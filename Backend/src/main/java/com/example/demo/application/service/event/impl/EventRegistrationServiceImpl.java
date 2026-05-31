@@ -184,7 +184,7 @@ public class EventRegistrationServiceImpl implements com.example.demo.applicatio
                 .counterpartyName(member.getFullName())
                 .type(TransactionType.INCOME)
                 .amount(amount)
-                .description("Phi tham gia su kien: " + event.getEventName())
+                .description("Phí tham gia sự kiện: " + event.getEventName())
                 .transactionDate(LocalDateTime.now())
                 .status(TransactionStatus.PENDING)
                 .build();

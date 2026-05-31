@@ -156,8 +156,9 @@ public class SampleDataSeeder implements CommandLineRunner {
                 Department.builder().departmentName("Công nghệ phần mềm").build(),
                 Department.builder().departmentName("Khoa học máy tính").build(),
                 Department.builder().departmentName("Hệ thống thông tin").build(),
-                Department.builder().departmentName("Mạng máy tính").build(),
-                Department.builder().departmentName("Trí tuệ nhân tạo").build());
+                Department.builder().departmentName("Mạng máy tính & Truyền thông dữ liệu").build(),
+                Department.builder().departmentName("Khoa học và Kỹ thuật thông tin").build(),
+                Department.builder().departmentName("Kỹ thuật máy tính").build());
         return departmentRepository.saveAll(departments);
     }
 
