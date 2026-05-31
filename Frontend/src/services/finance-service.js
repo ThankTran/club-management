@@ -136,6 +136,12 @@ export const updateTransactionAPI = (id, payload) =>
 export const completeTransactionAPI = (id) =>
   api.patch(`transactions/${id}/complete`)
 
+export const submitTransactionPaymentAPI = (id) =>
+  api.patch(`transactions/${id}/submit-payment`)
+
+export const rejectTransactionPaymentAPI = (id) =>
+  api.patch(`transactions/${id}/reject-payment`)
+
 export const deleteTransactionAPI = (id) =>
   api.delete(`transactions/${id}`)
 

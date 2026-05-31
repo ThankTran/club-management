@@ -289,6 +289,7 @@
 
 .qrCode,
 .pendingBadge,
+.failedBadge,
 .countBadge {
   display: inline-flex;
   padding: 5px 9px;
@@ -307,9 +308,35 @@
   color: #92400e;
 }
 
+.failedBadge {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
 .countBadge {
   background: #dcfce7;
   color: #15803d;
+}
+
+.processingCountBadge {
+  display: inline-flex;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.paymentFailedNotice {
+  margin-bottom: 14px;
+  padding: 11px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .card h3 {

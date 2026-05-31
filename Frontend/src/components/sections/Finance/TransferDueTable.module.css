@@ -135,6 +135,7 @@
 }
 
 .pendingBadge,
+.processingBadge,
 .paidBadge {
   display: inline-flex;
   padding: 5px 9px;
@@ -147,6 +148,11 @@
 .pendingBadge {
   background: #fef3c7;
   color: #92400e;
+}
+
+.processingBadge {
+  background: #dbeafe;
+  color: #1d4ed8;
 }
 
 .paidBadge {

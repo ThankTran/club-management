@@ -15,12 +15,6 @@ import ExpenseFormModal from '../../components/sections/Finance/ExpenseFormModal
 import ConfirmModal from '../../components/sections/Finance/ConfirmModal';
 import TransferDueTable from '../../components/sections/Finance/TransferDueTable';
 import {
-  deleteTransferDue,
-  getTransferDues,
-  markTransferDueCashPaid,
-  syncPaidTransferDuesToIncomeReceipts,
-} from '../../utils/Finance/transferDues';
-import {
   completeTransactionAPI,
   createTransactionAPI,
   deleteTransactionAPI,
@@ -28,6 +22,7 @@ import {
   getTransactionsAPI,
   normalizeMemberDueFromApi,
   normalizeTransactionFromApi,
+  rejectTransactionPaymentAPI,
   toExpensePayload,
   toIncomePayload,
   updateTransactionAPI,
@@ -40,7 +35,7 @@ export default function FinancePage() {
   const currentUser = useAuthStore((state) => state.user);
   const [thuList, setThuList] = useState([]);
   const [chiList, setChiList] = useState([]);
-  const [transferDues, setTransferDues] = useState(() => getTransferDues());
+  const [transferDues, setTransferDues] = useState([]);
   const [memberOptions, setMemberOptions] = useState([]);
   const [pendingDues, setPendingDues] = useState([]);
   const [pendingDuesLoading, setPendingDuesLoading] = useState(false);
@@ -96,6 +91,7 @@ export default function FinancePage() {
 
         setThuList(income);
         setChiList(expense);
+        setTransferDues(income.filter((item) => String(item.status || '').toUpperCase() === 'PROCESSING').map(toTransferDueRow));
         setPendingDues(Array.isArray(dueData) ? dueData.map(normalizeMemberDueFromApi) : []);
         setMemberOptions(Array.isArray(memberData) ? memberData.map(normalizeMemberFromApi) : []);
         setApiError('');
@@ -243,15 +239,27 @@ export default function FinancePage() {
   const openEditChiModal = (r) => { setEditChi(r); setChiOpen(true); };
 
   const refreshTransferDuesAndReceipts = () => {
-    const dues = getTransferDues();
-    syncPaidTransferDuesToIncomeReceipts(dues);
-    setTransferDues(dues);
-    setThuList((prev) => [...prev]);
+    loadFinanceData();
   };
 
-  const handleMarkCashPaid = (id) => {
-    setTransferDues(markTransferDueCashPaid(id));
-    setThuList((prev) => [...prev]);
+  const handleConfirmTransferPaid = async (id) => {
+    try {
+      await completeTransactionAPI(id);
+      await loadFinanceData();
+      setApiError('');
+    } catch (error) {
+      setApiError(error?.message || 'Không xác nhận được khoản chuyển khoản.');
+    }
+  };
+
+  const handleRejectTransferPaid = async (id) => {
+    try {
+      await rejectTransactionPaymentAPI(id);
+      await loadFinanceData();
+      setApiError('');
+    } catch (error) {
+      setApiError(error?.message || 'Không từ chối được khoản chuyển khoản.');
+    }
   };
 
   const handleThuSubmit = async (data) => {
@@ -411,8 +419,8 @@ export default function FinancePage() {
         <TransferDueTable
           dues={transferDues}
           onRefresh={refreshTransferDuesAndReceipts}
-          onMarkCashPaid={handleMarkCashPaid}
-          onDelete={(id) => setTransferDues(deleteTransferDue(id))}
+          onConfirmPaid={handleConfirmTransferPaid}
+          onRejectPaid={handleRejectTransferPaid}
         />
       )}
 
@@ -453,4 +461,20 @@ export default function FinancePage() {
 
 function isSettledTransaction(item) {
   return ['COMPLETED', 'APPROVED'].includes(String(item?.status || item?.raw?.status || '').toUpperCase());
+}
+
+function toTransferDueRow(item) {
+  return {
+    id: item.id,
+    transferCode: `${item.maSuKien || 'QUY'}-${item.id}`,
+    lyDo: item.lyDo,
+    maSuKien: item.maSuKien,
+    targetName: item.nguoiNop,
+    soTien: item.soTien,
+    status: 'processing',
+    paidBy: item.nguoiNop,
+    paidMethod: 'Chuyển khoản',
+    paidAt: item.raw?.updatedAt || item.raw?.transactionDate || item.ngayThu,
+    raw: item.raw,
+  };
 }

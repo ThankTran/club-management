@@ -3,8 +3,8 @@ import { CreditCard, RefreshCw } from 'lucide-react';
 import styles from './MemberPaymentPage.module.css';
 import { fmtMoney } from '../../utils/Finance/financeUtils';
 import {
-  completeTransactionAPI,
   getMemberDuesAPI,
+  submitTransactionPaymentAPI,
 } from '../../services/finance-service';
 import useAuthStore from '../../store/auth-store';
 
@@ -50,7 +50,9 @@ export default function MemberPaymentPage() {
   }, [loadDues]);
 
   const pending = useMemo(() => dues.filter((due) => due.status === 'pending'), [dues]);
+  const processing = useMemo(() => dues.filter((due) => due.status === 'processing'), [dues]);
   const paid = useMemo(() => dues.filter((due) => due.status === 'paid'), [dues]);
+  const failedDues = useMemo(() => pending.filter((due) => due.paymentFailed), [pending]);
   const selectedDues = useMemo(
     () => pending.filter((due) => selectedDueIds.includes(due.id)),
     [pending, selectedDueIds],
@@ -77,7 +79,7 @@ export default function MemberPaymentPage() {
 
   const handlePay = async (id) => {
     try {
-      const completed = await completeTransactionAPI(id);
+      const completed = await submitTransactionPaymentAPI(id);
       const normalized = normalizeDueFromTransaction(completed);
       setDues((prev) => prev.map((due) => (due.id === id ? normalized : due)).filter(Boolean));
       setSelectedDueIds((prev) => prev.filter((selectedId) => selectedId !== id));
@@ -99,7 +101,7 @@ export default function MemberPaymentPage() {
 
     setBulkProcessing(true);
     const results = await Promise.allSettled(
-      bulkDues.map((due) => completeTransactionAPI(due.id)),
+      bulkDues.map((due) => submitTransactionPaymentAPI(due.id)),
     );
 
     const completed = results
@@ -164,6 +166,12 @@ export default function MemberPaymentPage() {
           </button>
         </div>
 
+        {failedDues.length > 0 && (
+          <div className={styles.paymentFailedNotice}>
+            Có {failedDues.length} khoản thanh toán không thành công. Vui lòng kiểm tra và thanh toán lại.
+          </div>
+        )}
+
         {pending.length === 0 ? (
           <div className={styles.empty}>Không có khoản nào đang chờ đóng.</div>
         ) : (
@@ -203,6 +211,31 @@ export default function MemberPaymentPage() {
               ))}
             </div>
           </>
+        )}
+      </div>
+
+      <div className={styles.section}>
+        <div className={styles.sectionHeader}>
+          <h2>Chờ xác nhận</h2>
+          <span className={styles.processingCountBadge}>{processing.length} khoản</span>
+        </div>
+        {processing.length === 0 ? (
+          <div className={styles.empty}>Không có khoản nào đang chờ xác nhận.</div>
+        ) : (
+          <div className={styles.paidList}>
+            {processing.map((due) => (
+              <div key={due.id} className={styles.paidRow}>
+                <div>
+                  <strong>{due.lyDo}</strong>
+                  <span>{due.transferCode}</span>
+                </div>
+                <div className={styles.paidMeta}>
+                  <span>{fmtMoney(due.soTien)}</span>
+                  <small>Đang chờ admin xác nhận</small>
+                </div>
+              </div>
+            ))}
+          </div>
         )}
       </div>
 
@@ -271,7 +304,9 @@ function PaymentCard({ due, selected, onToggle, onPay }) {
             />
             <span className={styles.qrCode}>Mã: {due.id}</span>
           </label>
-          <span className={styles.pendingBadge}>Chờ đóng</span>
+          <span className={due.paymentFailed ? styles.failedBadge : styles.pendingBadge}>
+            {due.paymentFailed ? 'Không thành công' : 'Chờ đóng'}
+          </span>
         </div>
         <div className={styles.cardContent}>
           <p className={styles.contentLabel}>Nội dung</p>
@@ -443,9 +478,15 @@ function QrPaymentModal({ due, memberName, memberCode, onClose, onConfirm }) {
 
 function normalizeDueFromTransaction(transaction = {}) {
   const status = String(transaction.status || '').toUpperCase();
-  if (!['PENDING', 'COMPLETED', 'APPROVED'].includes(status)) {
+  if (!['PENDING', 'PROCESSING', 'COMPLETED', 'APPROVED', 'FAILED'].includes(status)) {
     return null;
   }
+
+  const normalizedStatus = status === 'PROCESSING'
+    ? 'processing'
+    : ['COMPLETED', 'APPROVED'].includes(status)
+      ? 'paid'
+      : 'pending';
 
   return {
     id: transaction.transactionId,
@@ -453,7 +494,8 @@ function normalizeDueFromTransaction(transaction = {}) {
     lyDo: normalizeDueDescription(transaction.description || 'Khoản cần đóng'),
     soTien: Number(transaction.amount || 0),
     maSuKien: transaction.eventId || '',
-    status: status === 'PENDING' ? 'pending' : 'paid',
+    status: normalizedStatus,
+    paymentFailed: status === 'FAILED',
     paidAt: transaction.approvedAt || transaction.updatedAt || '',
     targetName: transaction.memberName || transaction.counterpartyName || '',
     raw: transaction,

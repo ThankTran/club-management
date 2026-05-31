@@ -116,7 +116,9 @@ public class AccessControlInterceptor implements HandlerInterceptor {
             return true;
         }
 
-        if ("PATCH".equalsIgnoreCase(method) && matches(path, "/api/transactions/*/complete")) {
+        if ("PATCH".equalsIgnoreCase(method) && (
+                matches(path, "/api/transactions/*/complete")
+                        || matches(path, "/api/transactions/*/submit-payment"))) {
             return true;
         }
 

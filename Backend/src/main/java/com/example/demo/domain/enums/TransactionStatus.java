@@ -5,6 +5,7 @@ public enum TransactionStatus {
     APPROVED("Đã duyệt"),
     REJECTED("Đã từ chối"),
     CANCELLED("Đã hủy"),
+    PROCESSING("Chờ xác nhận"),
     COMPLETED("Đã hoàn thành"),
     FAILED("Đã thất bại"),
     REFUNDED("Đã hoàn trả");

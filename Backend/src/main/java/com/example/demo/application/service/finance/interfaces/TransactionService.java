@@ -25,6 +25,10 @@ public interface TransactionService {
 
     TransactionResponse complete(String id, Long currentMemberId, boolean currentUserIsManager);
 
+    TransactionResponse submitPayment(String id, Long currentMemberId);
+
+    TransactionResponse rejectPayment(String id, Long currentMemberId, boolean currentUserIsManager);
+
     void delete(String id);
 
     CompletableFuture<List<TransactionResponse>> getAllAsync();
