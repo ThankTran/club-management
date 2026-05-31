@@ -96,7 +96,7 @@
 }
 
 .refreshBtn,
-.payBtn,
+.cardPayBtn,
 .closeBtn,
 .secondaryBtn,
 .confirmBtn {
@@ -108,23 +108,111 @@
 }
 
 .refreshBtn {
+  width: 36px;
   height: 36px;
-  padding: 0 14px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0;
   background: var(--primary-100);
   color: var(--primary-700);
+}
+
+.refreshBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.68;
+}
+
+.bulkBar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+  padding: 12px;
+  border: 1px solid #e8edf3;
+  border-radius: 10px;
+  background: #f8fafc;
+}
+
+.selectAllControl,
+.cardSelect {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.selectAllControl {
+  color: var(--gray-700);
+  font-size: 13px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.selectAllControl input,
+.cardSelect input {
+  width: 16px;
+  height: 16px;
+  accent-color: #a50064;
+  cursor: pointer;
+}
+
+.bulkSummary {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gray-500);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.bulkSummary strong,
+.bulkSummary b {
+  color: var(--gray-900);
+  font-weight: 900;
+}
+
+.bulkPayBtn {
+  min-height: 36px;
+  padding: 0 14px;
+  border: none;
+  border-radius: 9px;
+  background: #a50064;
+  color: var(--white-hard);
+  cursor: pointer;
+  font-family: var(--font-family);
+  font-size: 13px;
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.bulkPayBtn:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  align-items: stretch;
   gap: 14px;
 }
 
 .card {
+  align-self: stretch;
+  box-sizing: border-box;
+  display: flex;
+  flex-direction: column;
   padding: 16px;
   border: 1px solid #e8edf3;
   border-radius: 12px;
   background: #fbfdff;
+}
+
+.selectedCard {
+  border-color: #a50064;
+  box-shadow: 0 0 0 2px rgba(165, 0, 100, 0.1);
 }
 
 .fakeQr {
@@ -181,6 +269,14 @@
 .cardBody {
   min-width: 0;
   flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.cardContent {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
 }
 
 .cardTop {
@@ -193,6 +289,7 @@
 
 .qrCode,
 .pendingBadge,
+.failedBadge,
 .countBadge {
   display: inline-flex;
   padding: 5px 9px;
@@ -211,15 +308,42 @@
   color: #92400e;
 }
 
+.failedBadge {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
 .countBadge {
   background: #dcfce7;
   color: #15803d;
+}
+
+.processingCountBadge {
+  display: inline-flex;
+  padding: 5px 9px;
+  border-radius: 999px;
+  background: #dbeafe;
+  color: #1d4ed8;
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.paymentFailedNotice {
+  margin-bottom: 14px;
+  padding: 11px 12px;
+  border: 1px solid #fecaca;
+  border-radius: 9px;
+  background: #fef2f2;
+  color: #991b1b;
+  font-size: 13px;
+  font-weight: 800;
 }
 
 .card h3 {
   margin: 3px 0 14px;
   color: var(--gray-900);
   font-size: 16px;
+  line-height: 1.35;
 }
 
 .card .contentLabel {
@@ -237,10 +361,29 @@
   font-size: 12.5px;
 }
 
-.payBtn {
-  width: 100%;
-  margin-top: 4px;
-  min-height: 38px;
+.cardFooter {
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-top: 14px;
+}
+
+.cardAmount {
+  margin: 0 !important;
+  color: #a50064 !important;
+  font-size: 15px !important;
+  font-weight: 900;
+}
+
+.cardPayBtn {
+  width: 38px;
+  height: 34px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
   background: #a50064;
   color: var(--white-hard);
 }
@@ -384,6 +527,59 @@
   font-size: 18px !important;
 }
 
+.bulkTotal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+}
+
+.bulkTotal span {
+  color: #8a3f66;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.bulkTotal strong {
+  color: #a50064;
+  font-size: 24px;
+  font-weight: 900;
+}
+
+.bulkList {
+  max-height: 160px;
+  overflow: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-top: 12px;
+  padding-right: 2px;
+}
+
+.bulkItem {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 9px 10px;
+  border: 1px solid #f1e3eb;
+  border-radius: 9px;
+  background: #fffafb;
+}
+
+.bulkItem span {
+  min-width: 0;
+  color: var(--gray-700);
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.bulkItem strong {
+  flex-shrink: 0;
+  color: #a50064;
+  font-size: 12.5px;
+  font-weight: 900;
+}
+
 .modalActions {
   flex-shrink: 0;
   display: grid;
@@ -466,8 +662,14 @@
   }
 
   .hero,
+  .bulkBar,
   .paidRow {
     flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bulkSummary {
+    justify-content: space-between;
   }
 
   .paidMeta {

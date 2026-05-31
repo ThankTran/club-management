@@ -69,18 +69,18 @@ public class TransactionServiceImpl implements com.example.demo.application.serv
 
         var event = request.getEventId() == null || request.getEventId().isBlank() ? null
                 : eventRepository.findById(request.getEventId())
-                        .orElseThrow(() -> new IllegalArgumentException("Khong tim thay event: " + request.getEventId()));
+                        .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sự kiện: " + request.getEventId()));
         var member = request.getMemberId() == null ? null
                 : memberRepository.findById(request.getMemberId())
-                        .orElseThrow(() -> new IllegalArgumentException("Khong tim thay thanh vien: " + request.getMemberId()));
+                        .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thành viên: " + request.getMemberId()));
         var createdBy = request.getCreatedById() == null ? null
                 : memberRepository.findById(request.getCreatedById())
                         .orElseThrow(() -> new IllegalArgumentException(
-                                "Khong tim thay nguoi tao: " + request.getCreatedById()));
+                                "Không tìm thấy người tạo: " + request.getCreatedById()));
         var approvedBy = request.getApprovedById() == null ? null
                 : memberRepository.findById(request.getApprovedById())
                         .orElseThrow(() -> new IllegalArgumentException(
-                "Khong tim thay nguoi duyet: " + request.getApprovedById()));
+                                "Không tìm thấy người duyệt: " + request.getApprovedById()));
         var entity = transactionMapper.toEntity(request, event, member, createdBy, approvedBy);
         Transaction savedTransaction = transactionRepository.save(entity);
         notifyFinance(
@@ -101,21 +101,21 @@ public class TransactionServiceImpl implements com.example.demo.application.serv
         }
 
         Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay transaction: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khoản tài chính: " + id));
         var event = request.getEventId() == null || request.getEventId().isBlank() ? null
                 : eventRepository.findById(request.getEventId())
-                        .orElseThrow(() -> new IllegalArgumentException("Khong tim thay event: " + request.getEventId()));
+                        .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sự kiện: " + request.getEventId()));
         var member = request.getMemberId() == null ? null
                 : memberRepository.findById(request.getMemberId())
-                        .orElseThrow(() -> new IllegalArgumentException("Khong tim thay thanh vien: " + request.getMemberId()));
+                        .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thành viên: " + request.getMemberId()));
         var createdBy = request.getCreatedById() == null ? null
                 : memberRepository.findById(request.getCreatedById())
                         .orElseThrow(() -> new IllegalArgumentException(
-                                "Khong tim thay nguoi tao: " + request.getCreatedById()));
+                                "Không tìm thấy người tạo: " + request.getCreatedById()));
         var approvedBy = request.getApprovedById() == null ? null
                 : memberRepository.findById(request.getApprovedById())
                         .orElseThrow(() -> new IllegalArgumentException(
-                                "Khong tim thay nguoi duyet: " + request.getApprovedById()));
+                                "Không tìm thấy người duyệt: " + request.getApprovedById()));
 
         transaction.setEvent(event);
         transaction.setMember(member);
@@ -159,7 +159,7 @@ public class TransactionServiceImpl implements com.example.demo.application.serv
             throw new IllegalArgumentException("Member ID must not be empty");
         }
         var member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay thanh vien: " + memberId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thành viên: " + memberId));
 
         YearMonth currentMonth = YearMonth.now();
         ensureMonthlyDue(member, currentMonth);
@@ -193,13 +193,13 @@ public class TransactionServiceImpl implements com.example.demo.application.serv
     @Cacheable(key = "'id:' + #id")
     public TransactionResponse getById(String id) {
         return transactionRepository.findById(id).map(transactionMapper::toResponse)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay transaction: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khoản tài chính: " + id));
     }
 
     @CacheEvict(cacheNames = {"transactions", "finance"}, allEntries = true)
     public TransactionResponse complete(String id, Long currentMemberId, boolean currentUserIsManager) {
         Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay transaction: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khoản tài chính: " + id));
         if (transaction.getType() == TransactionType.Expense && !currentUserIsManager) {
             throw new IllegalArgumentException("Chi co thanh vien co chuc vu moi duoc duyet phieu chi");
         }
@@ -210,26 +210,87 @@ public class TransactionServiceImpl implements com.example.demo.application.serv
                 || !currentMemberId.equals(transaction.getMember().getMemberId()))) {
             throw new IllegalArgumentException("Ban chi co the thanh toan khoan thu cua chinh minh");
         }
-        Member approver = currentMemberId == null ? null : memberRepository.findById(currentMemberId).orElse(null);
-        transaction.setStatus(TransactionStatus.COMPLETED);
-        transaction.setApprovedBy(approver);
-        transaction.setApprovedAt(LocalDateTime.now());
+        Member actor = currentMemberId == null ? null : memberRepository.findById(currentMemberId).orElse(null);
+        if (transaction.getType() == TransactionType.INCOME && !currentUserIsManager) {
+            transaction.setStatus(TransactionStatus.PROCESSING);
+            transaction.setApprovedBy(null);
+            transaction.setApprovedAt(null);
+        } else {
+            transaction.setStatus(TransactionStatus.COMPLETED);
+            transaction.setApprovedBy(actor);
+            transaction.setApprovedAt(LocalDateTime.now());
+        }
         if (transaction.getTransactionDate() == null) {
             transaction.setTransactionDate(LocalDateTime.now());
         }
         Transaction savedTransaction = transactionRepository.save(transaction);
         notifyFinance(
                 savedTransaction,
-                "Đóng tiền thành công",
-                "Khoản " + describeTransaction(savedTransaction) + " đã được hoàn tất.",
+                savedTransaction.getStatus() == TransactionStatus.PROCESSING
+                        ? "Thanh toan dang cho xac nhan"
+                        : "Dong tien thanh cong",
+                savedTransaction.getStatus() == TransactionStatus.PROCESSING
+                        ? "Khoan " + describeTransaction(savedTransaction) + " dang cho ban quan ly xac nhan."
+                        : "Khoan " + describeTransaction(savedTransaction) + " da duoc hoan tat.",
                 savedTransaction.getApprovedBy());
+        return transactionMapper.toResponse(savedTransaction);
+    }
+
+    @CacheEvict(cacheNames = {"transactions", "finance"}, allEntries = true)
+    public TransactionResponse submitPayment(String id, Long currentMemberId) {
+        Transaction transaction = transactionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay transaction: " + id));
+        if (transaction.getType() != TransactionType.INCOME) {
+            throw new IllegalArgumentException("Chi co the bao thanh toan cho khoan thu");
+        }
+        if (transaction.getMember() == null
+                || currentMemberId == null
+                || !currentMemberId.equals(transaction.getMember().getMemberId())) {
+            throw new IllegalArgumentException("Ban chi co the thanh toan khoan thu cua chinh minh");
+        }
+
+        transaction.setStatus(TransactionStatus.PROCESSING);
+        transaction.setApprovedBy(null);
+        transaction.setApprovedAt(null);
+        if (transaction.getTransactionDate() == null) {
+            transaction.setTransactionDate(LocalDateTime.now());
+        }
+        Transaction savedTransaction = transactionRepository.save(transaction);
+        notifyFinance(
+                savedTransaction,
+                "Thanh toan dang cho xac nhan",
+                "Khoan " + describeTransaction(savedTransaction) + " dang cho ban quan ly xac nhan.",
+                null);
+        return transactionMapper.toResponse(savedTransaction);
+    }
+
+    @CacheEvict(cacheNames = {"transactions", "finance"}, allEntries = true)
+    public TransactionResponse rejectPayment(String id, Long currentMemberId, boolean currentUserIsManager) {
+        if (!currentUserIsManager) {
+            throw new IllegalArgumentException("Chi co thanh vien co chuc vu moi duoc tu choi xac nhan thanh toan");
+        }
+        Transaction transaction = transactionRepository.findById(id)
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khoản tài chính: " + id));
+        if (transaction.getType() != TransactionType.INCOME) {
+            throw new IllegalArgumentException("Chi co the tu choi xac nhan khoan thu");
+        }
+
+        transaction.setStatus(TransactionStatus.FAILED);
+        transaction.setApprovedBy(null);
+        transaction.setApprovedAt(null);
+        Transaction savedTransaction = transactionRepository.save(transaction);
+        notifyFinance(
+                savedTransaction,
+                "Thanh toán không thành công",
+                "Khoản " + describeTransaction(savedTransaction) + " chưa được xác nhận. Vui lòng kiểm tra lại thông tin và thử thanh toán lại.",
+                currentMemberId == null ? null : memberRepository.findById(currentMemberId).orElse(null));
         return transactionMapper.toResponse(savedTransaction);
     }
 
     @CacheEvict(cacheNames = {"transactions", "finance"}, allEntries = true)
     public void delete(String id) {
         Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay transaction: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khoản tài chính: " + id));
         transaction.setDeletedAt(LocalDateTime.now());
         Transaction savedTransaction = transactionRepository.save(transaction);
         notifyFinance(

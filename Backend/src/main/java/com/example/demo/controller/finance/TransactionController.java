@@ -101,6 +101,35 @@ public class TransactionController {
         }
     }
 
+    @PatchMapping("/{id}/submit-payment")
+    public ResponseEntity<?> submitPayment(
+            @PathVariable String id,
+            @RequestAttribute(value = AccessControlInterceptor.CURRENT_MEMBER_ID_ATTRIBUTE, required = false) Long currentMemberId) {
+        try {
+            return ResponseEntity.ok(transactionService.submitPayment(id, currentMemberId));
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() != null && e.getMessage().startsWith("Khong tim thay transaction")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            }
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{id}/reject-payment")
+    public ResponseEntity<?> rejectPayment(
+            @PathVariable String id,
+            @RequestAttribute(value = AccessControlInterceptor.CURRENT_MEMBER_ID_ATTRIBUTE, required = false) Long currentMemberId,
+            @RequestAttribute(value = AccessControlInterceptor.CURRENT_USER_IS_MANAGER_ATTRIBUTE, required = false) Boolean currentUserIsManager) {
+        try {
+            return ResponseEntity.ok(transactionService.rejectPayment(id, currentMemberId, Boolean.TRUE.equals(currentUserIsManager)));
+        } catch (IllegalArgumentException e) {
+            if (e.getMessage() != null && e.getMessage().startsWith("Khong tim thay transaction")) {
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
+            }
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
+        }
+    }
+
     @DeleteMapping("/{id}")
     public ResponseEntity<?> delete(@PathVariable String id) {
         try {
