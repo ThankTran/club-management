@@ -129,6 +129,7 @@ public class DashboardServiceImpl implements DashboardService {
 
     private Map<String, Object> activity(Notification notification) {
         Map<String, Object> item = new LinkedHashMap<>();
+        item.put("notificationId", notification.getNotificationId());
         item.put("text", notification.getTitle());
         item.put("time", notification.getSentAt());
         item.put("to", routeForTarget(notification.getTargetType()));

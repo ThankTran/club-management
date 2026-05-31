@@ -1,6 +1,11 @@
 import React, { useEffect, useState } from "react";
 import styles from "./DashboardPage.module.css";
 import { getDashboardOverviewAPI } from "../../services/dashboard-service";
+import {
+  getNotificationsByMemberAPI,
+  markNotificationRecipientAsReadAPI,
+} from "../../services/notification-service";
+import useAuthStore from "../../store/auth-store";
 import ActivityTimeline from "../../components/sections/Dashboard/ActivityTimeline";
 import ComboChart from "../../components/sections/Dashboard/ComboChart";
 
@@ -34,8 +39,32 @@ const DEFAULT_OVERVIEW = {
   ],
 };
 
+const getActivityNotificationId = (activity) =>
+  activity?.notificationId ?? activity?.id ?? activity?.notification?.notificationId;
+
+const mergeActivityReadState = (activities = [], recipients = []) => {
+  const readByNotificationId = new Map(
+    (recipients || []).map((recipient) => [
+      String(recipient.notificationId ?? recipient.id),
+      Boolean(recipient.isRead),
+    ])
+  );
+
+  return activities.map((activity) => {
+    const notificationId = getActivityNotificationId(activity);
+    if (notificationId == null) {
+      return activity;
+    }
+
+    const read = readByNotificationId.get(String(notificationId));
+    return read === undefined ? activity : { ...activity, read };
+  });
+};
+
 // ── Main ──────────────────────────────────────────────────────
 const DashboardPage = () => {
+  const currentUser = useAuthStore((state) => state.user);
+  const currentMemberId = currentUser?.memberId;
   const [overview, setOverview] = useState(DEFAULT_OVERVIEW);
   const [error, setError] = useState("");
   const [showWelcomeBadge, setShowWelcomeBadge] = useState(true);
@@ -46,19 +75,58 @@ const DashboardPage = () => {
   }, []);
 
   useEffect(() => {
-    getDashboardOverviewAPI()
-      .then((data) => {
-        if (data?.stats) {
-          setOverview((prev) => ({
-            ...prev,
-            stats: data.stats,
-            activities: data.activities ?? prev.activities,
-            chartData: data.chartData ?? prev.chartData,
-          }));
+    let ignore = false;
+
+    const loadOverview = async () => {
+      try {
+        const [overviewData, recipientData] = await Promise.all([
+          getDashboardOverviewAPI(),
+          currentMemberId ? getNotificationsByMemberAPI(currentMemberId) : Promise.resolve([]),
+        ]);
+
+        if (ignore || !overviewData?.stats) return;
+
+        setOverview((prev) => ({
+          ...prev,
+          stats: overviewData.stats,
+          activities: mergeActivityReadState(
+            overviewData.activities ?? prev.activities,
+            recipientData
+          ),
+          chartData: overviewData.chartData ?? prev.chartData,
+        }));
+      } catch (err) {
+        if (!ignore) {
+          setError(err?.message || "Không thể tải dữ liệu");
         }
-      })
-      .catch((err) => setError(err?.message || "Không thể tải dữ liệu"));
-  }, []);
+      }
+    };
+
+    loadOverview();
+    return () => {
+      ignore = true;
+    };
+  }, [currentMemberId]);
+
+  const handleActivityRead = async (activity, index) => {
+    setOverview((prev) => ({
+      ...prev,
+      activities: prev.activities.map((a, i) =>
+        i === index ? { ...a, read: true } : a
+      ),
+    }));
+
+    const notificationId = getActivityNotificationId(activity);
+    if (!currentMemberId || notificationId == null || activity?.read) {
+      return;
+    }
+
+    try {
+      await markNotificationRecipientAsReadAPI(notificationId, currentMemberId);
+    } catch {
+      // Keep the optimistic UI update; the next refresh will reflect backend state.
+    }
+  };
 
   return (
     <div className={styles.page}>
@@ -118,14 +186,7 @@ const DashboardPage = () => {
           </div>
           <ActivityTimeline
             activities={overview.activities}
-            onRead={(index) =>
-              setOverview((prev) => ({
-                ...prev,
-                activities: prev.activities.map((a, i) =>
-                  i === index ? { ...a, read: true } : a
-                ),
-              }))
-            }
+            onRead={handleActivityRead}
           />
         </section>
       </div>

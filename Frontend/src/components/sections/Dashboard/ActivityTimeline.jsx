@@ -6,9 +6,9 @@ export default function ActivityTimeline({ activities, onRead }) {
   const navigate = useNavigate();
   const [tab, setTab] = useState("all");
 
-  const handleClick = (item, index) => {
+  const handleClick = async (item, index) => {
     if (!item.to) return;
-    onRead(index);
+    await onRead(item, index);
     navigate(item.to);
   };
 
