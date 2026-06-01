@@ -34,11 +34,11 @@ public class DocumentFileController {
         try {
             if (!Boolean.TRUE.equals(currentUserIsManager)) {
                 if (currentMemberId == null) {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Khong xac dinh duoc thanh vien hien tai");
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Không xác định được thành viên hiện tại");
                 }
                 DocumentResponse document = documentService.getById(request.getDocumentId());
                 if (!Objects.equals(document.getProposedById(), currentMemberId)) {
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Ban khong co quyen tai tep len tai lieu nay");
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Bạn không có quyền tải tệp lên tài liệu này");
                 }
             }
             return ResponseEntity

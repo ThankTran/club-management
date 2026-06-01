@@ -53,13 +53,13 @@ public class DepartmentServiceImpl implements DepartmentService {
     @Cacheable(key = "'id:' + #id")
     public DepartmentResponse getById(Long id) {
         return departmentRepository.findById(id).map(departmentMapper::toResponse)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay khoa: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khoa: " + id));
     }
 
     @Cacheable(key = "'name:' + #departmentName")
     public DepartmentResponse getByDepartmentName(String departmentName) {
         return departmentRepository.findByDepartmentName(departmentName).map(departmentMapper::toResponse)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay khoa: " + departmentName));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khoa: " + departmentName));
     }
 
     @CacheEvict(allEntries = true)

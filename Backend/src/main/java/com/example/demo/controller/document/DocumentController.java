@@ -31,10 +31,10 @@ public class DocumentController {
         try {
             if (!Boolean.TRUE.equals(currentUserIsManager)) {
                 if (currentMemberId == null) {
-                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Khong xac dinh duoc thanh vien hien tai");
+                    return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body("Không xác định được thành viên hiện tại");
                 }
                 if (request.getProposedById() != null && !Objects.equals(request.getProposedById(), currentMemberId)) {
-                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Ban khong co quyen de xuat tai lieu cho thanh vien khac");
+                    return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Bạn không có quyền đề xuất tài liệu cho thành viên khác");
                 }
                 request.setProposedById(currentMemberId);
             }

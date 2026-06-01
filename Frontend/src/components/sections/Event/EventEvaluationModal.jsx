@@ -17,7 +17,7 @@ export default function EventEvaluationModal({
       <div className={styles.evaluationBox} onClick={(e) => e.stopPropagation()}>
         <div className={styles.evaluationHeader}>
           <div>
-            <h3 className={styles.title}>{isEditingEvaluation ? 'Chinh sua danh gia su kien' : 'Phieu danh gia su kien'}</h3>
+            <h3 className={styles.title}>{isEditingEvaluation ? 'Chỉnh sửa đánh giá sự kiện' : 'Phiếu đánh giá sự kiện'}</h3>
             <p className={styles.evaluationMeta}>{event.eventCode} - {event.title}</p>
           </div>
           <button className={styles.closeIconBtn} onClick={onClose} aria-label="Đóng">

@@ -358,7 +358,7 @@ export default function AccountPage() {
 }
 
 function parseDate(value) {
-  if (!value || value === "Chua cap nhat") return 0;
+  if (!value || value === "Chưa cập nhật") return 0;
 
   const [day, month, year] = value.split("/");
   if (!day || !month || !year) return 0;

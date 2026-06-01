@@ -52,13 +52,13 @@ public class RoleServiceImpl implements com.example.demo.application.service.rol
     @Cacheable(key = "'id:' + #id")
     public RoleResponse getById(Long id) {
         return roleRepository.findById(id).map(roleMapper::toResponse)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay vai tro: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vai trò: " + id));
     }
 
     @Cacheable(key = "'name:' + #roleName")
     public RoleResponse getByRoleName(String roleName) {
         return roleRepository.findByRoleName(roleName).map(roleMapper::toResponse)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay vai tro: " + roleName));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vai trò: " + roleName));
     }
 
     @CacheEvict(allEntries = true)

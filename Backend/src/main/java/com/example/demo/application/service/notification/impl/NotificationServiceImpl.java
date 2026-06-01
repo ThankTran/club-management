@@ -49,7 +49,7 @@ public class NotificationServiceImpl implements com.example.demo.application.ser
         if (request.getSenderId() != null) {
             sender = memberRepository.findById(request.getSenderId())
                     .orElseThrow(() -> new IllegalArgumentException(
-                            "Khong tim thay nguoi gui: " + request.getSenderId()));
+                            "Không tìm thấy người gửi: " + request.getSenderId()));
             notificationDomainService.validateSender(sender);
         }
 
@@ -80,7 +80,7 @@ public class NotificationServiceImpl implements com.example.demo.application.ser
     @Cacheable(key = "'id:' + #id")
     public NotificationResponse getById(Long id) {
         return notificationRepository.findById(id).map(notificationMapper::toResponse)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay notification: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thông báo: " + id));
     }
 
     @CacheEvict(allEntries = true)

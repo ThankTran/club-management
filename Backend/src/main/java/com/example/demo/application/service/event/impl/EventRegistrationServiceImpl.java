@@ -66,13 +66,13 @@ public class EventRegistrationServiceImpl implements com.example.demo.applicatio
         }
 
         var event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay event: " + eventId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sự kiện: " + eventId));
         if (event.getStatus() == EventStatusEnum.Finished || event.getStatus() == EventStatusEnum.Cancelled) {
             throw new IllegalArgumentException("Cannot register for a finished or cancelled event");
         }
 
         var member = memberRepository.findById(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay thanh vien: " + memberId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thành viên: " + memberId));
         if (member.getReqStatus() != ApprovalStatusEnum.APPROVED) {
             throw new IllegalArgumentException("Only approved members can register for events");
         }
@@ -126,7 +126,7 @@ public class EventRegistrationServiceImpl implements com.example.demo.applicatio
             throw new IllegalArgumentException("Event ID must not be empty");
         }
         if (!eventRepository.existsById(eventId)) {
-            throw new IllegalArgumentException("Khong tim thay event: " + eventId);
+            throw new IllegalArgumentException("Không tìm thấy sự kiện: " + eventId);
         }
         Set<Long> memberIds = resolveMemberIds(request);
         boolean attended = request == null || request.getAttended() == null || request.getAttended();
@@ -135,7 +135,7 @@ public class EventRegistrationServiceImpl implements com.example.demo.applicatio
             EventRegistration registration = eventRegistrationRepository
                     .findById(new EventRegistrationId(eventId, memberId))
                     .orElseThrow(() -> new IllegalArgumentException(
-                            "Khong tim thay dang ky cho event " + eventId + " va member " + memberId));
+                            "Không tìm thấy đăng ký cho sự kiện " + eventId + " và thành viên " + memberId));
             registration.setAttended(attended);
             registration.setAttendedAt(attended ? LocalDateTime.now() : null);
             eventRegistrationRepository.save(registration);
@@ -154,10 +154,10 @@ public class EventRegistrationServiceImpl implements com.example.demo.applicatio
         }
         EventRegistrationId id = new EventRegistrationId(eventId, memberId);
         if (!eventRegistrationRepository.existsById(id)) {
-            throw new IllegalArgumentException("Khong tim thay dang ky su kien");
+            throw new IllegalArgumentException("Không tìm thấy đăng ký sự kiện");
         }
         var registration = eventRegistrationRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay dang ky su kien"));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy đăng ký sự kiện"));
         var event = registration.getEvent();
         var member = registration.getMember();
         eventRegistrationRepository.deleteById(id);

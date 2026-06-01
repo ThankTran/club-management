@@ -55,7 +55,7 @@ export const buildRegisteredEventsIcs = (registeredEvents = []) => {
       'BEGIN:VEVENT',
       `UID:${escapeIcsText(event.id || event.title)}@club-management.local`,
       `DTSTAMP:${dtstamp}`,
-      `SUMMARY:${escapeIcsText(event.title || 'Su kien cau lac bo')}`,
+      `SUMMARY:${escapeIcsText(event.title || 'Sự kiện câu lạc bộ')}`,
     ];
 
     if (event.time) {

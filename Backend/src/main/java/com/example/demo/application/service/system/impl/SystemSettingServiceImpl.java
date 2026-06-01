@@ -42,7 +42,7 @@ public class SystemSettingServiceImpl implements com.example.demo.application.se
         Member updatedBy = null;
         if (request.getUpdatedById() != null) {
             updatedBy = memberRepository.findById(request.getUpdatedById())
-                    .orElseThrow(() -> new IllegalArgumentException("Khong tim thay thanh vien cap nhat: " + request.getUpdatedById()));
+                    .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thành viên cập nhật: " + request.getUpdatedById()));
             systemSettingDomainService.validateUpdatedBy(updatedBy);
         }
         return systemSettingMapper.toResponse(
@@ -63,7 +63,7 @@ public class SystemSettingServiceImpl implements com.example.demo.application.se
     @Cacheable(key = "'key:' + #key")
     public SystemSettingResponse getByKey(String key) {
         return systemSettingRepository.findById(key).map(systemSettingMapper::toResponse)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay setting: " + key));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy cài đặt: " + key));
     }
 
     @Cacheable(key = "'keyOrDefault:' + #key + ':' + #defaultValue")

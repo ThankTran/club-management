@@ -83,7 +83,7 @@ public class EventServiceImpl implements com.example.demo.application.service.ev
         if (request.getEvaluatedById() != null) {
             evaluatedBy = memberRepository.findById(request.getEvaluatedById())
                     .orElseThrow(() -> new IllegalArgumentException(
-                            "Khong tim thay thanh vien danh gia: " + request.getEvaluatedById()));
+                            "Không tìm thấy thành viên đánh giá: " + request.getEvaluatedById()));
         }
         Event savedEvent = eventRepository.save(eventMapper.toEntity(request, evaluatedBy));
         notificationDispatchService.toApprovedActiveMembers(
@@ -99,7 +99,7 @@ public class EventServiceImpl implements com.example.demo.application.service.ev
         eventDomainService.validateUpdateRequest(id, request);
 
         Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay event: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sự kiện: " + id));
         eventRepository.findByEventNameIgnoreCase(request.getEventName())
                 .filter(existing -> !existing.getEventId().equals(id))
                 .ifPresent(existing -> {
@@ -169,16 +169,16 @@ public class EventServiceImpl implements com.example.demo.application.service.ev
     @Cacheable(key = "'id:' + #id")
     public EventResponse getById(String id) {
         return eventRepository.findById(id).map(this::toResponse)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay event: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sự kiện: " + id));
     }
 
     @Override
     public EventCalendarLinkResponse getGoogleCalendarLink(String id) {
         Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay event: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sự kiện: " + id));
 
         if (event.getStartTime() == null || event.getEndTime() == null) {
-            throw new IllegalArgumentException("Event chua co du thong tin thoi gian de tao link Google Calendar");
+            throw new IllegalArgumentException("Sự kiện chưa có đủ thông tin thời gian để tạo link Google Calendar");
         }
 
         String details = buildEventDetails(event);
@@ -221,7 +221,7 @@ public class EventServiceImpl implements com.example.demo.application.service.ev
         }
 
         Event event = eventRepository.findById(request.getEventId())
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay event: " + request.getEventId()));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sự kiện: " + request.getEventId()));
         LocalDateTime evaluationDate = request.getEvaluationDate() == null
                 ? LocalDateTime.now()
                 : request.getEvaluationDate();
@@ -233,7 +233,7 @@ public class EventServiceImpl implements com.example.demo.application.service.ev
         if (request.getEvaluatedById() != null) {
             evaluatedBy = memberRepository.findById(request.getEvaluatedById())
                     .orElseThrow(() -> new IllegalArgumentException(
-                            "Khong tim thay thanh vien danh gia: " + request.getEvaluatedById()));
+                            "Không tìm thấy thành viên đánh giá: " + request.getEvaluatedById()));
         }
 
         event.setEvaluatedBy(evaluatedBy);
@@ -254,14 +254,14 @@ public class EventServiceImpl implements com.example.demo.application.service.ev
     @Override
     public EventEvaluationResponse getEvaluationByEvent(String eventId) {
         Event event = eventRepository.findById(eventId)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay event: " + eventId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sự kiện: " + eventId));
         return toEvaluationResponse(event);
     }
 
     @CacheEvict(allEntries = true)
     public void delete(String id) {
         Event event = eventRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay event: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sự kiện: " + id));
         if (event.getStatus() == EventStatusEnum.InProgress) {
             throw new IllegalArgumentException("Chỉ được hủy khi và chỉ khi sự kiện chưa hoạt động.");
         }
@@ -315,7 +315,7 @@ public class EventServiceImpl implements com.example.demo.application.service.ev
             if (details.length() > 0) {
                 details.append("\n\n");
             }
-            details.append("Ma su kien: ").append(event.getEventId());
+            details.append("Mã sự kiện: ").append(event.getEventId());
         }
         return details.toString();
     }

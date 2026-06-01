@@ -53,11 +53,11 @@ public class EventOrganizerServiceImpl implements com.example.demo.application.s
                 eventOrganizerRepository.existsById(new EventOrganizerId(request.getEventId(), request.getMemberId())));
 
         var event = eventRepository.findById(request.getEventId())
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay event: " + request.getEventId()));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sự kiện: " + request.getEventId()));
         var member = memberRepository.findById(request.getMemberId())
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay thanh vien: " + request.getMemberId()));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thành viên: " + request.getMemberId()));
         var role = eventRoleRepository.findById(request.getRoleId())
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay vai tro su kien: " + request.getRoleId()));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy vai trò sự kiện: " + request.getRoleId()));
         var entity = eventOrganizerMapper.toEntity(request, event, member, role);
         return eventOrganizerMapper.toResponse(eventOrganizerRepository.save(entity));
     }
@@ -82,7 +82,7 @@ public class EventOrganizerServiceImpl implements com.example.demo.application.s
         EventOrganizerId id = new EventOrganizerId(eventId, memberId);
         if (!eventOrganizerRepository.existsById(id)) {
             throw new IllegalArgumentException(
-                    "Khong tim thay phan cong organizer cho event " + eventId + " va member " + memberId);
+                    "Không tìm thấy phân công ban tổ chức cho sự kiện " + eventId + " và thành viên " + memberId);
         }
         eventOrganizerRepository.deleteById(id);
     }

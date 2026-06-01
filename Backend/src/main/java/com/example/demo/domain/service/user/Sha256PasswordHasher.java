@@ -18,7 +18,7 @@ public class Sha256PasswordHasher implements PasswordHasher {
             }
             return builder.toString();
         } catch (NoSuchAlgorithmException exception) {
-            throw new IllegalStateException("Khong the ma hoa mat khau", exception);
+            throw new IllegalStateException("Không thể mã hóa mật khẩu", exception);
         }
     }
 

@@ -62,7 +62,7 @@ public class SystemSettingController {
         try {
             String value = request == null ? null : request.getSettingValue();
             if (value == null || !value.matches("\\d+")) {
-                return ResponseEntity.badRequest().body("So tien dong quy khong hop le");
+                return ResponseEntity.badRequest().body("Số tiền đóng quỹ không hợp lệ");
             }
 
             SystemSettingRequest normalized = new SystemSettingRequest();

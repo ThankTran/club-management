@@ -201,14 +201,14 @@ public class TransactionServiceImpl implements com.example.demo.application.serv
         Transaction transaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khoản tài chính: " + id));
         if (transaction.getType() == TransactionType.Expense && !currentUserIsManager) {
-            throw new IllegalArgumentException("Chi co thanh vien co chuc vu moi duoc duyet phieu chi");
+            throw new IllegalArgumentException("Chỉ có thành viên có chức vụ mới được duyệt phiếu chi");
         }
         if (transaction.getType() == TransactionType.INCOME
                 && !currentUserIsManager
                 && (transaction.getMember() == null
                 || currentMemberId == null
                 || !currentMemberId.equals(transaction.getMember().getMemberId()))) {
-            throw new IllegalArgumentException("Ban chi co the thanh toan khoan thu cua chinh minh");
+            throw new IllegalArgumentException("Bạn chỉ có thể xác nhận thanh toán cho khoản thu của chính mình");
         }
         Member actor = currentMemberId == null ? null : memberRepository.findById(currentMemberId).orElse(null);
         if (transaction.getType() == TransactionType.INCOME && !currentUserIsManager) {
@@ -237,14 +237,14 @@ public class TransactionServiceImpl implements com.example.demo.application.serv
     @CacheEvict(cacheNames = {"transactions", "finance"}, allEntries = true)
     public TransactionResponse submitPayment(String id, Long currentMemberId) {
         Transaction transaction = transactionRepository.findById(id)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay transaction: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy giao dịch: " + id));
         if (transaction.getType() != TransactionType.INCOME) {
-            throw new IllegalArgumentException("Chi co the bao thanh toan cho khoan thu");
+            throw new IllegalArgumentException("Chỉ có thể thanh toán khoản thu");
         }
         if (transaction.getMember() == null
                 || currentMemberId == null
                 || !currentMemberId.equals(transaction.getMember().getMemberId())) {
-            throw new IllegalArgumentException("Ban chi co the thanh toan khoan thu cua chinh minh");
+            throw new IllegalArgumentException("Bạn chỉ có thể xác nhận thanh toán cho khoản thu của chính mình");
         }
 
         markAwaitingConfirmation(transaction);

@@ -52,9 +52,9 @@ public class NotificationRecipientServiceImpl implements com.example.demo.applic
 
         var notification = notificationRepository.findById(request.getNotificationId())
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "Khong tim thay notification: " + request.getNotificationId()));
+                        "Không tìm thấy thông báo: " + request.getNotificationId()));
         var member = memberRepository.findById(request.getMemberId())
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay thanh vien: " + request.getMemberId()));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thành viên: " + request.getMemberId()));
         var entity = notificationRecipientMapper.toEntity(request, notification, member);
         return notificationRecipientMapper.toResponse(notificationRecipientRepository.save(entity));
     }
@@ -78,7 +78,7 @@ public class NotificationRecipientServiceImpl implements com.example.demo.applic
         var id = new NotificationRecipientId(notificationId, memberId);
         var recipient = notificationRecipientRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException(
-                        "Khong tim thay notification recipient: " + notificationId + "/" + memberId));
+                        "Không tìm thấy người nhận thông báo: " + notificationId + "/" + memberId));
 
         recipient.setIsRead(true);
         recipient.setReadAt(LocalDateTime.now());

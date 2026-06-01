@@ -106,7 +106,7 @@ public class UserController {
             @RequestAttribute(value = AccessControlInterceptor.CURRENT_USER_IS_MANAGER_ATTRIBUTE, required = false) Boolean currentUserIsManager) {
         if (!Boolean.TRUE.equals(currentUserIsManager)
                 && (currentUser == null || !id.equals(currentUser.getUserId()))) {
-            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Ban khong co quyen xem phien dang nhap nay");
+            return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Bạn không có quyền xem phiên đăng nhập này");
         }
         return ResponseEntity.ok(loginSessionService.getSessionsByUser(id));
     }

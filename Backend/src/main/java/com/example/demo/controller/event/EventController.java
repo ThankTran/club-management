@@ -36,7 +36,7 @@ public class EventController {
         try {
             return ResponseEntity.ok(eventService.update(id, request));
         } catch (IllegalArgumentException e) {
-            if (e.getMessage() != null && e.getMessage().startsWith("Khong tim thay event")) {
+            if (e.getMessage() != null && e.getMessage().startsWith("Không tìm thấy sự kiện")) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
             }
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -68,7 +68,7 @@ public class EventController {
             EventCalendarLinkResponse response = eventService.getGoogleCalendarLink(id);
             return ResponseEntity.ok(response);
         } catch (IllegalArgumentException e) {
-            if (e.getMessage() != null && e.getMessage().startsWith("Khong tim thay event")) {
+            if (e.getMessage() != null && e.getMessage().startsWith("Không tìm thấy sự kiện")) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());
@@ -93,7 +93,7 @@ public class EventController {
             eventService.delete(id);
             return ResponseEntity.noContent().build();
         } catch (IllegalArgumentException e) {
-            if (e.getMessage() != null && e.getMessage().startsWith("Khong tim thay event")) {
+            if (e.getMessage() != null && e.getMessage().startsWith("Không tìm thấy sự kiện")) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
             }
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(e.getMessage());

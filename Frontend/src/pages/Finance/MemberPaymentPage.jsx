@@ -564,7 +564,7 @@ function isAwaitingConfirmationTransaction(transaction = {}) {
 
 function normalizeDueDescription(description = '') {
   return String(description)
-    .replace(/Phi tham gia su kien:/gi, 'Phí tham gia sự kiện:')
+    .replace(/Ph[ií] tham gia s[uự] ki[eệ]n:/gi, 'Phí tham gia sự kiện:')
     .replace(/Phi tham gia sự kiện:/gi, 'Phí tham gia sự kiện:')
-    .replace(/Phí tham gia su kien:/gi, 'Phí tham gia sự kiện:');
+    .replace(/Phí tham gia s[uự] ki[eệ]n:/gi, 'Phí tham gia sự kiện:');
 }

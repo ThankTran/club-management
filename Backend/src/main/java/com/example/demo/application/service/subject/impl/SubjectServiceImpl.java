@@ -52,7 +52,7 @@ public class SubjectServiceImpl implements com.example.demo.application.service.
     @Cacheable(key = "'id:' + #id")
     public SubjectResponse getById(Integer id) {
         return subjectRepository.findById(id).map(subjectMapper::toResponse)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay subject: " + id));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy chủ đề: " + id));
     }
 
     @CacheEvict(allEntries = true)

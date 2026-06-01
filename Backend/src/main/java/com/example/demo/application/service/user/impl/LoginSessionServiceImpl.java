@@ -34,7 +34,7 @@ public class LoginSessionServiceImpl implements LoginSessionService {
             return;
         }
         var user = userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay user: " + userId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng: " + userId));
         String userAgent = request == null ? "" : safeHeader(request, "User-Agent");
         LoginSession session = LoginSession.builder()
                 .user(user)
@@ -71,7 +71,7 @@ public class LoginSessionServiceImpl implements LoginSessionService {
     }
 
     private String resolveDeviceLabel(String userAgent) {
-        String browser = "Trinh duyet";
+        String browser = "Trình duyệt";
         if (userAgent.contains("Edg/")) {
             browser = "Edge";
         } else if (userAgent.contains("Chrome/")) {
@@ -82,7 +82,7 @@ public class LoginSessionServiceImpl implements LoginSessionService {
             browser = "Safari";
         }
 
-        String platform = "Thiet bi khong xac dinh";
+        String platform = "Thiết bị không xác định";
         if (userAgent.contains("Windows")) {
             platform = "Windows";
         } else if (userAgent.contains("Android")) {

@@ -35,7 +35,7 @@ export const normalizeAccountFromApi = (user = {}, passwordHash = '', sessions =
     role: user.roleName || 'Thành viên',
     department: user.departmentName || '',
     status: user.reqStatus || '',
-    lastLogin: sessions[0]?.time || 'Chua co du lieu',
+    lastLogin: sessions[0]?.time || 'Chưa có dữ liệu',
     createdAt: formatDate(user.createdAt),
     updatedAt: formatDate(user.updatedAt),
     sessions,
@@ -49,7 +49,7 @@ export const loadAccountUsersAPI = async () => {
 }
 
 function formatDate(value) {
-  if (!value) return 'Chua cap nhat'
+  if (!value) return 'Chưa cập nhật'
 
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return String(value)
@@ -63,8 +63,8 @@ function formatDate(value) {
 
 export const normalizeLoginSessionFromApi = (session = {}) => ({
   id: String(session.sessionId || session.id || `${session.loginAt || ''}-${session.ipAddress || ''}`),
-  device: session.deviceLabel || 'Thiet bi khong xac dinh',
-  location: 'Khong co du lieu vi tri',
+  device: session.deviceLabel || 'Thiết bị không xác định',
+  location: 'Không có dữ liệu vị trí',
   ip: session.ipAddress || '',
   userAgent: session.userAgent || '',
   time: formatDateTime(session.loginAt),
@@ -72,7 +72,7 @@ export const normalizeLoginSessionFromApi = (session = {}) => ({
 })
 
 function formatDateTime(value) {
-  if (!value) return 'Chua cap nhat'
+  if (!value) return 'Chưa cập nhật'
 
   const date = new Date(value)
   if (Number.isNaN(date.getTime())) return String(value)

@@ -56,7 +56,7 @@ public class TransactionController {
         try {
             return ResponseEntity.ok(transactionService.update(id, request));
         } catch (IllegalArgumentException e) {
-            if (e.getMessage() != null && e.getMessage().startsWith("Khong tim thay transaction")) {
+            if (e.getMessage() != null && e.getMessage().startsWith("Không tìm thấy giao dịch")) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
             }
             return ResponseEntity.badRequest().body(e.getMessage());
@@ -94,7 +94,7 @@ public class TransactionController {
         try {
             return ResponseEntity.ok(transactionService.complete(id, currentMemberId, Boolean.TRUE.equals(currentUserIsManager)));
         } catch (IllegalArgumentException e) {
-            if (e.getMessage() != null && e.getMessage().startsWith("Khong tim thay transaction")) {
+            if (e.getMessage() != null && e.getMessage().startsWith("Không tìm thấy giao dịch")) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
             }
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
@@ -108,7 +108,7 @@ public class TransactionController {
         try {
             return ResponseEntity.ok(transactionService.submitPayment(id, currentMemberId));
         } catch (IllegalArgumentException e) {
-            if (e.getMessage() != null && e.getMessage().startsWith("Khong tim thay transaction")) {
+            if (e.getMessage() != null && e.getMessage().startsWith("Không tìm thấy giao dịch")) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
             }
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());
@@ -123,7 +123,7 @@ public class TransactionController {
         try {
             return ResponseEntity.ok(transactionService.rejectPayment(id, currentMemberId, Boolean.TRUE.equals(currentUserIsManager)));
         } catch (IllegalArgumentException e) {
-            if (e.getMessage() != null && e.getMessage().startsWith("Khong tim thay transaction")) {
+            if (e.getMessage() != null && e.getMessage().startsWith("Không tìm thấy giao dịch")) {
                 return ResponseEntity.status(HttpStatus.NOT_FOUND).body(e.getMessage());
             }
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body(e.getMessage());

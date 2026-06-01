@@ -52,16 +52,16 @@ public class UserServiceImpl implements com.example.demo.application.service.use
     @CacheEvict(allEntries = true)
     public UserResponse createUser(CreateUserRequest request) {
         if (request == null) {
-            throw new IllegalArgumentException("Thong tin tao tai khoan khong duoc de trong");
+            throw new IllegalArgumentException("Thông tin tạo tài khoản không được để trống");
         }
         userDomainService.validateCreateRequest(request.getMemberId(), request.getPassword());
 
         if (userRepository.existsByMemberMemberId(request.getMemberId())) {
-            throw new IllegalArgumentException("Member da co tai khoan");
+            throw new IllegalArgumentException("Thành viên đã có tài khoản");
         }
 
         Member member = memberRepository.findById(request.getMemberId())
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay member voi ID: " + request.getMemberId()));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thành viên với ID: " + request.getMemberId()));
 
         User user = User.create(member, passwordHasher.hash(request.getPassword()));
 
@@ -71,7 +71,7 @@ public class UserServiceImpl implements com.example.demo.application.service.use
     @Override
     public UserResponse login(LoginRequest request) {
         if (request == null) {
-            throw new IllegalArgumentException("Thong tin dang nhap khong duoc de trong");
+            throw new IllegalArgumentException("Thông tin đăng nhập không được để trống");
         }
         userDomainService.validateLoginRequest(
                 request.getUserId(),
@@ -108,7 +108,7 @@ public class UserServiceImpl implements com.example.demo.application.service.use
     @CacheEvict(allEntries = true)
     public UserResponse changePassword(Long userId, ChangePasswordRequest request) {
         if (request == null) {
-            throw new IllegalArgumentException("Thong tin doi mat khau khong duoc de trong");
+            throw new IllegalArgumentException("Thông tin đổi mật khẩu không được để trống");
         }
         User user = findUserById(userId);
         userDomainService.validateChangePasswordRequest(
@@ -187,17 +187,17 @@ public class UserServiceImpl implements com.example.demo.application.service.use
 
     private User findUserById(Long userId) {
         return userRepository.findById(userId)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay user voi ID: " + userId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người dùng với ID: " + userId));
     }
 
     private User findUserByMemberId(Long memberId) {
         return userRepository.findByMemberMemberId(memberId)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay tai khoan cua member ID: " + memberId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản của thành viên ID: " + memberId));
     }
 
     private User findUserByStudentId(String studentId) {
         return userRepository.findByMemberStudentId(studentId)
-                .orElseThrow(() -> new IllegalArgumentException("Khong tim thay tai khoan voi ten dang nhap: " + studentId));
+                .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài khoản với tên đăng nhập: " + studentId));
     }
 
     private User findUserByUsername(String username) {
@@ -217,10 +217,10 @@ public class UserServiceImpl implements com.example.demo.application.service.use
 
     private void validateNewPassword(String newPassword) {
         if (newPassword == null || newPassword.isBlank()) {
-            throw new IllegalArgumentException("Mat khau moi khong duoc de trong");
+            throw new IllegalArgumentException("Mật khẩu moi không được để trống");
         }
         if (newPassword.length() < 6) {
-            throw new IllegalArgumentException("Mat khau moi phai co it nhat 6 ky tu");
+            throw new IllegalArgumentException("Mật khẩu moi phải có ít nhất 6 ký tự");
         }
     }
 }

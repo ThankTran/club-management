@@ -120,10 +120,10 @@ export default function EventForm({ open, onClose, onSubmit, initial = null, loa
         <div className={styles.header}>
           <div>
             <h2 className={styles.title}>
-              {readOnly ? 'Chi tiet su kien' : isEdit ? 'Chinh sua su kien' : 'Tao su kien moi'}
+              {readOnly ? 'Chi tiết sự kiện' : isEdit ? 'Chỉnh sửa sự kiện' : 'Tạo sự kiện mới'}
             </h2>
             <p className={styles.subtitle}>
-              {readOnly ? 'Xem thong tin chi tiet su kien' : isEdit ? 'Cap nhat thong tin su kien' : 'Dien thong tin de tao su kien'}
+              {readOnly ? 'Xem thông tin chi tiết sự kiện' : isEdit ? 'Cập nhật thông tin sự kiện' : 'Điền thông tin để tạo sự kiện'}
             </p>
           </div>
           <button className={styles.closeBtn} onClick={onClose}>
