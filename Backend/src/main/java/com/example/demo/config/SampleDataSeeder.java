@@ -175,7 +175,9 @@ public class SampleDataSeeder implements CommandLineRunner {
                 "An toàn thông tin",
                 "Trí tuệ nhân tạo",
                 "Mạng máy tính",
-                "Công nghệ phần mềm nâng cao");
+                "Công nghệ phần mềm nâng cao",
+                "Chính trị",
+                "Anh văn");
 
         List<Subject> subjects = new ArrayList<>();
         for (String name : names) {
@@ -254,13 +256,19 @@ public class SampleDataSeeder implements CommandLineRunner {
                 new MemberSeed("24130037", "Ngô Thùy Dương", computerScience, "thuyduong@club.local", "0901000037", GenderEnum.FEMALE, LocalDate.of(2006, 4, 26), memberRole),
                 new MemberSeed("24130038", "Đặng Quốc Việt", informationSystem, "quocviet@club.local", "0901000038", GenderEnum.MALE, LocalDate.of(2006, 6, 18), memberRole),
                 new MemberSeed("24130039", "Lương Gia Huy", networking, "giahuy@club.local", "0901000039", GenderEnum.MALE, LocalDate.of(2006, 7, 21), memberRole),
-                new MemberSeed("24130040", "Tô Minh Nguyệt", ai, "minhnguyet@club.local", "0901000040", GenderEnum.FEMALE, LocalDate.of(2006, 9, 28), memberRole));
+                new MemberSeed("24130040", "Tô Minh Nguyệt", ai, "minhnguyet@club.local", "0901000040", GenderEnum.FEMALE, LocalDate.of(2006, 9, 28), memberRole),
+                new MemberSeed("25130041", "Nguyễn Hải An", software, "haian@club.local", "0901000041", GenderEnum.MALE, LocalDate.of(2007, 1, 12), memberRole, ApprovalStatusEnum.PENDING, "Hồ sơ đăng ký mới, chờ ban quản lý xét duyệt"),
+                new MemberSeed("25130042", "Trần Mỹ Duyên", computerScience, "myduyen@club.local", "0901000042", GenderEnum.FEMALE, LocalDate.of(2007, 3, 8), memberRole, ApprovalStatusEnum.PENDING, "Chờ kiểm tra minh chứng sinh viên"),
+                new MemberSeed("25130043", "Lê Quốc Thịnh", informationSystem, "quocthinh@club.local", "0901000043", GenderEnum.MALE, LocalDate.of(2007, 5, 19), memberRole, ApprovalStatusEnum.PENDING, "Chờ phỏng vấn ngắn với ban học thuật"),
+                new MemberSeed("25130044", "Phạm Ngọc Bích", networking, "ngocbich@club.local", "0901000044", GenderEnum.FEMALE, LocalDate.of(2007, 7, 24), memberRole, ApprovalStatusEnum.PENDING, "Chờ duyệt đơn tham gia CLB"),
+                new MemberSeed("25130045", "Vũ Minh Quân", ai, "minhquan25@club.local", "0901000045", GenderEnum.MALE, LocalDate.of(2007, 10, 2), memberRole, ApprovalStatusEnum.PENDING, "Chờ bổ sung thông tin lớp sinh hoạt"));
 
         List<Member> members = new ArrayList<>();
         YearMonth currentMonth = YearMonth.now();
         for (int index = 0; index < seeds.size(); index++) {
             MemberSeed seed = seeds.get(index);
-            Member approver = index < 2 ? null : members.get(index % 2);
+            ApprovalStatusEnum requestStatus = seed.reqStatus();
+            Member approver = requestStatus == ApprovalStatusEnum.APPROVED && index >= 2 ? members.get(index % 2) : null;
             YearMonth joinedMonth = currentMonth.minusMonths(5L - (index % 6));
             int joinedDay = Math.min(joinedMonth.lengthOfMonth(), 2 + ((index * 3) % 24));
             LocalDateTime createdAt = joinedMonth.atDay(joinedDay).atTime(8 + (index % 8), (index * 11) % 60);
@@ -274,10 +282,10 @@ public class SampleDataSeeder implements CommandLineRunner {
                     .dateOfBirth(seed.dateOfBirth())
                     .role(seed.role())
                     .graduatedStatus(GraduatedStatusEnum.ACTIVE)
-                    .reqStatus(ApprovalStatusEnum.APPROVED)
-                    .approvalNote(index < 2 ? "Tài khoản ban chủ nhiệm" : "Đã duyệt hồ sơ thành viên")
+                    .reqStatus(requestStatus)
+                    .approvalNote(seed.approvalNote() != null ? seed.approvalNote() : index < 2 ? "Tài khoản ban chủ nhiệm" : "Đã duyệt hồ sơ thành viên")
                     .approver(approver)
-                    .approvalDate(createdAt.plusHours(4))
+                    .approvalDate(requestStatus == ApprovalStatusEnum.APPROVED ? createdAt.plusHours(4) : null)
                     .createdAt(createdAt)
                     .updatedAt(createdAt.plusHours(4))
                     .build());
@@ -293,13 +301,15 @@ public class SampleDataSeeder implements CommandLineRunner {
     }
 
     private void seedUsers(List<Member> members) {
-        List<User> users = List.of(
-                User.create(members.get(0), passwordHasher.hash("StudyHead@123")),
-                User.create(members.get(1), passwordHasher.hash("EventHead@123")),
-                User.create(members.get(2), passwordHasher.hash("Member01@123")),
-                User.create(members.get(3), passwordHasher.hash("Member02@123")),
-                User.create(members.get(4), passwordHasher.hash("Member03@123")),
-                User.create(members.get(5), passwordHasher.hash("Member04@123")));
+        List<User> users = new ArrayList<>();
+        for (int index = 0; index < members.size(); index++) {
+            String password = switch (index) {
+                case 0 -> "StudyHead@123";
+                case 1 -> "EventHead@123";
+                default -> String.format("Member%02d@123", index - 1);
+            };
+            users.add(User.create(members.get(index), passwordHasher.hash(password)));
+        }
         userRepository.saveAll(users);
     }
 
@@ -438,6 +448,7 @@ public class SampleDataSeeder implements CommandLineRunner {
                 index++;
             }
         }
+        seedDocumentReviewQueue(documents, subjects, documentTypes, members, index);
         return documentRepository.saveAll(documents);
     }
 
@@ -463,6 +474,48 @@ public class SampleDataSeeder implements CommandLineRunner {
                     .build());
         }
         documentFileRepository.saveAll(files);
+    }
+
+    private void seedDocumentReviewQueue(
+            List<Document> documents,
+            List<Subject> subjects,
+            List<DocumentType> documentTypes,
+            List<Member> members,
+            int startIndex) {
+        List<DocumentReviewSeed> seeds = List.of(
+                new DocumentReviewSeed("Đề xuất cập nhật slide Luật sở hữu trí tuệ", "Chính trị", 1, ApprovalStatusEnum.REQUESTED_CHANGES, DocumentStatus.FIXING, "Cần bổ sung phần trích dẫn văn bản pháp luật mới nhất."),
+                new DocumentReviewSeed("Bản sửa giáo trình Anh văn 2 - Unit 5 Presentation", "Anh văn", 0, ApprovalStatusEnum.REQUESTED_CHANGES, DocumentStatus.FIXING, "Cần chuẩn hóa định dạng bài tập nghe và đáp án."),
+                new DocumentReviewSeed("Bộ bài tập SQL nâng cao bản chỉnh sửa", "Cơ sở dữ liệu", 4, ApprovalStatusEnum.REQUESTED_CHANGES, DocumentStatus.FIXING, "Cần thêm dữ liệu mẫu cho phần truy vấn lồng nhau."),
+                new DocumentReviewSeed("Tài liệu thực hành React Hooks bản cập nhật", "Công nghệ phần mềm nâng cao", 2, ApprovalStatusEnum.REQUESTED_CHANGES, DocumentStatus.FIXING, "Cần tách rõ ví dụ useEffect và useMemo."),
+                new DocumentReviewSeed("Đề xuất tài liệu nhập môn Python cho thành viên mới", "Nhập môn lập trình", 2, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Tài liệu mới chờ admin duyệt thêm vào kho."),
+                new DocumentReviewSeed("Đề xuất ngân hàng câu hỏi Xác suất thống kê", "Xác suất thống kê", 4, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Bộ câu hỏi trắc nghiệm phục vụ ôn tập giữa kỳ."),
+                new DocumentReviewSeed("Đề xuất slide An toàn thông tin web cơ bản", "An toàn thông tin", 1, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Slide chuyên đề bảo mật web cho buổi sinh hoạt CLB."),
+                new DocumentReviewSeed("Đề xuất tài liệu IELTS Reading Foundation", "Anh văn", 0, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Tài liệu ngoại ngữ mới cho nhóm luyện chứng chỉ."));
+
+        LocalDateTime baseTime = LocalDateTime.now().minusDays(14);
+        for (int item = 0; item < seeds.size(); item++) {
+            DocumentReviewSeed seed = seeds.get(item);
+            int index = startIndex + item;
+            Member proposer = members.get(index % members.size());
+            Member reviewer = members.get((index + 1) % 2);
+            LocalDateTime createdAt = baseTime.plusDays(item).withHour(9 + (item % 5)).withMinute((item * 11) % 60);
+            documents.add(Document.builder()
+                    .documentName(seed.name())
+                    .type(documentTypes.get(seed.typeIndex() % documentTypes.size()))
+                    .subject(findSubjectByName(subjects, seed.subjectName()))
+                    .status(seed.documentStatus())
+                    .reqStatus(seed.reqStatus())
+                    .lookupFolderId(null)
+                    .version("1.0")
+                    .source("https://drive.google.com/drive/folders/review-queue/document-" + index)
+                    .note(seed.note())
+                    .proposedBy(proposer)
+                    .approvedBy(seed.reqStatus() == ApprovalStatusEnum.REQUESTED_CHANGES ? reviewer : null)
+                    .approvedAt(null)
+                    .createdAt(createdAt)
+                    .updatedAt(createdAt.plusHours(6))
+                    .build());
+        }
     }
 
     private List<Notification> seedNotifications(List<Member> members) {
@@ -684,20 +737,20 @@ public class SampleDataSeeder implements CommandLineRunner {
 
     private List<ResourceFolderSeed> resourceFolderSeeds() {
         return List.of(
-                new ResourceFolderSeed("tu-tuong-ho-chi-minh", "Tư tưởng Hồ Chí Minh", "Triết học Mác - Lênin"),
-                new ResourceFolderSeed("triet-hoc-mac-lenin", "Triết học Mác - Lênin", "Triết học Mác - Lênin"),
-                new ResourceFolderSeed("kinh-te-chinh-tri", "Kinh tế Chính trị Mác - Lênin", "Triết học Mác - Lênin"),
-                new ResourceFolderSeed("chu-nghia-xa-hoi-khoa-hoc", "Chủ nghĩa xã hội khoa học", "Triết học Mác - Lênin"),
-                new ResourceFolderSeed("lich-su-dang", "Lịch sử Đảng Cộng sản Việt Nam", "Triết học Mác - Lênin"),
-                new ResourceFolderSeed("phap-luat-dai-cuong", "Pháp luật đại cương", "Triết học Mác - Lênin"),
+                new ResourceFolderSeed("tu-tuong-ho-chi-minh", "Tư tưởng Hồ Chí Minh", "Chính trị"),
+                new ResourceFolderSeed("triet-hoc-mac-lenin", "Triết học Mác - Lênin", "Chính trị"),
+                new ResourceFolderSeed("kinh-te-chinh-tri", "Kinh tế Chính trị Mác - Lênin", "Chính trị"),
+                new ResourceFolderSeed("chu-nghia-xa-hoi-khoa-hoc", "Chủ nghĩa xã hội khoa học", "Chính trị"),
+                new ResourceFolderSeed("lich-su-dang", "Lịch sử Đảng Cộng sản Việt Nam", "Chính trị"),
+                new ResourceFolderSeed("phap-luat-dai-cuong", "Pháp luật đại cương", "Chính trị"),
                 new ResourceFolderSeed("giai-tich", "Giải tích", "Xác suất thống kê"),
                 new ResourceFolderSeed("dai-so-tuyen-tinh", "Đại số tuyến tính", "Xác suất thống kê"),
                 new ResourceFolderSeed("cau-truc-roi-rac", "Cấu trúc rời rạc", "Cấu trúc rời rạc"),
                 new ResourceFolderSeed("xac-suat-thong-ke", "Xác suất thống kê", "Xác suất thống kê"),
                 new ResourceFolderSeed("nhap-mon-lap-trinh", "Nhập môn lập trình", "Nhập môn lập trình"),
-                new ResourceFolderSeed("anh-van-1", "Anh văn 1", "Nhập môn lập trình"),
-                new ResourceFolderSeed("anh-van-2", "Anh văn 2", "Nhập môn lập trình"),
-                new ResourceFolderSeed("anh-van-3", "Anh văn 3", "Nhập môn lập trình"),
+                new ResourceFolderSeed("anh-van-1", "Anh văn 1", "Anh văn"),
+                new ResourceFolderSeed("anh-van-2", "Anh văn 2", "Anh văn"),
+                new ResourceFolderSeed("anh-van-3", "Anh văn 3", "Anh văn"),
                 new ResourceFolderSeed("ky-thuat-phan-mem", "Kỹ thuật phần mềm", "Kiến trúc phần mềm"),
                 new ResourceFolderSeed("truyen-thong-da-phuong-tien", "Truyền thông đa phương tiện", "Công nghệ phần mềm nâng cao"),
                 new ResourceFolderSeed("he-thong-thong-tin-chuyen-nganh", "Hệ thống thông tin", "Phân tích thiết kế hệ thống"),
@@ -720,7 +773,20 @@ public class SampleDataSeeder implements CommandLineRunner {
             String phone,
             GenderEnum gender,
             LocalDate dateOfBirth,
-            Role role) {
+            Role role,
+            ApprovalStatusEnum reqStatus,
+            String approvalNote) {
+        private MemberSeed(
+                String studentId,
+                String fullName,
+                Department department,
+                String email,
+                String phone,
+                GenderEnum gender,
+                LocalDate dateOfBirth,
+                Role role) {
+            this(studentId, fullName, department, email, phone, gender, dateOfBirth, role, ApprovalStatusEnum.APPROVED, null);
+        }
     }
 
     private record EventSeed(
@@ -742,5 +808,14 @@ public class SampleDataSeeder implements CommandLineRunner {
             String folderId,
             String label,
             String subjectName) {
+    }
+
+    private record DocumentReviewSeed(
+            String name,
+            String subjectName,
+            int typeIndex,
+            ApprovalStatusEnum reqStatus,
+            DocumentStatus documentStatus,
+            String note) {
     }
 }
