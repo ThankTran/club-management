@@ -217,10 +217,10 @@ public class UserServiceImpl implements com.example.demo.application.service.use
 
     private void validateNewPassword(String newPassword) {
         if (newPassword == null || newPassword.isBlank()) {
-            throw new IllegalArgumentException("Mật khẩu moi không được để trống");
+            throw new IllegalArgumentException("Mật khẩu mới không được để trống");
         }
         if (newPassword.length() < 6) {
-            throw new IllegalArgumentException("Mật khẩu moi phải có ít nhất 6 ký tự");
+            throw new IllegalArgumentException("Mật khẩu mới phải có ít nhất 6 ký tự");
         }
     }
 }

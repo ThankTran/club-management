@@ -20,9 +20,9 @@ const fileNameFromUrl = (url = '') => {
   try {
     const { pathname } = new URL(url)
     const fileName = decodeURIComponent(pathname.split('/').filter(Boolean).pop() || '')
-    return fileName || 'Tai lieu lien ket'
+    return fileName || 'Tài liệu liên kết'
   } catch {
-    return 'Tai lieu lien ket'
+    return 'Tài liệu liên kết'
   }
 }
 
