@@ -13,22 +13,6 @@ const FOLDER_TREE = RESOURCE_FOLDER_TREE;
 const LEAF_FOLDERS = RESOURCE_LEAF_FOLDERS;
 const DEFAULT_FOLDER_ID = DEFAULT_RESOURCE_FOLDER_ID;
 
-const SAMPLE_LOOKUP_RESOURCES = LEAF_FOLDERS.map((folder, index) => ({
-  id: `sample-${folder.id}`,
-  formCode: `TK-${String(index + 1).padStart(3, '0')}`,
-  title: `Tài liệu tham khảo ${folder.label}`,
-  subject: folder.label,
-  type: index % 3 === 0 ? 'Giáo trình' : index % 3 === 1 ? 'Slide bài giảng' : 'Tài liệu tham khảo',
-  format: index % 4 === 0 ? 'PDF' : index % 4 === 1 ? 'PPT' : index % 4 === 2 ? 'DOCX' : 'ZIP',
-  source: index % 2 === 0 ? 'Giảng viên cung cấp' : 'Internet',
-  description: `Tài liệu mẫu thuộc thư mục ${folder.pathLabel}.`,
-  link: `/uploads/documents/sample-${folder.id}.pdf`,
-  uploadedBy: 'Ban học tập',
-  createdAt: `2024-12-${String((index % 20) + 1).padStart(2, '0')}`,
-  status: 'approved',
-  lookupFolderId: folder.id,
-}));
-
 const WORKFLOW_STATUS = {
   working: { label: 'Đang sử dụng', bg: '#dcfce7', color: '#15803d' },
   fixing: { label: 'Đang chỉnh sửa', bg: '#e0f2fe', color: '#0369a1' },

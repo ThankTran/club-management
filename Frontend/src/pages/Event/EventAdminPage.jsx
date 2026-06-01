@@ -136,6 +136,8 @@ export default function EventAdminPage() {
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [tagFilter, setTagFilter] = useState('all');
+  const [dateFromFilter, setDateFromFilter] = useState('');
+  const [dateToFilter, setDateToFilter] = useState('');
   const [filterOpen, setFilterOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editTarget, setEditTarget] = useState(null);
@@ -272,13 +274,13 @@ export default function EventAdminPage() {
 
   const totalEstimated = events.reduce((sum, event) => sum + (Number(event.estimatedCost) || 0), 0);
   const totalActual = events
-    .filter((event) => event.status === 'completed')
+    .filter((event) => isFinishedEventStatus(event.status))
     .reduce((sum, event) => sum + (Number(event.estimatedCost) * 0.9 || 0), 0);
   const publishedCount = events.filter((event) => event.status === 'published').length;
-  const eventsToEvaluate = useMemo(
+  const evaluatedEvents = useMemo(
     () =>
       events.filter(
-        (event) => event.status === 'completed' && !hasEventEvaluation(event, evaluations),
+        (event) => isFinishedEventStatus(event.status) && hasEventEvaluation(event, evaluations),
       ),
     [events, evaluations],
   );
@@ -293,11 +295,13 @@ export default function EventAdminPage() {
       const matchStatus =
         statusFilter === 'all' ||
         (statusFilter === 'completed'
-          ? event.status === 'completed'
+          ? isFinishedEventStatus(event.status)
           : getDisplayStatus(event, evaluations) === statusFilter);
       const matchTag = tagFilter === 'all' || event.tag === tagFilter;
+      const matchDateFrom = !dateFromFilter || event.date >= dateFromFilter;
+      const matchDateTo = !dateToFilter || event.date <= dateToFilter;
 
-      return matchSearch && matchStatus && matchTag;
+      return matchSearch && matchStatus && matchTag && matchDateFrom && matchDateTo;
     });
 
     result.sort((a, b) => {
@@ -307,7 +311,7 @@ export default function EventAdminPage() {
     });
 
     return result;
-  }, [events, evaluations, search, statusFilter, tagFilter, dateSort]);
+  }, [events, evaluations, search, statusFilter, tagFilter, dateFromFilter, dateToFilter, dateSort]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
@@ -334,9 +338,16 @@ export default function EventAdminPage() {
     setRegisteredMembers(registrationsByEvent[event.id] || []);
   };
 
-  const applyFilters = ({ statusFilter: nextStatusFilter, tagFilter: nextTagFilter }) => {
+  const applyFilters = ({
+    statusFilter: nextStatusFilter,
+    tagFilter: nextTagFilter,
+    dateFromFilter: nextDateFromFilter,
+    dateToFilter: nextDateToFilter,
+  }) => {
     setStatusFilter(nextStatusFilter);
     setTagFilter(nextTagFilter);
+    setDateFromFilter(nextDateFromFilter);
+    setDateToFilter(nextDateToFilter);
     setPage(1);
   };
 
@@ -446,7 +457,7 @@ export default function EventAdminPage() {
     }
 
     const current = evaluations.find((item) => item.eventCode === event.eventCode);
-    const evaluationDate = getTodayDateInputValue();
+    const evaluationDate = current?.evaluationDate || event.evaluationDate || getTodayDateInputValue();
     const evaluation = current?.evaluation || event.evaluation || '';
     setEvaluationTarget({ ...event, evaluationDate, evaluation });
     setEvaluationForm({
@@ -457,7 +468,6 @@ export default function EventAdminPage() {
   };
 
   const openEvaluationFromList = (event) => {
-    setEvaluationHistoryOpen(false);
     openEvaluation(event);
   };
 
@@ -557,6 +567,8 @@ export default function EventAdminPage() {
         setFilterOpen={setFilterOpen}
         statusFilter={statusFilter}
         tagFilter={tagFilter}
+        dateFromFilter={dateFromFilter}
+        dateToFilter={dateToFilter}
         onApplyFilters={applyFilters}
         dateSort={dateSort}
         setDateSort={setDateSort}
@@ -601,7 +613,7 @@ export default function EventAdminPage() {
 
       <EventEvaluationHistoryModal
         open={evaluationHistoryOpen}
-        events={eventsToEvaluate}
+        events={evaluatedEvents}
         onClose={() => setEvaluationHistoryOpen(false)}
         onSelectEvent={openEvaluationFromList}
       />

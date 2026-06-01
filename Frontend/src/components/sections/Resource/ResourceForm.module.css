@@ -219,6 +219,34 @@
   height: 0;
 }
 
+.segmented {
+  display: inline-flex;
+  width: fit-content;
+  padding: 3px;
+  border: 1.5px solid var(--gray-300);
+  border-radius: 10px;
+  background: var(--gray-100);
+  gap: 3px;
+}
+
+.segmentBtn {
+  border: 0;
+  border-radius: 7px;
+  background: transparent;
+  color: var(--gray-600);
+  cursor: pointer;
+  font-family: var(--font-family);
+  font-size: 13px;
+  font-weight: 700;
+  padding: 7px 12px;
+}
+
+.segmentBtnActive {
+  background: var(--white-hard);
+  color: var(--primary-700);
+  box-shadow: 0 1px 4px rgba(15, 23, 42, 0.12);
+}
+
 /* ── Actions ── */
 .actions {
   display: flex;

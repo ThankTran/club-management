@@ -25,7 +25,7 @@
   top: 50px;
   left: 0;
   right: auto;
-  width: 265px;
+  width: 340px;
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 16px;
@@ -47,13 +47,22 @@
   color: #2d3748;
 }
 
-.group select {
+.group select,
+.group input {
   height: 42px;
   border: 1px solid #e2e8f0;
   border-radius: 10px;
   padding: 0 12px;
   font-size: 14px;
   outline: none;
+  font-family: inherit;
+  color: #1f2937;
+}
+
+.dateGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
 .actions {

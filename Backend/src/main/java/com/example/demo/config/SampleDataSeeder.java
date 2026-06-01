@@ -43,6 +43,8 @@ import com.example.demo.domain.repository.system.SystemSettingRepository;
 import com.example.demo.domain.repository.user.UserRepository;
 import com.example.demo.domain.service.user.PasswordHasher;
 import java.math.BigDecimal;
+import java.net.URLDecoder;
+import java.nio.charset.StandardCharsets;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -138,7 +140,7 @@ public class SampleDataSeeder implements CommandLineRunner {
         seedNotificationRecipients(notifications, members);
         seedTransactions(events, members);
         seedSystemSettings(members);
-        seedAuditLogs(members);
+        seedAuditLogs(members, events);
     }
 
     private List<Role> seedRoles() {
@@ -371,7 +373,7 @@ public class SampleDataSeeder implements CommandLineRunner {
                     : seed.dayOffset() <= 0
                             ? eventDate.minusDays(1).atTime(15, (eventNumber * 5) % 60)
                             : today.minusDays(eventNumber % 5).atTime(15, (eventNumber * 5) % 60);
-            boolean hasEvaluation = seed.status() == EventStatusEnum.Evaluated || seed.status() == EventStatusEnum.Finished;
+            boolean hasEvaluation = seed.status() == EventStatusEnum.Evaluated;
             events.add(Event.builder()
                     .eventId(String.format("EVT%03d", eventNumber))
                     .eventName(seed.name())
@@ -415,30 +417,25 @@ public class SampleDataSeeder implements CommandLineRunner {
     private List<Document> seedDocuments(List<Member> members, List<Subject> subjects, List<DocumentType> documentTypes) {
         List<Document> documents = new ArrayList<>();
         List<ResourceFolderSeed> folders = resourceFolderSeeds();
-        List<String> titlePrefixes = List.of(
-                "Giáo trình tổng hợp",
-                "Slide bài giảng",
-                "Bộ bài tập thực hành",
-                "Đề cương ôn tập cuối kỳ",
-                "Ngân hàng câu hỏi trắc nghiệm");
-
         int index = 1;
         LocalDateTime baseTime = LocalDateTime.now().minusDays(120);
         for (ResourceFolderSeed folder : folders) {
-            for (int item = 0; item < titlePrefixes.size(); item++) {
+            List<MaterialSeed> materials = materialsForFolder(folder.folderId());
+            for (int item = 0; item < 5; item++) {
+                MaterialSeed material = materials.get(item % materials.size());
                 Member proposer = members.get(index % members.size());
                 Member approver = members.get((index + 1) % 2);
                 LocalDateTime createdAt = baseTime.plusDays(index).withHour(8 + (index % 8)).withMinute((index * 7) % 60);
             documents.add(Document.builder()
-                    .documentName(titlePrefixes.get(item) + " - " + folder.label())
+                    .documentName(material.title())
                     .type(documentTypes.get(item % documentTypes.size()))
                     .subject(findSubjectByName(subjects, folder.subjectName()))
                     .status(DocumentStatus.WORKING)
                     .reqStatus(ApprovalStatusEnum.APPROVED)
                     .lookupFolderId(folder.folderId())
                     .version("2." + item)
-                    .source(item % 2 == 0 ? "Giảng viên cung cấp" : "Tự biên soạn")
-                    .note("Tài liệu học tập đã duyệt cho thư mục " + folder.label() + ".")
+                    .source(material.url())
+                    .note("Tài liệu thực tế từ kho UIT SoftwareEngineering Subjects, phân loại vào thư mục " + folder.label() + ".")
                     .proposedBy(proposer)
                     .approvedBy(approver)
                     .approvedAt(createdAt.plusHours(4))
@@ -453,23 +450,22 @@ public class SampleDataSeeder implements CommandLineRunner {
     }
 
     private void seedDocumentFiles(List<Document> documents) {
-        List<String> mimeTypes = List.of(
-                "application/pdf",
-                "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-                "application/vnd.ms-powerpoint",
-                "application/pdf",
-                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
-
         List<DocumentFile> files = new ArrayList<>();
         for (int index = 0; index < documents.size(); index++) {
             Document document = documents.get(index);
-            String extension = extensionFromMimeType(mimeTypes.get(index % mimeTypes.size()));
+            String fileUrl = document.getSource() != null && document.getSource().startsWith("https://")
+                    ? document.getSource()
+                    : null;
+            String fileName = fileUrl != null
+                    ? fileNameFromUrl(fileUrl, "tai-lieu-" + document.getDocumentId())
+                    : "tai-lieu-" + document.getDocumentId() + ".pdf";
+            String mimeType = mimeTypeFromFileName(fileName);
             files.add(DocumentFile.builder()
                     .document(document)
-                    .fileUrl("/uploads/documents/seed-document-" + document.getDocumentId() + "." + extension)
-                    .fileName("tai-lieu-" + document.getDocumentId() + "." + extension)
+                    .fileUrl(fileUrl != null ? fileUrl : "/uploads/documents/seed-document-" + document.getDocumentId() + ".pdf")
+                    .fileName(fileName)
                     .fileSize(650_000L + (index * 18_000L))
-                    .mimeType(mimeTypes.get(index % mimeTypes.size()))
+                    .mimeType(mimeType)
                     .uploadedAt(LocalDateTime.now().minusDays(Math.max(1, documents.size() - index)))
                     .build());
         }
@@ -640,7 +636,7 @@ public class SampleDataSeeder implements CommandLineRunner {
         systemSettingRepository.saveAll(settings);
     }
 
-    private void seedAuditLogs(List<Member> members) {
+    private void seedAuditLogs(List<Member> members, List<Event> events) {
         List<AuditLog> logs = new ArrayList<>();
         LocalDateTime baseTime = LocalDateTime.now().minusDays(20);
         List<String> entityTypes = List.of("MEMBER", "USER", "DOCUMENT", "EVENT", "TRANSACTION");
@@ -656,6 +652,18 @@ public class SampleDataSeeder implements CommandLineRunner {
                     .performedAt(baseTime.plusDays(index))
                     .build());
         }
+        events.stream()
+                .filter(event -> event.getStatus() == EventStatusEnum.Evaluated)
+                .filter(event -> event.getEvaluationContent() != null && !event.getEvaluationContent().isBlank())
+                .forEach(event -> logs.add(AuditLog.builder()
+                        .entityType("EVENT")
+                        .entityId(event.getEventId())
+                        .actionType("EVALUATE")
+                        .oldValue("{\"status\":\"Finished\",\"evaluationContent\":null}")
+                        .newValue("{\"status\":\"Evaluated\",\"evaluationContent\":\"" + event.getEvaluationContent() + "\"}")
+                        .performedBy(event.getEvaluatedBy())
+                        .performedAt(event.getEvaluationDate())
+                        .build()));
         auditLogRepository.saveAll(logs);
     }
 
@@ -728,6 +736,23 @@ public class SampleDataSeeder implements CommandLineRunner {
         };
     }
 
+    private String fileNameFromUrl(String url, String fallbackName) {
+        String decoded = URLDecoder.decode(url, StandardCharsets.UTF_8);
+        int slashIndex = decoded.lastIndexOf('/');
+        String fileName = slashIndex >= 0 ? decoded.substring(slashIndex + 1) : decoded;
+        return fileName.isBlank() ? fallbackName + ".pdf" : fileName;
+    }
+
+    private String mimeTypeFromFileName(String fileName) {
+        String normalized = fileName.toLowerCase();
+        if (normalized.endsWith(".pdf")) return "application/pdf";
+        if (normalized.endsWith(".ppt") || normalized.endsWith(".pptx")) return "application/vnd.ms-powerpoint";
+        if (normalized.endsWith(".doc") || normalized.endsWith(".docx")) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        if (normalized.endsWith(".xls") || normalized.endsWith(".xlsx")) return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        if (normalized.endsWith(".zip")) return "application/zip";
+        return "application/octet-stream";
+    }
+
     private Subject findSubjectByName(List<Subject> subjects, String subjectName) {
         return subjects.stream()
                 .filter(subject -> subject.getSubjectName().equalsIgnoreCase(subjectName))
@@ -763,6 +788,87 @@ public class SampleDataSeeder implements CommandLineRunner {
                 new ResourceFolderSeed("mang-may-tinh-truyen-thong-du-lieu", "Mạng máy tính và truyền thông dữ liệu", "Mạng máy tính"),
                 new ResourceFolderSeed("ky-thuat-may-tinh-chuyen-nganh", "Kỹ thuật máy tính", "Mạng máy tính"),
                 new ResourceFolderSeed("thiet-ke-vi-mach", "Thiết kế vi mạch", "Kiến trúc phần mềm"));
+    }
+
+    private List<MaterialSeed> materialsForFolder(String folderId) {
+        return switch (folderId) {
+            case "tu-tuong-ho-chi-minh", "triet-hoc-mac-lenin", "kinh-te-chinh-tri",
+                    "chu-nghia-xa-hoi-khoa-hoc", "lich-su-dang", "phap-luat-dai-cuong" -> selectedMaterials(
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/SE301 - Phát triển phần mềm mã nguồn mở/Bài giảng/2. Open Source Licensing - Contract - Law.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/SE301 - Phát triển phần mềm mã nguồn mở/Bài giảng/5. Legal impacts of OS and FS licenses.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/EC002 - Quản trị doanh nghiệp/Chapter 03 Enterprise and Business Environment.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/EC002 - Quản trị doanh nghiệp/Chapter 04 Enterprise and Governance.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/EC002 - Quản trị doanh nghiệp/Chapter 10 International Business Administration.pdf");
+            case "giai-tich" -> selectedMaterials(
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/MA006 - Giải tích/Đề ôn thi cuối kỳ.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/MA003 - Đại số tuyến tính/Bài giảng/Chương 4 - Không gian Euclide.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/MA003 - Đại số tuyến tính/Bài giảng/Chương 5 - Giá trị riêng, vector riêng, chéo hóa ma trận.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/MA003 - Đại số tuyến tính/Ôn thi/Cuối kỳ/01.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/MA003 - Đại số tuyến tính/Ôn thi/Giữa kỳ/Đề ôn tập.pdf");
+            case "dai-so-tuyen-tinh", "xac-suat-thong-ke" -> selectedMaterials(
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/MA003 - Đại số tuyến tính/Bài giảng/Chương 1 - Ma trận.ppt",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/MA003 - Đại số tuyến tính/Bài giảng/Chương 1 - Định thức.ppt",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/MA003 - Đại số tuyến tính/Bài giảng/Chương 2 - Hệ phương trình tuyến tính.ppt",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/MA003 - Đại số tuyến tính/Bài tập/Chương 1.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/MA003 - Đại số tuyến tính/Đề cương môn học.pdf");
+            case "cau-truc-roi-rac" -> selectedMaterials(
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/MA004 - Cấu trúc rời rạc/Bài giảng/Chương 1. Cơ sở logic.pptx",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/MA004 - Cấu trúc rời rạc/Bài giảng/Chương 2. Phép đếm.pptx",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/MA004 - Cấu trúc rời rạc/Bài giảng/Chương 5. Đồ thị (phần 1).ppt",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/MA004 - Cấu trúc rời rạc/Bài tập/Chương 5.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/MA004 - Cấu trúc rời rạc/Bài tập/Chương 6.pdf");
+            case "nhap-mon-lap-trinh" -> selectedMaterials(
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT001 - Nhập môn lập trình/Bài giảng/00. Tổng quan về máy tính và phần mềm máy tính.pptx",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT001 - Nhập môn lập trình/Bài giảng/01. Thuật toán.pptx",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT001 - Nhập môn lập trình/Bài giảng/04. Cấu trúc lặp.pptx",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT001 - Nhập môn lập trình/Ôn thi/Giữa kỳ.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT001 - Nhập môn lập trình/Ôn thi/Cuối kỳ.pdf");
+            case "anh-van-1", "anh-van-2", "anh-van-3" -> selectedMaterials(
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/EC002 - Quản trị doanh nghiệp/Chapter 00 Introduction to the course.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/EC002 - Quản trị doanh nghiệp/Chapter 01 Overview of An Enterprise.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/EC002 - Quản trị doanh nghiệp/Chapter 02 Types of Enterprise Organization.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/EC002 - Quản trị doanh nghiệp/Chapter 06 Human Resource Management in Enterprise.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/EC002 - Quản trị doanh nghiệp/Chapter 08 Quality Management in The Enterprise.pdf");
+            case "he-thong-thong-tin-chuyen-nganh", "thuong-mai-dien-tu", "khoa-hoc-du-lieu" -> selectedMaterials(
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT004 - Cơ sở dữ liệu/Bài giảng/[01] Tổng Quan Về CSDL.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT004 - Cơ sở dữ liệu/Bài giảng/[02] Mô Hình E-R.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT004 - Cơ sở dữ liệu/Bài giảng/[05] Ngôn Ngữ SQL.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT004 - Cơ sở dữ liệu/Thực hành/Bài thực hành 01.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT004 - Cơ sở dữ liệu/Đề thi tham khảo/Đề Thi Cuối Kỳ Môn CSDL HK1 2020-2021 (Final).pdf");
+            case "an-toan-thong-tin", "mang-may-tinh-truyen-thong-du-lieu" -> selectedMaterials(
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT005 - Nhập môn mạng máy tính/Thực hành/01. Wireshark Getting Started.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT005 - Nhập môn mạng máy tính/Thực hành/02. HTTP Protocol.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT005 - Nhập môn mạng máy tính/Thực hành/03. TCP and UDP.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT005 - Nhập môn mạng máy tính/Thực hành/06. Scanning WPA-WPA2 Passwords.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/SE301 - Phát triển phần mềm mã nguồn mở/Bài giảng/6. No open-source license.pdf");
+            case "ky-thuat-may-tinh-chuyen-nganh", "thiet-ke-vi-mach" -> selectedMaterials(
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT012 - Tổ chức và Cấu trúc Máy tính II/Thực hành/Bài thực hành 1.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT012 - Tổ chức và Cấu trúc Máy tính II/Thực hành/Bài thực hành 2.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT012 - Tổ chức và Cấu trúc Máy tính II/Thực hành/Bài thực hành 3.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT012 - Tổ chức và Cấu trúc Máy tính II/Thực hành/Hướng dẫn sử dụng Logisim.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/IT012 - Tổ chức và Cấu trúc Máy tính II/Thực hành/Lập trình hợp ngữ MIPS.pdf");
+            default -> selectedMaterials(
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/SE104 - Nhập môn Công nghệ phần mềm/Bài giảng/Chương 1.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/SE104 - Nhập môn Công nghệ phần mềm/Bài giảng/Chương 2/Chương 2.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/SE104 - Nhập môn Công nghệ phần mềm/Bài giảng/Chương 3/Chương 3.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/SE214 - Công nghệ phần mềm chuyên sâu/Bài giảng/Chương 02. Quy trình phát triển phần mềm.pdf",
+                    "https://github.com/phanxuanquang/UIT_SoftwareEngineering_Subjects/blob/main/SE357 - Kỹ thuật phân tích yêu cầu/Bài giảng/Requirement Engineering.pdf");
+        };
+    }
+
+    private List<MaterialSeed> selectedMaterials(String... urls) {
+        List<MaterialSeed> materials = new ArrayList<>();
+        for (String url : urls) {
+            materials.add(new MaterialSeed(titleFromMaterialUrl(url), url));
+        }
+        return materials;
+    }
+
+    private String titleFromMaterialUrl(String url) {
+        String decoded = URLDecoder.decode(url, StandardCharsets.UTF_8);
+        String fileName = decoded.substring(decoded.lastIndexOf('/') + 1);
+        int dotIndex = fileName.lastIndexOf('.');
+        return dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
     }
 
     private record MemberSeed(
@@ -808,6 +914,11 @@ public class SampleDataSeeder implements CommandLineRunner {
             String folderId,
             String label,
             String subjectName) {
+    }
+
+    private record MaterialSeed(
+            String title,
+            String url) {
     }
 
     private record DocumentReviewSeed(

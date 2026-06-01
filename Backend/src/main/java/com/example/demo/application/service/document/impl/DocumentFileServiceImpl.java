@@ -14,6 +14,7 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardCopyOption;
 import java.util.List;
+import java.util.Locale;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import org.springframework.cache.annotation.CacheConfig;
@@ -43,11 +44,11 @@ public class DocumentFileServiceImpl implements DocumentFileService {
     }
 
     @Override
-    @CacheEvict(cacheNames = {"documentFiles", "documents"}, allEntries = true)
+    @CacheEvict(cacheNames = {"documentFiles", "documents"}, allEntries = true, beforeInvocation = true)
     public DocumentFileResponse create(DocumentFileRequest request) {
         Document document = documentRepository.findById(request.getDocumentId())
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy tài liệu: " + request.getDocumentId()));
-        String url = save(request.getFile());
+        String url = resolveUrl(request);
         return documentFileMapper.toResponse(
                 documentFileRepository.save(documentFileMapper.toEntity(request, document,url)));
     }
@@ -61,7 +62,7 @@ public class DocumentFileServiceImpl implements DocumentFileService {
     }
 
     @Override
-    @CacheEvict(allEntries = true)
+    @CacheEvict(cacheNames = {"documentFiles", "documents"}, allEntries = true, beforeInvocation = true)
     public void delete(Long fileId) {
         documentFileRepository.deleteById(fileId);
     }
@@ -114,6 +115,54 @@ public class DocumentFileServiceImpl implements DocumentFileService {
         } catch (IOException e) {
             throw new RuntimeException("Save file failed", e);
         }
+    }
+
+    private String resolveUrl(DocumentFileRequest request) {
+        MultipartFile file = request.getFile();
+        if (file != null && !file.isEmpty()) {
+            return save(file);
+        }
+
+        String fileUrl = normalizeBlank(request.getFileUrl());
+        if (fileUrl == null) {
+            throw new IllegalArgumentException("File or file URL is required");
+        }
+        String lowerUrl = fileUrl.toLowerCase(Locale.ROOT);
+        if (!lowerUrl.startsWith("http://") && !lowerUrl.startsWith("https://")) {
+            throw new IllegalArgumentException("File URL must start with http:// or https://");
+        }
+
+        if (normalizeBlank(request.getFileName()) == null) {
+            request.setFileName(fileNameFromUrl(fileUrl));
+        }
+        if (request.getFileSize() == null || request.getFileSize() <= 0) {
+            request.setFileSize(0L);
+        }
+        if (normalizeBlank(request.getMimeType()) == null) {
+            request.setMimeType(mimeTypeFromFileName(request.getFileName()));
+        }
+        return fileUrl;
+    }
+
+    private String normalizeBlank(String value) {
+        return value == null || value.isBlank() ? null : value.trim();
+    }
+
+    private String fileNameFromUrl(String url) {
+        String withoutQuery = url.split("\\?", 2)[0];
+        int slashIndex = withoutQuery.lastIndexOf('/');
+        String fileName = slashIndex >= 0 ? withoutQuery.substring(slashIndex + 1) : withoutQuery;
+        return fileName.isBlank() ? "linked-document" : fileName;
+    }
+
+    private String mimeTypeFromFileName(String fileName) {
+        String normalized = fileName == null ? "" : fileName.toLowerCase(Locale.ROOT);
+        if (normalized.endsWith(".pdf")) return "application/pdf";
+        if (normalized.endsWith(".ppt") || normalized.endsWith(".pptx")) return "application/vnd.ms-powerpoint";
+        if (normalized.endsWith(".doc") || normalized.endsWith(".docx")) return "application/vnd.openxmlformats-officedocument.wordprocessingml.document";
+        if (normalized.endsWith(".xls") || normalized.endsWith(".xlsx")) return "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet";
+        if (normalized.endsWith(".zip")) return "application/zip";
+        return "application/octet-stream";
     }
 }
 

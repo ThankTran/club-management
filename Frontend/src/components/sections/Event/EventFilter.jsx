@@ -7,6 +7,8 @@ export default function EventFilter({
   setOpen,
   statusFilter,
   tagFilter,
+  dateFromFilter,
+  dateToFilter,
   statuses,
   tags,
   onApplyFilters,
@@ -14,12 +16,16 @@ export default function EventFilter({
   const wrapRef = useRef(null);
   const [draftStatusFilter, setDraftStatusFilter] = useState(statusFilter);
   const [draftTagFilter, setDraftTagFilter] = useState(tagFilter);
+  const [draftDateFromFilter, setDraftDateFromFilter] = useState(dateFromFilter);
+  const [draftDateToFilter, setDraftDateToFilter] = useState(dateToFilter);
 
   useEffect(() => {
     if (!open) return;
     setDraftStatusFilter(statusFilter);
     setDraftTagFilter(tagFilter);
-  }, [open, statusFilter, tagFilter]);
+    setDraftDateFromFilter(dateFromFilter);
+    setDraftDateToFilter(dateToFilter);
+  }, [dateFromFilter, dateToFilter, open, statusFilter, tagFilter]);
 
   useEffect(() => {
     if (!open) return undefined;
@@ -42,12 +48,19 @@ export default function EventFilter({
   const handleReset = () => {
     setDraftStatusFilter('all');
     setDraftTagFilter('all');
+    setDraftDateFromFilter('');
+    setDraftDateToFilter('');
   };
 
   const handleApply = () => {
+    const shouldSwapDates =
+      draftDateFromFilter && draftDateToFilter && draftDateFromFilter > draftDateToFilter;
+
     onApplyFilters({
       statusFilter: draftStatusFilter,
       tagFilter: draftTagFilter,
+      dateFromFilter: shouldSwapDates ? draftDateToFilter : draftDateFromFilter,
+      dateToFilter: shouldSwapDates ? draftDateFromFilter : draftDateToFilter,
     });
     setOpen(false);
   };
@@ -119,6 +132,26 @@ export default function EventFilter({
                 </option>
               ))}
             </select>
+          </div>
+
+          <div className={styles.dateGrid}>
+            <div className={styles.group}>
+              <label>Từ ngày</label>
+              <input
+                type="date"
+                value={draftDateFromFilter}
+                onChange={(e) => setDraftDateFromFilter(e.target.value)}
+              />
+            </div>
+
+            <div className={styles.group}>
+              <label>Đến ngày</label>
+              <input
+                type="date"
+                value={draftDateToFilter}
+                onChange={(e) => setDraftDateToFilter(e.target.value)}
+              />
+            </div>
           </div>
 
           <div className={styles.actions}>

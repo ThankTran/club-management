@@ -13,11 +13,11 @@ import ResourceApproveModal from '../../components/sections/Resource/ResourceApp
 import ResourceRejectModal from '../../components/sections/Resource/ResourceRejectModal';
 import ActionToast from '../../components/common/ActionToast/ActionToast';
 import {
-  INITIAL_RESOURCES,
   RESOURCE_RULES,
 } from '../../data/Resource/resourceAdminData';
 import {
   approveResourceAPI,
+  buildResourceFilePayload,
   createResourceAPI,
   createResourceFileAPI,
   getResourceTypesAPI,
@@ -38,7 +38,7 @@ import {
 } from '../../services/member-service';
 export default function ResourceAdminPage() {
   const currentUser = useAuthStore((state) => state.user);
-  const [resources, setResources] = useState(INITIAL_RESOURCES);
+  const [resources, setResources] = useState([]);
   const [apiError, setApiError] = useState('');
   const [resourceTypes, setResourceTypes] = useState([]);
   const [subjectOptions, setSubjectOptions] = useState([]);
@@ -85,12 +85,12 @@ export default function ResourceAdminPage() {
                     : [];
 
                 return hydrateResourcesWithFiles(nextResources).then((hydratedResources) => {
-                    setResources(hydratedResources.length ? hydratedResources : INITIAL_RESOURCES);
+                    setResources(hydratedResources);
                     setApiError('');
                 });
             })
             .catch((error) => {
-                setResources(INITIAL_RESOURCES);
+                setResources([]);
                 setApiError(error?.message || 'Không tải được danh sách tài liệu từ API.');
             });
 
@@ -130,11 +130,11 @@ export default function ResourceAdminPage() {
 
                 hydrateResourcesWithFiles(nextResources).then((hydratedResources) => {
                     if (ignore) return;
-                    setResources(hydratedResources.length ? hydratedResources : INITIAL_RESOURCES);
+                    setResources(hydratedResources);
                 });
                 setApiError('');
             } else {
-                setResources(INITIAL_RESOURCES);
+                setResources([]);
                 setApiError(
                     resourcesResult.reason?.message ||
                     'Không tải được danh sách tài liệu từ API.'
@@ -321,11 +321,9 @@ export default function ResourceAdminPage() {
       }));
 
       let uploadedFile = null;
-      if (data.file) {
+      if (data.file || data.fileUrl?.trim()) {
         try {
-          const filePayload = new FormData();
-          filePayload.append('documentId', created.documentId);
-          filePayload.append('file', data.file);
+          const filePayload = buildResourceFilePayload(created.documentId, data);
           uploadedFile = await createResourceFileAPI(filePayload);
         } catch (uploadError) {
           await loadResources();
@@ -340,7 +338,7 @@ export default function ResourceAdminPage() {
         const createdId = created.documentId || created.id;
         setResources((prev) =>
           prev.map((resource) =>
-            resource.id === createdId ? { ...resource, ...uploadedFields } : resource
+            Number(resource.id) === Number(createdId) ? { ...resource, ...uploadedFields } : resource
           )
         );
       }

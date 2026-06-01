@@ -16,6 +16,58 @@ export const normalizeUploadedResourceFile = (file = {}) => ({
   mimeType: file.mimeType || '',
 })
 
+const fileNameFromUrl = (url = '') => {
+  try {
+    const { pathname } = new URL(url)
+    const fileName = decodeURIComponent(pathname.split('/').filter(Boolean).pop() || '')
+    return fileName || 'Tai lieu lien ket'
+  } catch {
+    return 'Tai lieu lien ket'
+  }
+}
+
+const mimeTypeFromFileName = (fileName = '') => {
+  const extension = fileName.split('.').pop()?.toLowerCase()
+  const types = {
+    pdf: 'application/pdf',
+    doc: 'application/msword',
+    docx: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+    ppt: 'application/vnd.ms-powerpoint',
+    pptx: 'application/vnd.openxmlformats-officedocument.presentationml.presentation',
+    xls: 'application/vnd.ms-excel',
+    xlsx: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+    zip: 'application/zip',
+    rar: 'application/vnd.rar',
+    png: 'image/png',
+    jpg: 'image/jpeg',
+    jpeg: 'image/jpeg',
+    txt: 'text/plain',
+  }
+
+  return types[extension] || 'application/octet-stream'
+}
+
+export const buildResourceFilePayload = (documentId, attachment = {}) => {
+  const payload = new FormData()
+  payload.append('documentId', documentId)
+
+  if (attachment.file) {
+    payload.append('file', attachment.file)
+    return payload
+  }
+
+  const fileUrl = String(attachment.fileUrl || '').trim()
+  if (fileUrl) {
+    const fileName = fileNameFromUrl(fileUrl)
+    payload.append('fileUrl', fileUrl)
+    payload.append('fileName', fileName)
+    payload.append('fileSize', '0')
+    payload.append('mimeType', mimeTypeFromFileName(fileName))
+  }
+
+  return payload
+}
+
 export const hydrateResourcesWithFiles = async (resources = []) =>
   Promise.all(resources.map(async (resource) => {
     if (resource.link || !resource.id) return resource
@@ -127,9 +179,7 @@ export const hardDeleteResourceAPI = (id) =>
   api.delete(`documents/${id}/hard`)
 
 export const createResourceFileAPI = (payload) =>
-  api.post('document-files', payload, {
-    headers: { 'Content-Type': 'multipart/form-data' },
-  })
+  api.post('document-files', payload)
 
 export const getResourceFilesAPI = (documentId) =>
   api.get(`document-files/by-document/${documentId}`)

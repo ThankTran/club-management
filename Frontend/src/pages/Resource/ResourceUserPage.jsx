@@ -3,8 +3,9 @@ import ResourceCard from '../../components/sections/Resource/ResourceCard';
 import ResourceForm from '../../components/sections/Resource/ResourceForm';
 import ResourceFolderView from '../../components/sections/Resource/ResourceFolderView';
 import { normalizeResourceFolderId, RESOURCE_LEAF_FOLDERS } from '../../data/Resource/resourceFolderData';
-import { INITIAL_MEMBER_SUBMISSIONS, MOCK_RESOURCES, PAGE_SIZE, FORMAT_OPTIONS, SOURCE_OPTIONS, TYPE_TABS } from '../../data/Resource/resourceUserData';
+import { PAGE_SIZE, FORMAT_OPTIONS, SOURCE_OPTIONS, TYPE_TABS } from '../../data/Resource/resourceUserData';
 import {
+  buildResourceFilePayload,
   createResourceAPI,
   createResourceFileAPI,
   approveResourceAPI,
@@ -21,7 +22,7 @@ import styles from './ResourceUserPage.module.css';
 
 export default function ResourceUserPage() {
   const currentUser = useAuthStore((state) => state.user);
-  const [resources, setResources] = useState(MOCK_RESOURCES);
+  const [resources, setResources] = useState([]);
   const [resourceTypes, setResourceTypes] = useState([]);
   const [subjectOptions, setSubjectOptions] = useState([]);
   const [apiError, setApiError] = useState('');
@@ -45,7 +46,7 @@ export default function ResourceUserPage() {
   const [fixLoading, setFixLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submissionsOpen, setSubmissionsOpen] = useState(false);
-  const [memberSubmissions, setMemberSubmissions] = useState(INITIAL_MEMBER_SUBMISSIONS);
+  const [memberSubmissions, setMemberSubmissions] = useState([]);
 
   const loadResources = () =>
     getResourcesAPI()
@@ -54,7 +55,7 @@ export default function ResourceUserPage() {
           ? data.map(normalizeResourceFromApi)
           : [];
         return hydrateResourcesWithFiles(nextResources).then((hydratedResources) => {
-          setResources(hydratedResources.length ? hydratedResources : MOCK_RESOURCES);
+          setResources(hydratedResources);
           if (currentUser?.memberId) {
             setMemberSubmissions(
               hydratedResources
@@ -68,7 +69,7 @@ export default function ResourceUserPage() {
         setApiError('');
       })
       .catch((error) => {
-        setResources(MOCK_RESOURCES);
+        setResources([]);
         setApiError(error?.message || 'Không tải được kho tài liệu từ API.');
       });
 
@@ -85,7 +86,7 @@ export default function ResourceUserPage() {
             : [];
           hydrateResourcesWithFiles(nextResources).then((hydratedResources) => {
             if (ignore) return;
-            setResources(hydratedResources.length ? hydratedResources : MOCK_RESOURCES);
+            setResources(hydratedResources);
             if (currentUser?.memberId) {
               setMemberSubmissions(
                 hydratedResources
@@ -96,7 +97,7 @@ export default function ResourceUserPage() {
           });
           setApiError('');
         } else {
-          setResources(MOCK_RESOURCES);
+          setResources([]);
           setApiError(resourcesResult.reason?.message || 'Không tải được kho tài liệu từ API.');
         }
 
@@ -197,9 +198,7 @@ export default function ResourceUserPage() {
 
       let uploadedFile = null;
       try {
-        const filePayload = new FormData();
-        filePayload.append('documentId', created.documentId);
-        filePayload.append('file', formData.file);
+        const filePayload = buildResourceFilePayload(created.documentId, formData);
         uploadedFile = await createResourceFileAPI(filePayload);
       } catch (uploadError) {
         await loadResources();
@@ -213,12 +212,12 @@ export default function ResourceUserPage() {
         const createdId = created.documentId || created.id;
         setResources((prev) =>
           prev.map((resource) =>
-            resource.id === createdId ? { ...resource, ...uploadedFields } : resource
+            Number(resource.id) === Number(createdId) ? { ...resource, ...uploadedFields } : resource
           )
         );
         setMemberSubmissions((prev) =>
           prev.map((resource) =>
-            resource.id === createdId ? { ...resource, ...uploadedFields } : resource
+            Number(resource.id) === Number(createdId) ? { ...resource, ...uploadedFields } : resource
           )
         );
       }

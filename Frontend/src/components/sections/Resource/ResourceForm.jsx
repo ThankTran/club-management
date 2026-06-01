@@ -11,6 +11,8 @@ const EMPTY_FORM = {
   subject: '',
   source: '',
   description: '',
+  attachmentMode: 'file',
+  fileUrl: '',
   file: null,
 };
 
@@ -31,7 +33,16 @@ export default function ResourceForm({
 
   useEffect(() => {
     if (open) {
-      setForm(initial ? { ...EMPTY_FORM, ...initial, file: null } : EMPTY_FORM);
+      const initialLink = initial?.fileUrl || initial?.link || '';
+      setForm(initial
+        ? {
+          ...EMPTY_FORM,
+          ...initial,
+          attachmentMode: initialLink ? 'link' : 'file',
+          fileUrl: initialLink,
+          file: null,
+        }
+        : EMPTY_FORM);
       setErrors({});
     }
   }, [open, initial]);
@@ -72,8 +83,18 @@ export default function ResourceForm({
   };
 
   const handleFileChange = (e) => {
-    setForm((prev) => ({ ...prev, file: e.target.files?.[0] || null }));
+    setForm((prev) => ({ ...prev, file: e.target.files?.[0] || null, fileUrl: '' }));
     setErrors((prev) => ({ ...prev, file: '' }));
+  };
+
+  const handleAttachmentModeChange = (mode) => {
+    setForm((prev) => ({
+      ...prev,
+      attachmentMode: mode,
+      file: mode === 'file' ? prev.file : null,
+      fileUrl: mode === 'link' ? prev.fileUrl : '',
+    }));
+    setErrors((prev) => ({ ...prev, file: '', fileUrl: '' }));
   };
 
   const validate = () => {
@@ -81,7 +102,15 @@ export default function ResourceForm({
     if (!form.title.trim()) errs.title = 'Vui lòng nhập tên tài liệu';
     if (!form.typeId) errs.typeId = 'Vui lòng chọn loại tài liệu';
     if (!form.subjectId) errs.subjectId = 'Vui lòng chọn môn học / chủ đề';
-    if (!isEdit && !form.file) errs.file = 'Vui lòng chọn tệp tài liệu';
+    const hasFile = !!form.file;
+    const hasLink = !!form.fileUrl.trim();
+    if (!isEdit && !hasFile && !hasLink) {
+      if (form.attachmentMode === 'link') errs.fileUrl = 'Vui lòng nhập link tài liệu';
+      else errs.file = 'Vui lòng chọn tệp tài liệu';
+    }
+    if (hasLink && !/^https?:\/\//i.test(form.fileUrl.trim())) {
+      errs.fileUrl = 'Link tài liệu phải bắt đầu bằng http:// hoặc https://';
+    }
     return errs;
   };
 
@@ -200,14 +229,46 @@ export default function ResourceForm({
 
           <p className={styles.sectionLabel}>II. Tệp đính kèm</p>
 
-          <Field label={isEdit ? 'Tệp tài liệu' : 'Tệp tài liệu *'} error={errors.file}>
-            <input
-              className={`${styles.input} ${errors.file ? styles.inputError : ''}`}
-              type="file"
-              onChange={handleFileChange}
-            />
-            {form.file && <p className={styles.helperText}>{form.file.name}</p>}
+          <Field label={isEdit ? 'Nguồn tệp tài liệu' : 'Nguồn tệp tài liệu *'}>
+            <div className={styles.segmented}>
+              <button
+                type="button"
+                className={`${styles.segmentBtn} ${form.attachmentMode === 'file' ? styles.segmentBtnActive : ''}`}
+                onClick={() => handleAttachmentModeChange('file')}
+              >
+                Upload file
+              </button>
+              <button
+                type="button"
+                className={`${styles.segmentBtn} ${form.attachmentMode === 'link' ? styles.segmentBtnActive : ''}`}
+                onClick={() => handleAttachmentModeChange('link')}
+              >
+                Dán link
+              </button>
+            </div>
           </Field>
+
+          {form.attachmentMode === 'file' ? (
+            <Field label={isEdit ? 'Tệp tài liệu' : 'Tệp tài liệu *'} error={errors.file}>
+              <input
+                className={`${styles.input} ${errors.file ? styles.inputError : ''}`}
+                type="file"
+                onChange={handleFileChange}
+              />
+              {form.file && <p className={styles.helperText}>{form.file.name}</p>}
+            </Field>
+          ) : (
+            <Field label={isEdit ? 'Link tài liệu' : 'Link tài liệu *'} error={errors.fileUrl}>
+              <input
+                className={`${styles.input} ${errors.fileUrl ? styles.inputError : ''}`}
+                type="url"
+                placeholder="https://github.com/.../document.pdf"
+                value={form.fileUrl}
+                onChange={handleChange('fileUrl')}
+              />
+              <p className={styles.helperText}>Hỗ trợ link Google Drive, GitHub, PDF/PPT/DOCX công khai.</p>
+            </Field>
+          )}
 
           <div className={styles.actions}>
             <button type="button" className={styles.cancelBtn} onClick={onClose}>

@@ -33,6 +33,8 @@ export default function EventRosterTable({
   setFilterOpen,
   statusFilter,
   tagFilter,
+  dateFromFilter,
+  dateToFilter,
   onApplyFilters,
   dateSort,
   setDateSort,
@@ -69,6 +71,8 @@ export default function EventRosterTable({
             setOpen={setFilterOpen}
             statusFilter={statusFilter}
             tagFilter={tagFilter}
+            dateFromFilter={dateFromFilter}
+            dateToFilter={dateToFilter}
             statuses={statusLabels}
             tags={tagFilters}
             onApplyFilters={onApplyFilters}
