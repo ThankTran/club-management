@@ -22,7 +22,9 @@ import {
   createResourceFileAPI,
   getResourceTypesAPI,
   getResourcesAPI,
+  hydrateResourcesWithFiles,
   normalizeResourceFromApi,
+  normalizeUploadedResourceFile,
   softDeleteResourceAPI,
   toResourcePayload,
 } from '../../services/resource-service';
@@ -82,8 +84,10 @@ export default function ResourceAdminPage() {
                     )
                     : [];
 
-                setResources(nextResources.length ? nextResources : INITIAL_RESOURCES);
-                setApiError('');
+                return hydrateResourcesWithFiles(nextResources).then((hydratedResources) => {
+                    setResources(hydratedResources.length ? hydratedResources : INITIAL_RESOURCES);
+                    setApiError('');
+                });
             })
             .catch((error) => {
                 setResources(INITIAL_RESOURCES);
@@ -124,7 +128,10 @@ export default function ResourceAdminPage() {
                     )
                     : [];
 
-                setResources(nextResources.length ? nextResources : INITIAL_RESOURCES);
+                hydrateResourcesWithFiles(nextResources).then((hydratedResources) => {
+                    if (ignore) return;
+                    setResources(hydratedResources.length ? hydratedResources : INITIAL_RESOURCES);
+                });
                 setApiError('');
             } else {
                 setResources(INITIAL_RESOURCES);
@@ -313,12 +320,13 @@ export default function ResourceAdminPage() {
         proposedById: currentUser.memberId,
       }));
 
+      let uploadedFile = null;
       if (data.file) {
         try {
           const filePayload = new FormData();
           filePayload.append('documentId', created.documentId);
           filePayload.append('file', data.file);
-          await createResourceFileAPI(filePayload);
+          uploadedFile = await createResourceFileAPI(filePayload);
         } catch (uploadError) {
           await loadResources();
           setApiError(uploadError?.message || 'Đã tạo phiếu nhưng tải tệp thất bại.');
@@ -327,6 +335,15 @@ export default function ResourceAdminPage() {
       }
 
       await loadResources();
+      if (uploadedFile) {
+        const uploadedFields = normalizeUploadedResourceFile(uploadedFile);
+        const createdId = created.documentId || created.id;
+        setResources((prev) =>
+          prev.map((resource) =>
+            resource.id === createdId ? { ...resource, ...uploadedFields } : resource
+          )
+        );
+      }
       setFormOpen(false);
       setEditing(null);
     } catch (error) {

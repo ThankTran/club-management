@@ -10,7 +10,9 @@ import {
   approveResourceAPI,
   getResourceTypesAPI,
   getResourcesAPI,
+  hydrateResourcesWithFiles,
   normalizeResourceFromApi,
+  normalizeUploadedResourceFile,
   toResourcePayload,
 } from '../../services/resource-service';
 import { getSubjectsAPI } from '../../services/subject-service';
@@ -51,14 +53,18 @@ export default function ResourceUserPage() {
         const nextResources = Array.isArray(data)
           ? data.map(normalizeResourceFromApi)
           : [];
-        setResources(nextResources.length ? nextResources : MOCK_RESOURCES);
-        if (currentUser?.memberId) {
-          setMemberSubmissions(
-            nextResources
-              .filter((resource) => resource.memberId === currentUser.memberId)
-              .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
-          );
-        }
+        return hydrateResourcesWithFiles(nextResources).then((hydratedResources) => {
+          setResources(hydratedResources.length ? hydratedResources : MOCK_RESOURCES);
+          if (currentUser?.memberId) {
+            setMemberSubmissions(
+              hydratedResources
+                .filter((resource) => resource.memberId === currentUser.memberId)
+                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+            );
+          }
+        });
+      })
+      .then(() => {
         setApiError('');
       })
       .catch((error) => {
@@ -77,14 +83,17 @@ export default function ResourceUserPage() {
           const nextResources = Array.isArray(resourcesResult.value)
             ? resourcesResult.value.map(normalizeResourceFromApi)
             : [];
-          setResources(nextResources.length ? nextResources : MOCK_RESOURCES);
-          if (currentUser?.memberId) {
-            setMemberSubmissions(
-              nextResources
-                .filter((resource) => resource.memberId === currentUser.memberId)
-                .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
-            );
-          }
+          hydrateResourcesWithFiles(nextResources).then((hydratedResources) => {
+            if (ignore) return;
+            setResources(hydratedResources.length ? hydratedResources : MOCK_RESOURCES);
+            if (currentUser?.memberId) {
+              setMemberSubmissions(
+                hydratedResources
+                  .filter((resource) => resource.memberId === currentUser.memberId)
+                  .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt)),
+              );
+            }
+          });
           setApiError('');
         } else {
           setResources(MOCK_RESOURCES);
@@ -186,11 +195,12 @@ export default function ResourceUserPage() {
         proposedById: currentUser.memberId,
       }));
 
+      let uploadedFile = null;
       try {
         const filePayload = new FormData();
         filePayload.append('documentId', created.documentId);
         filePayload.append('file', formData.file);
-        await createResourceFileAPI(filePayload);
+        uploadedFile = await createResourceFileAPI(filePayload);
       } catch (uploadError) {
         await loadResources();
         setApiError(uploadError?.message || 'Đã tạo phiếu nhưng tải tệp thất bại.');
@@ -198,6 +208,20 @@ export default function ResourceUserPage() {
       }
 
       await loadResources();
+      if (uploadedFile) {
+        const uploadedFields = normalizeUploadedResourceFile(uploadedFile);
+        const createdId = created.documentId || created.id;
+        setResources((prev) =>
+          prev.map((resource) =>
+            resource.id === createdId ? { ...resource, ...uploadedFields } : resource
+          )
+        );
+        setMemberSubmissions((prev) =>
+          prev.map((resource) =>
+            resource.id === createdId ? { ...resource, ...uploadedFields } : resource
+          )
+        );
+      }
       setFormOpen(false);
       setSubmitted(true);
       setTimeout(() => setSubmitted(false), 5000);

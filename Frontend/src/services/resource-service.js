@@ -4,10 +4,45 @@ const API_ORIGIN = new URL(API_BASE_URL).origin
 
 const resolveResourceLink = (link = '') => {
   if (!link) return ''
-  if (/^https?:\/\//i.test(link)) return link
   if (link.startsWith('/uploads/')) return `${API_ORIGIN}${link}`
-  return link
+  if (/^https?:\/\//i.test(link)) {
+    try {
+      const url = new URL(link)
+      return url.pathname.startsWith('/uploads/') ? link : ''
+    } catch {
+      return ''
+    }
+  }
+  return ''
 }
+
+export const normalizeUploadedResourceFile = (file = {}) => ({
+  link: resolveResourceLink(file.fileUrl || ''),
+  fileName: file.fileName || '',
+  fileSize: file.fileSize || 0,
+  mimeType: file.mimeType || '',
+})
+
+export const hydrateResourcesWithFiles = async (resources = []) =>
+  Promise.all(resources.map(async (resource) => {
+    if (resource.link || !resource.id) return resource
+
+    try {
+      const files = await getResourceFilesAPI(resource.id)
+      if (!Array.isArray(files) || files.length === 0) return resource
+
+      const latestFile = [...files].sort((a, b) =>
+        new Date(b.uploadedAt || 0) - new Date(a.uploadedAt || 0)
+      )[0]
+
+      return {
+        ...resource,
+        ...normalizeUploadedResourceFile(latestFile),
+      }
+    } catch {
+      return resource
+    }
+  }))
 
 const detectFormat = (resource = {}) => {
   const fileName = resource.primaryFileName || resource.fileName || ''
@@ -43,7 +78,7 @@ export const normalizeResourceFromApi = (resource = {}, member = null) => ({
     format: detectFormat(resource),
     source: resource.source || '',
     description: resource.note || '',
-    link: resolveResourceLink(resource.primaryFileUrl || resource.fileUrl || resource.url || resource.files?.[0]?.fileUrl || ''),
+    link: resolveResourceLink(resource.primaryFileUrl || resource.fileUrl || resource.files?.[0]?.fileUrl || ''),
     fileName: resource.primaryFileName || resource.fileName || resource.files?.[0]?.fileName || '',
     fileSize: resource.fileSize || resource.files?.[0]?.fileSize || 0,
     mimeType: resource.mimeType || resource.files?.[0]?.mimeType || '',

@@ -98,8 +98,8 @@ export default function ResourceDetailModal({
           )}
         </div>
 
-        {/* Link */}
-        {link && status === 'approved' ? (
+        {/* Uploaded file */}
+        {link ? (
           <a
             href={link}
             target="_blank"

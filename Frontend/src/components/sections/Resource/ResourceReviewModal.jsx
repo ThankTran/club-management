@@ -56,17 +56,15 @@ export default function ResourceReviewModal({ resource, onClose, onApprove, onRe
             <Info label="Mô tả ngắn nội dung tài liệu" value={resource.description || '—'} multiline />
           </div>
 
-          <div title="III. Đường dẫn / tệp đính kèm">
+          <div title="III. Tệp đính kèm">
             <div className={styles.linkRow}>
-              <span className={styles.infoLabel}>Link lưu trữ</span>
-              {resource.status === 'approved' ? (
-                <a href={resource.link} target="_blank" rel="noopener noreferrer" className={styles.linkBtn}>
-                  Mở tài liệu
-                </a>
-              ) : (
+              <span className={styles.infoLabel}>Tệp tài liệu</span>
+              {resource.link ? (
                 <a href={resource.link} target="_blank" rel="noopener noreferrer" className={styles.linkBtn}>
                   Xem tài liệu
                 </a>
+              ) : (
+                <span className={styles.pendingLink}>Chưa có tệp</span>
               )}
             </div>
           </div>

@@ -44,7 +44,7 @@ export default function ResourceRejectModal({ resource, onCancel, onConfirm, loa
               if (error) setError('');
             }}
             rows={5}
-            placeholder="Ví dụ: Tài liệu trùng nội dung, link không truy cập được, sai định dạng..."
+            placeholder="Ví dụ: Tài liệu trùng nội dung, tệp không mở được, sai định dạng..."
             autoFocus
           />
         </label>

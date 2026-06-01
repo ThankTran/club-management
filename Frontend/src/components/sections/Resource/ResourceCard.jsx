@@ -132,7 +132,7 @@ function ResourceLink({ link, compact = false }) {
   if (!link) {
     return (
       <span className={`${styles.resourceLink} ${compact ? styles.resourceLinkCompact : ''} ${styles.resourceLinkDisabled}`}>
-        Chưa có link
+        Chưa có tệp
       </span>
     );
   }

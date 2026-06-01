@@ -146,7 +146,7 @@ export default function ResourceTable({
                         Mở tài liệu
                       </a>
                     ) : (
-                      <span className={styles.noLink}>—</span>
+                      <span className={styles.noLink}>Chưa có tệp</span>
                     )}
                   </td>
 

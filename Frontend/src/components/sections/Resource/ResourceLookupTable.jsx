@@ -22,7 +22,7 @@ const SAMPLE_LOOKUP_RESOURCES = LEAF_FOLDERS.map((folder, index) => ({
   format: index % 4 === 0 ? 'PDF' : index % 4 === 1 ? 'PPT' : index % 4 === 2 ? 'DOCX' : 'ZIP',
   source: index % 2 === 0 ? 'Giảng viên cung cấp' : 'Internet',
   description: `Tài liệu mẫu thuộc thư mục ${folder.pathLabel}.`,
-  link: `https://drive.google.com/example-${folder.id}`,
+  link: `/uploads/documents/sample-${folder.id}.pdf`,
   uploadedBy: 'Ban học tập',
   createdAt: `2024-12-${String((index % 20) + 1).padStart(2, '0')}`,
   status: 'approved',
@@ -147,7 +147,7 @@ export default function ResourceLookupTable({
                   <th>Loại</th>
                   <th>Định dạng</th>
                   <th>Trạng thái sử dụng</th>
-                  <th>Link</th>
+                  <th>Tệp</th>
                   <th>Thao tác</th>
                 </tr>
               </thead>
@@ -182,7 +182,7 @@ export default function ResourceLookupTable({
                             Xem tài liệu
                           </a>
                         ) : (
-                          <span className={styles.noLink}>-</span>
+                          <span className={styles.noLink}>Chưa có tệp</span>
                         )}
                       </td>
                       <td onClick={(event) => event.stopPropagation()}>
