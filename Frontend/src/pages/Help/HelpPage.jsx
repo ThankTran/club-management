@@ -71,7 +71,7 @@ export default function HelpPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeCategory, setActiveCategory] = useState("all");
   const [expandedFaq, setExpandedFaq] = useState(null);
-  
+
   // Right Column Tab: "ai" | "form"
   const [activeRightTab, setActiveRightTab] = useState("ai");
 
@@ -119,30 +119,30 @@ export default function HelpPage() {
 
   // AI agent responses dictionary
   const AI_ANSWERS = {
-    "Làm thế nào để cập nhật thông tin học tập và chuyên ngành?": 
+    "Làm thế nào để cập nhật thông tin học tập và chuyên ngành?":
       "Để cập nhật chuyên ngành và học tập, bạn làm theo các bước sau nhé:\n1. Bấm vào Avatar góc trên cùng bên phải màn hình để chọn **Hồ sơ**.\n2. Chọn tab **Học tập & Chuyên môn**.\n3. Tại mục Kỹ năng học thuật, bạn có thể gõ tìm kiếm và nhấn nút **+ Thêm tag** để cập nhật nhanh chóng! 🎓",
-    
-    "Quy trình đăng ký tham gia một sự kiện mới như thế nào?": 
+
+    "Quy trình đăng ký tham gia một sự kiện mới như thế nào?":
       "Quy trình đăng ký sự kiện vô cùng đơn giản:\n1. Chọn mục **Sự kiện** trên Sidebar bên trái.\n2. Duyệt qua danh sách sự kiện và bấm vào sự kiện bạn muốn tham gia.\n3. Nhấn **Đăng ký tham gia**. Hệ thống sẽ tự động gửi email xác nhận và lưu lịch sử vào hoạt động của bạn! 📅",
-    
-    "Làm cách nào để tải tài liệu học thuật lên hệ thống?": 
+
+    "Làm cách nào để tải tài liệu học thuật lên hệ thống?":
       "Để chia sẻ tài liệu hữu ích cho CLB:\n1. Di chuyển tới mục **Tài liệu** trên thanh điều hướng.\n2. Bấm nút **Thêm tài liệu** ở góc trên.\n3. Điền các trường thông tin (tên môn, mô tả) và tải lên file (định dạng PDF, DOCX, ZIP dưới 20MB).\n*Lưu ý: Tài liệu sẽ hiển thị công khai sau khi được Ban Quản Trị duyệt nhé!* 📚",
-    
-    "Tôi có thể theo dõi tình hình tài chính và quỹ CLB ở đâu?": 
+
+    "Tôi có thể theo dõi tình hình tài chính và quỹ CLB ở đâu?":
       "Tất cả các khoản thu chi đều minh bạch tại CLB:\n1. Hãy truy cập mục **Thu chi** trên Sidebar.\n2. Tại đây có biểu đồ trực quan, danh sách đóng góp quỹ và nhật ký chi tiêu của Ban Tài chính được cập nhật mỗi tháng! 💰",
-    
-    "Làm sao để thay đổi mật khẩu và cài đặt nhận thông báo?": 
+
+    "Làm sao để thay đổi mật khẩu và cài đặt nhận thông báo?":
       "Để nâng cao bảo mật tài khoản:\n1. Vào trang **Cá nhân** bằng menu góc phải.\n2. Chọn tab **Bảo mật & Cài đặt**.\n3. Tại đây bạn có thể đổi mật khẩu mới hoặc gạt các toggle bật/tắt nhận thông báo qua Email hoặc hệ thống! 🔑",
-    
-    "Tôi muốn tham gia Ban Học thuật hoặc Ban Truyền thông của CLB thì làm thế nào?": 
+
+    "Tôi muốn tham gia Ban Học thuật hoặc Ban Truyền thông của CLB thì làm thế nào?":
       "Chào mừng bạn đến với các Ban hoạt động của CLB! Đơn đăng ký thường mở vào đầu học kỳ trên Trang chủ. Bạn hãy cập nhật thông tin CV trong Hồ sơ cá nhân trước, sau đó nộp đơn ứng tuyển online trực tiếp hoặc liên hệ các Trưởng Ban để được phỏng vấn nhé! 🤝",
-    
-    "Có giới hạn dung lượng và định dạng cho tài liệu tải lên không?": 
+
+    "Có giới hạn dung lượng và định dạng cho tài liệu tải lên không?":
       "Dung lượng tối đa được hỗ trợ là **20MB** mỗi tệp để bảo toàn máy chủ. Các định dạng được phép tải lên bao gồm: `PDF`, `DOCX`, `XLSX`, `PPTX`, `ZIP`, `RAR`. Chú ý quét virus trước khi đăng bạn nhé! 💾",
-    
+
     "Tôi muốn liên hệ gấp với Ban Quản Trị?":
       "Bạn có thể liên hệ trực tiếp với Ban Quản Trị qua các kênh ưu tiên sau:\n- 📞 Hotline: **0987654321**\n- ✉️ Email: **24521092@gm.uit.edu.vn**\n- 🏢 Văn phòng: **Tầng 7, tòa E, trường ĐH Công nghệ Thông tin (UIT)**. Chúng mình luôn sẵn sàng lắng nghe bạn! 🏢",
-      
+
     "Làm sao để đóng lệ phí sinh hoạt CLB?":
       "Để đóng quỹ thành viên CLB:\n1. Vào mục **Thu chi**.\n2. Tìm phần đóng lệ phí định kỳ.\n3. Bấm **Thanh toán trực tuyến** hoặc chuyển khoản theo cú pháp hướng dẫn kèm mã QR được tạo tự động nhé! 💳",
   };
@@ -191,14 +191,14 @@ export default function HelpPage() {
 
     const query = userQuery.toLowerCase().trim();
     if (!query) return { answer: null, source: "FALLBACK" };
-    
+
     // Check exact or direct match of questions
     for (const question of ALL_AGENT_QUESTIONS) {
       if (question.toLowerCase().includes(query) || query.includes(question.toLowerCase())) {
         return { answer: AI_ANSWERS[question], source: "FALLBACK" };
       }
     }
-    
+
     // Keyword match logic
     if (query.includes("sự kiện") || query.includes("event") || query.includes("đăng ký")) {
       return { answer: AI_ANSWERS["Quy trình đăng ký tham gia một sự kiện mới như thế nào?"], source: "FALLBACK" };
@@ -236,17 +236,17 @@ export default function HelpPage() {
 
   const handleSelectQuestion = (question) => {
     if (isTyping) return;
-    
+
     // User message
     const userMsg = {
       id: `user-${Date.now()}`,
       sender: "user",
       text: question
     };
-    
+
     setChatMessages(prev => [...prev, userMsg]);
     setIsTyping(true);
-    
+
     // AI response delay
     setTimeout(async () => {
       const result = await getAiAnswer(question);
@@ -265,17 +265,17 @@ export default function HelpPage() {
     e.preventDefault();
     const text = chatInputValue.trim();
     if (!text || isTyping) return;
-    
+
     const userMsg = {
       id: `user-${Date.now()}`,
       sender: "user",
       text: text
     };
-    
+
     setChatMessages(prev => [...prev, userMsg]);
     setChatInputValue("");
     setIsTyping(true);
-    
+
     setTimeout(async () => {
       const result = await getAiAnswer(text);
       const botMsg = {
@@ -321,7 +321,7 @@ export default function HelpPage() {
     }
 
     setIsSubmitting(true);
-    
+
     // Simulate API call
     setTimeout(() => {
       setIsSubmitting(false);
@@ -332,7 +332,7 @@ export default function HelpPage() {
         topic: "general",
         message: "",
       });
-      
+
       // Auto dismiss success screen after 6 seconds
       setTimeout(() => {
         setSubmitSuccess(false);
@@ -398,9 +398,8 @@ export default function HelpPage() {
             {CATEGORIES.map((cat) => (
               <button
                 key={cat.id}
-                className={`${styles.tabBtn} ${
-                  activeCategory === cat.id ? styles.activeTab : ""
-                }`}
+                className={`${styles.tabBtn} ${activeCategory === cat.id ? styles.activeTab : ""
+                  }`}
                 onClick={() => {
                   setActiveCategory(cat.id);
                   setExpandedFaq(null);
@@ -514,7 +513,7 @@ export default function HelpPage() {
                             <div className={styles.botBubbleMessage}>
                               {msg.source && (
                                 <span className={`${styles.aiSourceBadge} ${msg.source === "REAL_AI" ? styles.aiSourceReal : styles.aiSourceFallback}`}>
-                                  {msg.source === "REAL_AI" ? "AI thật" : "Hỗ trợ tự động"}
+                                  {msg.source === "REAL_AI" ? "Trợ lý" : "Hỗ trợ tự động"}
                                 </span>
                               )}
                               {msg.text.split("\n").map((line, lIdx) => (
