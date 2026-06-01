@@ -313,8 +313,10 @@ public class SampleDataSeeder implements CommandLineRunner {
         List<User> users = new ArrayList<>();
         for (int index = 0; index < members.size(); index++) {
             String password = switch (index) {
-                case 0 -> "StudyHead@123";
-                case 1 -> "EventHead@123";
+                case 0 -> "President@123";
+                case 1 -> "VicePresident@123";
+                case 2 -> "AcademicHead@123";
+                case 3 -> "CommunicationHead@123";
                 default -> String.format("Member%02d@123", index - 1);
             };
             users.add(User.create(members.get(index), passwordHasher.hash(password)));
@@ -335,6 +337,7 @@ public class SampleDataSeeder implements CommandLineRunner {
     private List<Event> seedEvents(List<Member> members) {
         List<Event> events = new ArrayList<>();
         LocalDate today = LocalDate.now();
+        LocalDateTime now = LocalDateTime.now().withSecond(0).withNano(0);
         List<EventSeed> seeds = List.of(
                 new EventSeed("Bootcamp Java Spring Boot cho thành viên mới", "Phòng lab A101", -120, 8, 11, 2_800_000L, 60, "Ban học thuật", "TECH", EventStatusEnum.Evaluated, ApprovalStatusEnum.APPROVED, "Ôn tập Java, REST API và quy trình xây dựng backend cho thành viên mới."),
                 new EventSeed("Seminar Phương pháp nghiên cứu khoa học sinh viên", "Hội trường B", -112, 9, 11, 3_200_000L, 120, "Ban học thuật", "ACAD", EventStatusEnum.Finished, ApprovalStatusEnum.APPROVED, "Chia sẻ cách chọn đề tài, viết đề cương và trình bày kết quả nghiên cứu."),
@@ -377,17 +380,25 @@ public class SampleDataSeeder implements CommandLineRunner {
                     : today.minusDays(20L - (eventNumber % 10)).atTime(9 + (eventNumber % 4), (eventNumber * 7) % 60);
             LocalDateTime updatedAt = seed.status() == EventStatusEnum.Cancelled
                     ? eventDate.minusDays(5).atTime(16, 30)
+                    : seed.status() == EventStatusEnum.InProgress
+                            ? now.minusMinutes(15)
                     : seed.dayOffset() <= 0
                             ? eventDate.minusDays(1).atTime(15, (eventNumber * 5) % 60)
                             : today.minusDays(eventNumber % 5).atTime(15, (eventNumber * 5) % 60);
             boolean hasEvaluation = seed.status() == EventStatusEnum.Evaluated;
+            LocalDateTime startTime = seed.status() == EventStatusEnum.InProgress
+                    ? now.minusHours(1)
+                    : eventDate.atTime(seed.startHour(), 0);
+            LocalDateTime endTime = seed.status() == EventStatusEnum.InProgress
+                    ? now.plusHours(2)
+                    : eventDate.atTime(seed.endHour(), 0);
             events.add(Event.builder()
                     .eventId(String.format("EVT%03d", eventNumber))
                     .eventName(seed.name())
                     .location(seed.location())
                     .eventDate(eventDate)
-                    .startTime(eventDate.atTime(seed.startHour(), 0))
-                    .endTime(eventDate.atTime(seed.endHour(), 0))
+                    .startTime(startTime)
+                    .endTime(endTime)
                     .estimatedCost(BigDecimal.valueOf(seed.estimatedCost()))
                     .capacity(seed.capacity())
                     .tag(seed.tag())
@@ -627,7 +638,7 @@ public class SampleDataSeeder implements CommandLineRunner {
             }
         }
 
-        seedEventFeeTransactions(transactions, eventRegistrations);
+        seedEventFeeTransactions(transactions, eventRegistrations, members);
 
         for (int index = 1; index <= events.size(); index++) {
             Event event = events.get(index - 1);
@@ -700,6 +711,47 @@ public class SampleDataSeeder implements CommandLineRunner {
         }
         seedMonthlyOperatingTransactions(transactions, members, currentMonth);
         transactionRepository.saveAll(transactions);
+    }
+
+    private void seedEventFeeTransactions(
+            List<Transaction> transactions,
+            List<EventRegistration> registrations,
+            List<Member> members) {
+        for (EventRegistration registration : registrations) {
+            Event event = registration.getEvent();
+            Member member = registration.getMember();
+            BigDecimal feeAmount = eventParticipationFee(event);
+            if (feeAmount.compareTo(BigDecimal.ZERO) <= 0) {
+                continue;
+            }
+
+            LocalDateTime registeredAt = registration.getRegisteredAt() == null
+                    ? event.getStartTime().minusDays(7)
+                    : registration.getRegisteredAt();
+            TransactionStatus status = pickEventIncomeStatus(event);
+            Member approver = event.getEvaluatedBy() != null
+                    ? event.getEvaluatedBy()
+                    : members.get(Math.floorMod(event.getEventId().hashCode(), 2));
+            transactions.add(Transaction.builder()
+                    .transactionId(String.format(
+                            "DUE-EVENT-%s-%03d",
+                            event.getEventId(),
+                            member.getMemberId()))
+                    .event(event)
+                    .member(member)
+                    .counterpartyName(member.getFullName())
+                    .type(TransactionType.INCOME)
+                    .amount(feeAmount)
+                    .description("Phí tham gia sự kiện: " + event.getEventName())
+                    .transactionDate(registeredAt)
+                    .status(status)
+                    .createdBy(member)
+                    .approvedBy(isPaidStatus(status) ? approver : null)
+                    .createdAt(registeredAt)
+                    .updatedAt(isPaidStatus(status) ? registeredAt.plusHours(6) : registeredAt)
+                    .approvedAt(isPaidStatus(status) ? registeredAt.plusHours(6) : null)
+                    .build());
+        }
     }
 
     private void seedMonthlyOperatingTransactions(
@@ -819,6 +871,21 @@ public class SampleDataSeeder implements CommandLineRunner {
         };
     }
 
+    private BigDecimal eventParticipationFee(Event event) {
+        if (event == null || event.getReqStatus() != ApprovalStatusEnum.APPROVED) {
+            return BigDecimal.ZERO;
+        }
+        return switch (event.getTag()) {
+            case "CERT" -> BigDecimal.valueOf(120_000L);
+            case "SOCIAL" -> BigDecimal.valueOf(80_000L);
+            case "TECH" -> event.getEstimatedCost() != null
+                    && event.getEstimatedCost().compareTo(BigDecimal.valueOf(4_000_000L)) > 0
+                    ? BigDecimal.valueOf(100_000L)
+                    : BigDecimal.ZERO;
+            default -> BigDecimal.ZERO;
+        };
+    }
+
     private TransactionStatus pickEventIncomeStatus(Event event) {
         if (event.getReqStatus() != ApprovalStatusEnum.APPROVED) {
             return TransactionStatus.PENDING;
@@ -833,6 +900,12 @@ public class SampleDataSeeder implements CommandLineRunner {
     }
 
     private TransactionStatus pickEventSponsorshipStatus(Event event) {
+        if (event.getReqStatus() == ApprovalStatusEnum.REJECTED) {
+            return TransactionStatus.CANCELLED;
+        }
+        if (event.getReqStatus() != ApprovalStatusEnum.APPROVED) {
+            return TransactionStatus.PENDING;
+        }
         if (event.getStatus() == EventStatusEnum.Cancelled) {
             return TransactionStatus.REFUNDED;
         }
@@ -843,6 +916,9 @@ public class SampleDataSeeder implements CommandLineRunner {
     }
 
     private TransactionStatus pickEventExpenseStatus(Event event, int index) {
+        if (event.getReqStatus() == ApprovalStatusEnum.REJECTED) {
+            return TransactionStatus.CANCELLED;
+        }
         if (event.getReqStatus() != ApprovalStatusEnum.APPROVED) {
             return TransactionStatus.PENDING;
         }

@@ -376,18 +376,27 @@ http://localhost:8081/api
 
 # 👤 Sample Accounts
 
-When the database is empty, `SampleDataSeeder` creates sample users for the first seeded members.
+When the database is empty, `SampleDataSeeder` creates sample users for all seeded members.
 
-| User | Username | Password |
-| --- | --- | --- |
-| Seeded user 1 | `1` or `22130001` | `StudyHead@123` |
-| Seeded user 2 | `2` or `22130002` | `EventHead@123` |
-| Seeded user 3 | `3` or `22130003` | `Member01@123` |
-| Seeded user 4 | `4` or `22130004` | `Member02@123` |
-| Seeded user 5 | `5` or `22130005` | `Member03@123` |
-| Seeded user 6 | `6` or `22130006` | `Member04@123` |
+Use the member `studentId` as the login username. The backend resolves a numeric username as a member ID first, then falls back to student ID lookup.
 
-The login form sends `username` and `password`. The backend resolves a numeric username as a member ID first, then falls back to student ID lookup.
+| Role | Name | Username / Student ID | Password |
+| --- | --- | --- | --- |
+| Chủ nhiệm | Nguyễn Minh Anh | `22130001` | `President@123` |
+| Phó chủ nhiệm | Trần Quốc Bảo | `22130002` | `VicePresident@123` |
+| Trưởng ban học thuật | Lê Hoàng Nam | `22130003` | `AcademicHead@123` |
+| Trưởng ban truyền thông | Phạm Gia Hân | `22130004` | `CommunicationHead@123` |
+| Thành viên | Võ Đức Tài | `22130005` | `Member03@123` |
+| Thành viên | Hoàng Trung Kiên | `22130006` | `Member04@123` |
+
+If your database was seeded before the latest seed data update, these new passwords will not be applied automatically because `SampleDataSeeder` skips seeding when existing lookup/member data is present. Reseed the database or update the user password manually. Older local databases may still accept:
+
+| Username / Student ID | Previous Password |
+| --- | --- |
+| `22130001` | `StudyHead@123` |
+| `22130002` | `EventHead@123` |
+
+Recent seed data also keeps event and finance records logically consistent: in-progress events are generated around the current runtime, event participation fee transactions are seeded for paid event types, and unapproved or rejected event finance records no longer appear as completed income/expenses.
 
 > These accounts are intended for development environments only.
 
