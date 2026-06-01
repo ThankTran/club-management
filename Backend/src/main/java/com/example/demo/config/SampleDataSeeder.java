@@ -15,6 +15,8 @@ import com.example.demo.domain.model.document.DocumentType;
 import com.example.demo.domain.model.event.Event;
 import com.example.demo.domain.model.event.EventOrganizer;
 import com.example.demo.domain.model.event.EventOrganizerId;
+import com.example.demo.domain.model.event.EventRegistration;
+import com.example.demo.domain.model.event.EventRegistrationId;
 import com.example.demo.domain.model.event.EventRole;
 import com.example.demo.domain.model.finance.Transaction;
 import com.example.demo.domain.model.member.Member;
@@ -31,6 +33,7 @@ import com.example.demo.domain.repository.document.DocumentFileRepository;
 import com.example.demo.domain.repository.document.DocumentRepository;
 import com.example.demo.domain.repository.document.DocumentTypeRepository;
 import com.example.demo.domain.repository.event.EventOrganizerRepository;
+import com.example.demo.domain.repository.event.EventRegistrationRepository;
 import com.example.demo.domain.repository.event.EventRepository;
 import com.example.demo.domain.repository.event.EventRoleRepository;
 import com.example.demo.domain.repository.finance.TransactionRepository;
@@ -69,6 +72,7 @@ public class SampleDataSeeder implements CommandLineRunner {
     private final EventRoleRepository eventRoleRepository;
     private final EventRepository eventRepository;
     private final EventOrganizerRepository eventOrganizerRepository;
+    private final EventRegistrationRepository eventRegistrationRepository;
     private final DocumentRepository documentRepository;
     private final DocumentFileRepository documentFileRepository;
     private final NotificationRepository notificationRepository;
@@ -87,6 +91,7 @@ public class SampleDataSeeder implements CommandLineRunner {
                             EventRoleRepository eventRoleRepository,
                             EventRepository eventRepository,
                             EventOrganizerRepository eventOrganizerRepository,
+                            EventRegistrationRepository eventRegistrationRepository,
                             DocumentRepository documentRepository,
                             DocumentFileRepository documentFileRepository,
                             NotificationRepository notificationRepository,
@@ -104,6 +109,7 @@ public class SampleDataSeeder implements CommandLineRunner {
         this.eventRoleRepository = eventRoleRepository;
         this.eventRepository = eventRepository;
         this.eventOrganizerRepository = eventOrganizerRepository;
+        this.eventRegistrationRepository = eventRegistrationRepository;
         this.documentRepository = documentRepository;
         this.documentFileRepository = documentFileRepository;
         this.notificationRepository = notificationRepository;
@@ -134,11 +140,12 @@ public class SampleDataSeeder implements CommandLineRunner {
         List<EventRole> eventRoles = seedEventRoles();
         List<Event> events = seedEvents(members);
         seedEventOrganizers(events, members, eventRoles);
+        List<EventRegistration> eventRegistrations = seedEventRegistrations(events, members);
         List<Document> documents = seedDocuments(members, subjects, documentTypes);
         seedDocumentFiles(documents);
         List<Notification> notifications = seedNotifications(members);
         seedNotificationRecipients(notifications, members);
-        seedTransactions(events, members);
+        seedTransactions(events, members, eventRegistrations);
         seedSystemSettings(members);
         seedAuditLogs(members, events);
     }
@@ -414,6 +421,42 @@ public class SampleDataSeeder implements CommandLineRunner {
         eventOrganizerRepository.saveAll(organizers);
     }
 
+    private List<EventRegistration> seedEventRegistrations(List<Event> events, List<Member> members) {
+        List<EventRegistration> registrations = new ArrayList<>();
+        for (int eventIndex = 0; eventIndex < events.size(); eventIndex++) {
+            Event event = events.get(eventIndex);
+            if (event.getReqStatus() != ApprovalStatusEnum.APPROVED
+                    || event.getStatus() == EventStatusEnum.Cancelled) {
+                continue;
+            }
+
+            int registrationCount = switch (event.getStatus()) {
+                case Evaluated, Finished -> 10 + (eventIndex % 6);
+                case InProgress -> 8 + (eventIndex % 4);
+                case NotStarted -> 5 + (eventIndex % 5);
+                default -> 0;
+            };
+            LocalDateTime registrationBase = event.getStartTime() == null
+                    ? event.getEventDate().atTime(8, 0).minusDays(14)
+                    : event.getStartTime().minusDays(14);
+            for (int offset = 0; offset < registrationCount && offset < members.size(); offset++) {
+                Member member = members.get((eventIndex * 3 + offset) % members.size());
+                LocalDateTime registeredAt = registrationBase.plusHours(offset * 3L);
+                boolean attended = event.getStatus() == EventStatusEnum.Evaluated
+                        || event.getStatus() == EventStatusEnum.Finished;
+                registrations.add(EventRegistration.builder()
+                        .id(new EventRegistrationId(event.getEventId(), member.getMemberId()))
+                        .event(event)
+                        .member(member)
+                        .registeredAt(registeredAt)
+                        .attended(attended)
+                        .attendedAt(attended ? event.getEndTime().plusMinutes(10 + offset) : null)
+                        .build());
+            }
+        }
+        return eventRegistrationRepository.saveAll(registrations);
+    }
+
     private List<Document> seedDocuments(List<Member> members, List<Subject> subjects, List<DocumentType> documentTypes) {
         List<Document> documents = new ArrayList<>();
         List<ResourceFolderSeed> folders = resourceFolderSeeds();
@@ -547,20 +590,22 @@ public class SampleDataSeeder implements CommandLineRunner {
         notificationRecipientRepository.saveAll(recipients);
     }
 
-    private void seedTransactions(List<Event> events, List<Member> members) {
+    private void seedTransactions(List<Event> events, List<Member> members, List<EventRegistration> eventRegistrations) {
         List<Transaction> transactions = new ArrayList<>();
         YearMonth currentMonth = YearMonth.now();
 
-        for (int monthOffset = 5; monthOffset >= 0; monthOffset--) {
+        for (int monthOffset = 11; monthOffset >= 0; monthOffset--) {
             YearMonth dueMonth = currentMonth.minusMonths(monthOffset);
             String description = monthlyDueDescription(dueMonth);
+            LocalDateTime dueCreatedAt = dueMonth.atDay(1).atTime(8, 0);
             for (int index = 0; index < members.size(); index++) {
                 Member member = members.get(index);
                 Member creator = members.get(index % 2);
                 TransactionStatus status = pickMonthlyDueStatus(monthOffset, index);
                 Member approver = isPaidStatus(status) ? members.get((index + 1) % 2) : null;
-                int payDay = Math.min(26, 3 + ((index * 2 + monthOffset) % 24));
-                LocalDateTime transactionDate = dueMonth.atDay(payDay).atTime(8 + (index % 9), (index * 7) % 60);
+                LocalDateTime paidAt = dueCreatedAt.plusDays(Math.min(24, 2 + ((index * 2 + monthOffset) % 24)))
+                        .plusHours(index % 9)
+                        .plusMinutes((index * 7) % 60);
 
                 transactions.add(Transaction.builder()
                         .transactionId(String.format("DUE-FUND-%s-%03d", dueMonth.format(MONTH_ID_FORMAT), member.getMemberId()))
@@ -569,41 +614,53 @@ public class SampleDataSeeder implements CommandLineRunner {
                         .type(TransactionType.INCOME)
                         .amount(MONTHLY_FUND_AMOUNT)
                         .description(description)
-                        .transactionDate(transactionDate)
+                        .transactionDate(dueCreatedAt)
                         .status(status)
                         .createdBy(creator)
                         .approvedBy(approver)
-                        .createdAt(transactionDate)
-                        .updatedAt(transactionDate.plusHours(2))
-                        .approvedAt(approver == null ? null : transactionDate.plusHours(5))
+                        .createdAt(dueCreatedAt)
+                        .updatedAt(isPaidStatus(status) || status == TransactionStatus.PROCESSING ? paidAt : dueCreatedAt)
+                        .approvedAt(status == TransactionStatus.PROCESSING
+                                ? paidAt
+                                : (approver == null ? null : paidAt))
                         .build());
             }
         }
+
+        seedEventFeeTransactions(transactions, eventRegistrations);
 
         for (int index = 1; index <= events.size(); index++) {
             Event event = events.get(index - 1);
             Member owner = members.get((index + 3) % members.size());
             Member creator = members.get(index % 2);
             Member approver = members.get((index + 1) % 2);
-            LocalDateTime incomeAt = event.getEventDate().minusDays(2).atTime(9 + (index % 6), (index * 5) % 60);
+            LocalDateTime sponsorIncomeAt = event.getEventDate().minusDays(7).atTime(14 + (index % 4), (index * 11) % 60);
             LocalDateTime expenseAt = event.getEventDate().plusDays(1).atTime(10 + (index % 6), (index * 7) % 60);
+            long sponsorshipIncome = index % 3 == 0 ? 1_800_000L + (index % 5) * 450_000L : 0L;
+            long operatingExpense = 700_000L + (index % 7) * 220_000L + index * 55_000L;
+            long venueExpense = event.getEstimatedCost() == null
+                    ? 0L
+                    : Math.max(350_000L, event.getEstimatedCost().longValue() / 3);
+            TransactionStatus sponsorshipStatus = pickEventSponsorshipStatus(event);
+            TransactionStatus expenseStatus = pickEventExpenseStatus(event, index);
 
-            transactions.add(Transaction.builder()
-                    .transactionId(String.format("TRX-EVT-%03d-IN", index))
-                    .event(event)
-                    .member(owner)
-                    .counterpartyName(owner.getFullName())
-                    .type(TransactionType.INCOME)
-                    .amount(BigDecimal.valueOf(120_000L + index * 20_000L))
-                    .description("Thu phí tham gia " + event.getEventName())
-                    .transactionDate(incomeAt)
-                    .status(index % 12 == 0 ? TransactionStatus.PENDING : TransactionStatus.COMPLETED)
-                    .createdBy(creator)
-                    .approvedBy(index % 12 == 0 ? null : approver)
-                    .createdAt(incomeAt)
-                    .updatedAt(incomeAt.plusHours(2))
-                    .approvedAt(index % 12 == 0 ? null : incomeAt.plusHours(6))
-                    .build());
+            if (sponsorshipIncome > 0 && event.getReqStatus() == ApprovalStatusEnum.APPROVED) {
+                transactions.add(Transaction.builder()
+                        .transactionId(String.format("TRX-EVT-%03d-SPONSOR", index))
+                        .event(event)
+                        .counterpartyName(pickSponsorName(index))
+                        .type(TransactionType.INCOME)
+                        .amount(BigDecimal.valueOf(sponsorshipIncome))
+                        .description("Tai tro cho su kien: " + event.getEventName())
+                        .transactionDate(sponsorIncomeAt)
+                        .status(sponsorshipStatus)
+                        .createdBy(creator)
+                        .approvedBy(isPaidStatus(sponsorshipStatus) ? approver : null)
+                        .createdAt(sponsorIncomeAt)
+                        .updatedAt(sponsorIncomeAt.plusHours(2))
+                        .approvedAt(isPaidStatus(sponsorshipStatus) ? sponsorIncomeAt.plusHours(5) : null)
+                        .build());
+            }
 
             transactions.add(Transaction.builder()
                     .transactionId(String.format("TRX-EVT-%03d-OUT", index))
@@ -611,18 +668,84 @@ public class SampleDataSeeder implements CommandLineRunner {
                     .member(owner)
                     .counterpartyName(pickVendorName(index))
                     .type(TransactionType.Expense)
-                    .amount(BigDecimal.valueOf(450_000L + index * 65_000L))
+                    .amount(BigDecimal.valueOf(operatingExpense))
                     .description("Chi phí tổ chức " + event.getEventName())
                     .transactionDate(expenseAt)
-                    .status(index % 10 == 0 ? TransactionStatus.PENDING : TransactionStatus.COMPLETED)
+                    .status(expenseStatus)
                     .createdBy(creator)
-                    .approvedBy(index % 10 == 0 ? null : approver)
+                    .approvedBy(isPaidStatus(expenseStatus) ? approver : null)
                     .createdAt(expenseAt)
                     .updatedAt(expenseAt.plusHours(2))
-                    .approvedAt(index % 10 == 0 ? null : expenseAt.plusHours(6))
+                    .approvedAt(isPaidStatus(expenseStatus) ? expenseAt.plusHours(6) : null)
+                    .build());
+
+            if (venueExpense > 0 && event.getStatus() != EventStatusEnum.Cancelled) {
+                LocalDateTime venueExpenseAt = event.getEventDate().minusDays(1).atTime(16, (index * 13) % 60);
+                transactions.add(Transaction.builder()
+                        .transactionId(String.format("TRX-EVT-%03d-VENUE", index))
+                        .event(event)
+                        .counterpartyName("Doi tac dia diem va thiet bi")
+                        .type(TransactionType.Expense)
+                        .amount(BigDecimal.valueOf(venueExpense))
+                        .description("Tam ung dia diem va thiet bi: " + event.getEventName())
+                        .transactionDate(venueExpenseAt)
+                        .status(expenseStatus)
+                        .createdBy(creator)
+                        .approvedBy(isPaidStatus(expenseStatus) ? approver : null)
+                        .createdAt(venueExpenseAt)
+                        .updatedAt(venueExpenseAt.plusHours(2))
+                        .approvedAt(isPaidStatus(expenseStatus) ? venueExpenseAt.plusHours(5) : null)
+                        .build());
+            }
+        }
+        seedMonthlyOperatingTransactions(transactions, members, currentMonth);
+        transactionRepository.saveAll(transactions);
+    }
+
+    private void seedMonthlyOperatingTransactions(
+            List<Transaction> transactions,
+            List<Member> members,
+            YearMonth currentMonth) {
+        for (int monthOffset = 11; monthOffset >= 0; monthOffset--) {
+            YearMonth month = currentMonth.minusMonths(monthOffset);
+            int monthValue = month.getMonthValue();
+            Member creator = members.get(monthValue % 2);
+            Member approver = members.get((monthValue + 1) % 2);
+            long partnerIncome = 900_000L + (monthValue % 4) * 250_000L + (12 - monthOffset) * 80_000L;
+            long fixedExpense = 650_000L + (monthValue % 5) * 140_000L;
+            LocalDateTime incomeAt = month.atDay(Math.min(24, 12 + (monthValue % 8))).atTime(9, monthValue * 3 % 60);
+            LocalDateTime expenseAt = month.atDay(Math.min(26, 18 + (monthValue % 7))).atTime(15, monthValue * 5 % 60);
+
+            transactions.add(Transaction.builder()
+                    .transactionId(String.format("TRX-MONTH-%s-PARTNER", month.format(MONTH_ID_FORMAT)))
+                    .counterpartyName("Doi tac hoc thuat thang " + monthValue)
+                    .type(TransactionType.INCOME)
+                    .amount(BigDecimal.valueOf(partnerIncome))
+                    .description(String.format("Dong gop doi tac hoc thuat thang %02d/%d", monthValue, month.getYear()))
+                    .transactionDate(incomeAt)
+                    .status(TransactionStatus.COMPLETED)
+                    .createdBy(creator)
+                    .approvedBy(approver)
+                    .createdAt(incomeAt)
+                    .updatedAt(incomeAt.plusHours(2))
+                    .approvedAt(incomeAt.plusHours(6))
+                    .build());
+
+            transactions.add(Transaction.builder()
+                    .transactionId(String.format("TRX-MONTH-%s-OPS", month.format(MONTH_ID_FORMAT)))
+                    .counterpartyName("Van phong pham va nen tang CLB")
+                    .type(TransactionType.Expense)
+                    .amount(BigDecimal.valueOf(fixedExpense))
+                    .description(String.format("Chi van hanh CLB thang %02d/%d", monthValue, month.getYear()))
+                    .transactionDate(expenseAt)
+                    .status(TransactionStatus.COMPLETED)
+                    .createdBy(creator)
+                    .approvedBy(approver)
+                    .createdAt(expenseAt)
+                    .updatedAt(expenseAt.plusHours(2))
+                    .approvedAt(expenseAt.plusHours(6))
                     .build());
         }
-        transactionRepository.saveAll(transactions);
     }
 
     private void seedSystemSettings(List<Member> members) {
@@ -696,14 +819,58 @@ public class SampleDataSeeder implements CommandLineRunner {
         };
     }
 
-    private TransactionStatus pickMonthlyDueStatus(int monthOffset, int memberIndex) {
-        if (monthOffset == 0 && memberIndex % 7 == 0) {
+    private TransactionStatus pickEventIncomeStatus(Event event) {
+        if (event.getReqStatus() != ApprovalStatusEnum.APPROVED) {
             return TransactionStatus.PENDING;
         }
-        if (monthOffset == 0 && memberIndex % 11 == 0) {
-            return TransactionStatus.REJECTED;
+        if (event.getStatus() == EventStatusEnum.Cancelled) {
+            return TransactionStatus.REFUNDED;
         }
-        return memberIndex % 5 == 0 ? TransactionStatus.APPROVED : TransactionStatus.COMPLETED;
+        if (event.getStatus() == EventStatusEnum.NotStarted) {
+            return TransactionStatus.PENDING;
+        }
+        return TransactionStatus.COMPLETED;
+    }
+
+    private TransactionStatus pickEventSponsorshipStatus(Event event) {
+        if (event.getStatus() == EventStatusEnum.Cancelled) {
+            return TransactionStatus.REFUNDED;
+        }
+        if (event.getStatus() == EventStatusEnum.NotStarted) {
+            return TransactionStatus.PENDING;
+        }
+        return TransactionStatus.COMPLETED;
+    }
+
+    private TransactionStatus pickEventExpenseStatus(Event event, int index) {
+        if (event.getReqStatus() != ApprovalStatusEnum.APPROVED) {
+            return TransactionStatus.PENDING;
+        }
+        if (event.getStatus() == EventStatusEnum.Cancelled) {
+            return TransactionStatus.CANCELLED;
+        }
+        if (event.getStatus() == EventStatusEnum.NotStarted) {
+            return TransactionStatus.PENDING;
+        }
+        if (event.getStatus() == EventStatusEnum.InProgress) {
+            return TransactionStatus.APPROVED;
+        }
+        return index % 9 == 0 ? TransactionStatus.APPROVED : TransactionStatus.COMPLETED;
+    }
+
+    private TransactionStatus pickMonthlyDueStatus(int monthOffset, int memberIndex) {
+        if (monthOffset == 0) {
+            if (memberIndex < 7) {
+                return TransactionStatus.PROCESSING;
+            }
+            if (memberIndex < 10) {
+                return TransactionStatus.PENDING;
+            }
+            if (memberIndex < 12) {
+                return TransactionStatus.REJECTED;
+            }
+        }
+        return TransactionStatus.COMPLETED;
     }
 
     private boolean isPaidStatus(TransactionStatus status) {
@@ -721,6 +888,15 @@ public class SampleDataSeeder implements CommandLineRunner {
             case 2 -> "Dịch vụ in ấn Hồng Phát";
             case 3 -> "Trung tâm thiết bị sự kiện Sài Gòn";
             default -> "Quán nước Thanh Xuân";
+        };
+    }
+
+    private String pickSponsorName(int index) {
+        return switch (index % 4) {
+            case 0 -> "FPT Software Academy";
+            case 1 -> "VNG Campus";
+            case 2 -> "TMA Solutions";
+            default -> "Bosch Global Software Technologies";
         };
     }
 
