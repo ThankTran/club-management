@@ -315,31 +315,72 @@ public class SampleDataSeeder implements CommandLineRunner {
 
     private List<Event> seedEvents(List<Member> members) {
         List<Event> events = new ArrayList<>();
-        YearMonth currentMonth = YearMonth.now();
-        for (int index = 1; index <= 36; index++) {
-            Member evaluator = members.get(index % 2);
-            YearMonth eventMonth = currentMonth.minusMonths(5L - ((index - 1) % 6));
-            int eventDay = Math.min(eventMonth.lengthOfMonth(), 4 + (((index - 1) / 6) * 4) + (index % 3));
-            LocalDate eventDate = eventMonth.atDay(eventDay);
+        LocalDate today = LocalDate.now();
+        List<EventSeed> seeds = List.of(
+                new EventSeed("Bootcamp Java Spring Boot cho thành viên mới", "Phòng lab A101", -120, 8, 11, 2_800_000L, 60, "Ban học thuật", "TECH", EventStatusEnum.Evaluated, ApprovalStatusEnum.APPROVED, "Ôn tập Java, REST API và quy trình xây dựng backend cho thành viên mới."),
+                new EventSeed("Seminar Phương pháp nghiên cứu khoa học sinh viên", "Hội trường B", -112, 9, 11, 3_200_000L, 120, "Ban học thuật", "ACAD", EventStatusEnum.Finished, ApprovalStatusEnum.APPROVED, "Chia sẻ cách chọn đề tài, viết đề cương và trình bày kết quả nghiên cứu."),
+                new EventSeed("Workshop Git và GitHub Flow", "Phòng lab B202", -104, 13, 16, 2_400_000L, 70, "Ban kỹ thuật", "TECH", EventStatusEnum.Evaluated, ApprovalStatusEnum.APPROVED, "Thực hành quản lý source code, pull request và xử lý conflict trong nhóm."),
+                new EventSeed("Talkshow Định hướng AI Engineer", "Hội trường A", -96, 18, 20, 4_500_000L, 180, "Ban sự kiện", "ACAD", EventStatusEnum.Finished, ApprovalStatusEnum.APPROVED, "Giao lưu với cựu sinh viên về lộ trình học machine learning và AI engineering."),
+                new EventSeed("Ngày hội kết nối thành viên học kỳ mới", "Sân trường khu C", -88, 7, 10, 5_000_000L, 250, "Ban sự kiện", "SOCIAL", EventStatusEnum.Evaluated, ApprovalStatusEnum.APPROVED, "Hoạt động làm quen, chia đội và giới thiệu các nhóm học tập của CLB."),
+                new EventSeed("Lớp ôn thi Chứng chỉ MOS Excel", "Phòng máy C101", -80, 8, 11, 3_600_000L, 45, "Ban chứng chỉ", "CERT", EventStatusEnum.Finished, ApprovalStatusEnum.APPROVED, "Luyện tập các dạng bài MOS Excel và kỹ năng thao tác bảng tính."),
+                new EventSeed("Mini Hackathon Ứng dụng quản lý học tập", "Innovation Lab", -72, 8, 18, 8_500_000L, 100, "Ban kỹ thuật", "TECH", EventStatusEnum.Evaluated, ApprovalStatusEnum.APPROVED, "Cuộc thi xây dựng prototype ứng dụng phục vụ học tập trong 10 giờ."),
+                new EventSeed("Chuyên đề Viết báo cáo và slide học thuật", "Phòng D301", -64, 14, 16, 2_200_000L, 90, "Ban học thuật", "ACAD", EventStatusEnum.Finished, ApprovalStatusEnum.APPROVED, "Hướng dẫn cấu trúc báo cáo, thiết kế slide và cách bảo vệ kết quả."),
+                new EventSeed("Chương trình mentoring đồ án môn học", "Phòng sinh hoạt CLB", -56, 18, 20, 1_800_000L, 50, "Ban học thuật", "OTHER", EventStatusEnum.Evaluated, ApprovalStatusEnum.APPROVED, "Kết nối thành viên năm trên hỗ trợ nhóm đang làm đồ án môn học."),
+                new EventSeed("Workshop UI UX cho sản phẩm sinh viên", "Phòng C204", -48, 13, 16, 3_000_000L, 65, "Ban thiết kế", "TECH", EventStatusEnum.Finished, ApprovalStatusEnum.APPROVED, "Thực hành wireframe, user flow và prototype bằng Figma."),
+                new EventSeed("Lớp ôn thi TOEIC đầu ra", "Phòng B105", -40, 18, 20, 3_400_000L, 80, "Ban chứng chỉ", "CERT", EventStatusEnum.Cancelled, ApprovalStatusEnum.APPROVED, "Lớp ôn tập TOEIC theo dạng đề đọc hiểu và nghe hiểu cho thành viên."),
+                new EventSeed("Sinh hoạt chuyên đề Cloud Computing", "Phòng D105", -32, 9, 11, 2_700_000L, 85, "Ban kỹ thuật", "TECH", EventStatusEnum.Evaluated, ApprovalStatusEnum.APPROVED, "Giới thiệu cloud, container và cách triển khai ứng dụng cơ bản."),
+                new EventSeed("Bàn tròn Chia sẻ kinh nghiệm thực tập", "Phòng sinh hoạt CLB", -24, 18, 20, 2_000_000L, 70, "Ban sự kiện", "SOCIAL", EventStatusEnum.Finished, ApprovalStatusEnum.APPROVED, "Thành viên khóa trên chia sẻ cách tìm thực tập, viết CV và phỏng vấn."),
+                new EventSeed("Workshop SQL và Thiết kế cơ sở dữ liệu", "Phòng lab A102", -16, 8, 11, 2_900_000L, 75, "Ban học thuật", "TECH", EventStatusEnum.Evaluated, ApprovalStatusEnum.APPROVED, "Thực hành mô hình ERD, chuẩn hóa và viết truy vấn SQL."),
+                new EventSeed("Hội thảo An toàn thông tin cơ bản", "Hội trường B", -8, 14, 17, 4_100_000L, 140, "Ban kỹ thuật", "ACAD", EventStatusEnum.Finished, ApprovalStatusEnum.APPROVED, "Giới thiệu các rủi ro bảo mật phổ biến và thực hành phòng tránh."),
+                new EventSeed("Workshop React và Component Design", "Phòng lab B203", 0, 8, 11, 3_200_000L, 70, "Ban kỹ thuật", "TECH", EventStatusEnum.InProgress, ApprovalStatusEnum.APPROVED, "Xây dựng giao diện React theo component, state và props."),
+                new EventSeed("Buổi review đề cương nghiên cứu khoa học", "Phòng sinh hoạt CLB", 0, 14, 16, 1_500_000L, 45, "Ban học thuật", "ACAD", EventStatusEnum.InProgress, ApprovalStatusEnum.APPROVED, "Góp ý đề cương nghiên cứu trước khi nộp cho khoa."),
+                new EventSeed("Training Ban tổ chức sự kiện học thuật", "Phòng C201", 6, 18, 20, 1_900_000L, 55, "Ban sự kiện", "OTHER", EventStatusEnum.NotStarted, ApprovalStatusEnum.PENDING, "Tập huấn lập kế hoạch, điều phối nhân sự và quản lý rủi ro sự kiện."),
+                new EventSeed("Seminar Data Analyst Roadmap", "Hội trường A", 12, 9, 11, 4_000_000L, 160, "Ban học thuật", "ACAD", EventStatusEnum.NotStarted, ApprovalStatusEnum.APPROVED, "Giới thiệu lộ trình học Excel, SQL, BI và Python cho data analyst."),
+                new EventSeed("Lớp ôn thi Chứng chỉ FE Developer", "Phòng lab C202", 18, 13, 16, 4_600_000L, 50, "Ban chứng chỉ", "CERT", EventStatusEnum.NotStarted, ApprovalStatusEnum.APPROVED, "Ôn tập HTML, CSS, JavaScript và React cho chứng chỉ frontend."),
+                new EventSeed("Cuộc thi Thuật toán hằng tháng", "Phòng máy A201", 24, 8, 11, 3_700_000L, 90, "Ban học thuật", "TECH", EventStatusEnum.NotStarted, ApprovalStatusEnum.APPROVED, "Thi lập trình giải thuật theo đội và công bố bảng xếp hạng nội bộ."),
+                new EventSeed("Talkshow Kỹ năng học nhóm hiệu quả", "Phòng D302", 30, 18, 20, 2_100_000L, 100, "Ban sự kiện", "SOCIAL", EventStatusEnum.NotStarted, ApprovalStatusEnum.REQUESTED_CHANGES, "Chia sẻ cách phân công, theo dõi tiến độ và phản hồi trong nhóm học tập."),
+                new EventSeed("Workshop Python cho phân tích dữ liệu", "Phòng lab C201", 36, 13, 16, 3_900_000L, 65, "Ban kỹ thuật", "TECH", EventStatusEnum.NotStarted, ApprovalStatusEnum.APPROVED, "Thực hành pandas, trực quan hóa dữ liệu và xử lý tập dữ liệu nhỏ."),
+                new EventSeed("Ngày hội tài liệu và học liệu mở", "Thư viện trường", 42, 8, 10, 2_300_000L, 120, "Ban học thuật", "OTHER", EventStatusEnum.NotStarted, ApprovalStatusEnum.APPROVED, "Giới thiệu kho tài liệu, quy trình đóng góp và chuẩn hóa học liệu."),
+                new EventSeed("Lớp ôn thi IELTS Foundation", "Phòng B204", 48, 18, 20, 4_200_000L, 45, "Ban chứng chỉ", "CERT", EventStatusEnum.NotStarted, ApprovalStatusEnum.PENDING, "Lớp nền tảng IELTS cho thành viên cần chuẩn bị chứng chỉ ngoại ngữ."),
+                new EventSeed("Hackathon Giải pháp số cho CLB", "Innovation Lab", 54, 8, 18, 9_800_000L, 110, "Ban kỹ thuật", "TECH", EventStatusEnum.NotStarted, ApprovalStatusEnum.APPROVED, "Phát triển sản phẩm số hỗ trợ quản lý thành viên, tài liệu và sự kiện."),
+                new EventSeed("Chuyên đề Machine Learning ứng dụng", "Hội trường B", 60, 14, 17, 5_200_000L, 150, "Ban học thuật", "ACAD", EventStatusEnum.NotStarted, ApprovalStatusEnum.APPROVED, "Trình bày quy trình xây dựng mô hình học máy và đánh giá kết quả."),
+                new EventSeed("Gala tổng kết hoạt động học thuật", "Sân khấu hội trường A", 66, 18, 21, 7_500_000L, 220, "Ban sự kiện", "SOCIAL", EventStatusEnum.NotStarted, ApprovalStatusEnum.APPROVED, "Tổng kết các hoạt động học thuật, vinh danh nhóm học tập tích cực."),
+                new EventSeed("Workshop DevOps và CI CD cơ bản", "Phòng lab B201", 72, 8, 11, 3_800_000L, 70, "Ban kỹ thuật", "TECH", EventStatusEnum.NotStarted, ApprovalStatusEnum.REJECTED, "Giới thiệu pipeline, kiểm thử tự động và triển khai ứng dụng mẫu."),
+                new EventSeed("Diễn đàn Sinh viên nghiên cứu và khởi nghiệp", "Hội trường lớn", 78, 9, 12, 6_800_000L, 260, "Ban học thuật", "ACAD", EventStatusEnum.NotStarted, ApprovalStatusEnum.APPROVED, "Kết nối nhóm nghiên cứu, mentor và các ý tưởng sản phẩm từ đồ án sinh viên."));
+
+        for (int index = 0; index < seeds.size(); index++) {
+            EventSeed seed = seeds.get(index);
+            int eventNumber = index + 1;
+            Member evaluator = members.get(eventNumber % 2);
+            LocalDate eventDate = today.plusDays(seed.dayOffset());
+            LocalDateTime createdAt = seed.dayOffset() <= 0
+                    ? eventDate.minusDays(18).atTime(9 + (eventNumber % 4), (eventNumber * 7) % 60)
+                    : today.minusDays(20L - (eventNumber % 10)).atTime(9 + (eventNumber % 4), (eventNumber * 7) % 60);
+            LocalDateTime updatedAt = seed.status() == EventStatusEnum.Cancelled
+                    ? eventDate.minusDays(5).atTime(16, 30)
+                    : seed.dayOffset() <= 0
+                            ? eventDate.minusDays(1).atTime(15, (eventNumber * 5) % 60)
+                            : today.minusDays(eventNumber % 5).atTime(15, (eventNumber * 5) % 60);
+            boolean hasEvaluation = seed.status() == EventStatusEnum.Evaluated || seed.status() == EventStatusEnum.Finished;
             events.add(Event.builder()
-                    .eventId(String.format("EVT%03d", index))
-                    .eventName("Sự kiện học thuật số " + index)
-                    .location(index % 2 == 0 ? "Hội trường A" : "Phòng sinh hoạt CLB")
+                    .eventId(String.format("EVT%03d", eventNumber))
+                    .eventName(seed.name())
+                    .location(seed.location())
                     .eventDate(eventDate)
-                    .startTime(eventDate.atTime(8 + (index % 3), 0))
-                    .endTime(eventDate.atTime(11 + (index % 3), 30))
-                    .estimatedCost(BigDecimal.valueOf(2_000_000L + index * 150_000L))
-                    .capacity(50 + index * 5)
-                    .organizer(index % 2 == 0 ? "Ban học thuật" : "Ban sự kiện")
-                    .tag(pickEventTag(index))
-                    .status(pickEventStatus(index))
-                    .reqStatus(index % 4 == 0 ? ApprovalStatusEnum.PENDING : ApprovalStatusEnum.APPROVED)
-                    .description("Hoạt động chuyên môn, workshop và chia sẻ học tập đợt " + index)
-                    .evaluatedBy(evaluator)
-                    .evaluationDate(eventDate.atTime(17, 0))
-                    .evaluationContent("Đánh giá nội bộ cho sự kiện " + index)
-                    .createdAt(eventDate.minusDays(7).atTime(9, 0))
-                    .updatedAt(eventDate.minusDays(1).atTime(10, 0))
+                    .startTime(eventDate.atTime(seed.startHour(), 0))
+                    .endTime(eventDate.atTime(seed.endHour(), 0))
+                    .estimatedCost(BigDecimal.valueOf(seed.estimatedCost()))
+                    .capacity(seed.capacity())
+                    .tag(seed.tag())
+                    .status(seed.status())
+                    .reqStatus(seed.reqStatus())
+                    .organizer(seed.organizer())
+                    .description(seed.description())
+                    .evaluatedBy(hasEvaluation ? evaluator : null)
+                    .evaluationDate(hasEvaluation ? eventDate.plusDays(1).atTime(17, 0) : null)
+                    .evaluationContent(hasEvaluation ? "Tổng kết: " + seed.name() + " đạt mục tiêu chuyên môn và ghi nhận phản hồi để cải tiến lần sau." : null)
+                    .createdAt(createdAt)
+                    .updatedAt(updatedAt)
                     .build());
         }
         return eventRepository.saveAll(events);
@@ -363,30 +404,39 @@ public class SampleDataSeeder implements CommandLineRunner {
 
     private List<Document> seedDocuments(List<Member> members, List<Subject> subjects, List<DocumentType> documentTypes) {
         List<Document> documents = new ArrayList<>();
-        YearMonth currentMonth = YearMonth.now();
-        for (int index = 1; index <= 30; index++) {
-            Member proposer = members.get(index % members.size());
-            Member approver = members.get(index % 2);
-            YearMonth documentMonth = currentMonth.minusMonths(5L - ((index - 1) % 6));
-            int documentDay = Math.min(documentMonth.lengthOfMonth(), 3 + (((index - 1) / 6) * 4));
-            LocalDateTime createdAt = documentMonth.atDay(documentDay).atTime(10 + (index % 6), (index * 9) % 60);
-            ApprovalStatusEnum approvalStatus = pickApprovalStatus(index);
+        List<ResourceFolderSeed> folders = resourceFolderSeeds();
+        List<String> titlePrefixes = List.of(
+                "Giáo trình tổng hợp",
+                "Slide bài giảng",
+                "Bộ bài tập thực hành",
+                "Đề cương ôn tập cuối kỳ",
+                "Ngân hàng câu hỏi trắc nghiệm");
+
+        int index = 1;
+        LocalDateTime baseTime = LocalDateTime.now().minusDays(120);
+        for (ResourceFolderSeed folder : folders) {
+            for (int item = 0; item < titlePrefixes.size(); item++) {
+                Member proposer = members.get(index % members.size());
+                Member approver = members.get((index + 1) % 2);
+                LocalDateTime createdAt = baseTime.plusDays(index).withHour(8 + (index % 8)).withMinute((index * 7) % 60);
             documents.add(Document.builder()
-                    .documentName("Tài liệu học tập số " + index)
-                    .type(documentTypes.get((index - 1) % documentTypes.size()))
-                    .subject(subjects.get((index - 1) % subjects.size()))
-                    .status(pickDocumentStatus(index))
-                    .reqStatus(approvalStatus)
-                    .lookupFolderId(approvalStatus == ApprovalStatusEnum.APPROVED ? pickLookupFolderId(index) : null)
-                    .version("1." + ((index - 1) % 4))
-                    .source("https://drive.google.com/sample-doc-" + index)
-                    .note("Tài liệu mẫu phục vụ kiểm thử hệ thống số " + index)
+                    .documentName(titlePrefixes.get(item) + " - " + folder.label())
+                    .type(documentTypes.get(item % documentTypes.size()))
+                    .subject(findSubjectByName(subjects, folder.subjectName()))
+                    .status(DocumentStatus.WORKING)
+                    .reqStatus(ApprovalStatusEnum.APPROVED)
+                    .lookupFolderId(folder.folderId())
+                    .version("2." + item)
+                    .source("https://drive.google.com/drive/folders/seed-" + folder.folderId() + "/document-" + (item + 1))
+                    .note("Tài liệu học tập đã duyệt cho thư mục " + folder.label() + ".")
                     .proposedBy(proposer)
-                    .approvedBy(index % 3 == 0 ? null : approver)
-                    .approvedAt(index % 3 == 0 ? null : createdAt.plusHours(2))
+                    .approvedBy(approver)
+                    .approvedAt(createdAt.plusHours(4))
                     .createdAt(createdAt)
-                    .updatedAt(createdAt.plusHours(3))
+                    .updatedAt(createdAt.plusDays(2))
                     .build());
+                index++;
+            }
         }
         return documentRepository.saveAll(documents);
     }
@@ -396,19 +446,20 @@ public class SampleDataSeeder implements CommandLineRunner {
                 "application/pdf",
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
                 "application/vnd.ms-powerpoint",
-                "application/zip",
-                "image/png");
+                "application/pdf",
+                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet");
 
         List<DocumentFile> files = new ArrayList<>();
         for (int index = 0; index < documents.size(); index++) {
+            Document document = documents.get(index);
             String extension = extensionFromMimeType(mimeTypes.get(index % mimeTypes.size()));
             files.add(DocumentFile.builder()
-                    .document(documents.get(index))
-                    .fileUrl("https://drive.google.com/sample-file-" + (index + 1))
-                    .fileName("tai-lieu-hoc-tap-" + (index + 1) + "." + extension)
-                    .fileSize(500_000L + (index * 25_000L))
+                    .document(document)
+                    .fileUrl("https://drive.google.com/file/d/seed-document-" + document.getDocumentId() + "/view")
+                    .fileName("tai-lieu-" + document.getDocumentId() + "." + extension)
+                    .fileSize(650_000L + (index * 18_000L))
                     .mimeType(mimeTypes.get(index % mimeTypes.size()))
-                    .uploadedAt(LocalDateTime.now().minusDays(20 - index))
+                    .uploadedAt(LocalDateTime.now().minusDays(Math.max(1, documents.size() - index)))
                     .build());
         }
         documentFileRepository.saveAll(files);
@@ -574,42 +625,6 @@ public class SampleDataSeeder implements CommandLineRunner {
         };
     }
 
-    private DocumentStatus pickDocumentStatus(int index) {
-        return switch (index % 3) {
-            case 0 -> DocumentStatus.WORKING;
-            case 1 -> DocumentStatus.FIXING;
-            default -> DocumentStatus.CANCELLED;
-        };
-    }
-
-    private ApprovalStatusEnum pickApprovalStatus(int index) {
-        return switch (index % 4) {
-            case 0 -> ApprovalStatusEnum.PENDING;
-            case 1 -> ApprovalStatusEnum.APPROVED;
-            case 2 -> ApprovalStatusEnum.REJECTED;
-            default -> ApprovalStatusEnum.REQUESTED_CHANGES;
-        };
-    }
-
-    private String pickLookupFolderId(int index) {
-        List<String> folderIds = List.of(
-                "cau-truc-roi-rac",
-                "xac-suat-thong-ke",
-                "nhap-mon-lap-trinh",
-                "triet-hoc-mac-lenin",
-                "ky-thuat-phan-mem",
-                "truyen-thong-da-phuong-tien",
-                "he-thong-thong-tin-chuyen-nganh",
-                "thuong-mai-dien-tu",
-                "tri-tue-nhan-tao",
-                "khoa-hoc-du-lieu",
-                "mang-may-tinh-truyen-thong-du-lieu",
-                "an-toan-thong-tin",
-                "ky-thuat-may-tinh-chuyen-nganh",
-                "thiet-ke-vi-mach");
-        return folderIds.get((index - 1) % folderIds.size());
-    }
-
     private TransactionStatus pickTransactionStatus(int index) {
         return switch (index % 5) {
             case 0 -> TransactionStatus.PENDING;
@@ -653,10 +668,48 @@ public class SampleDataSeeder implements CommandLineRunner {
             case "application/pdf" -> "pdf";
             case "application/vnd.openxmlformats-officedocument.wordprocessingml.document" -> "docx";
             case "application/vnd.ms-powerpoint" -> "ppt";
+            case "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" -> "xlsx";
             case "application/zip" -> "zip";
             case "image/png" -> "png";
             default -> "dat";
         };
+    }
+
+    private Subject findSubjectByName(List<Subject> subjects, String subjectName) {
+        return subjects.stream()
+                .filter(subject -> subject.getSubjectName().equalsIgnoreCase(subjectName))
+                .findFirst()
+                .orElse(subjects.get(Math.floorMod(subjectName.hashCode(), subjects.size())));
+    }
+
+    private List<ResourceFolderSeed> resourceFolderSeeds() {
+        return List.of(
+                new ResourceFolderSeed("tu-tuong-ho-chi-minh", "Tư tưởng Hồ Chí Minh", "Triết học Mác - Lênin"),
+                new ResourceFolderSeed("triet-hoc-mac-lenin", "Triết học Mác - Lênin", "Triết học Mác - Lênin"),
+                new ResourceFolderSeed("kinh-te-chinh-tri", "Kinh tế Chính trị Mác - Lênin", "Triết học Mác - Lênin"),
+                new ResourceFolderSeed("chu-nghia-xa-hoi-khoa-hoc", "Chủ nghĩa xã hội khoa học", "Triết học Mác - Lênin"),
+                new ResourceFolderSeed("lich-su-dang", "Lịch sử Đảng Cộng sản Việt Nam", "Triết học Mác - Lênin"),
+                new ResourceFolderSeed("phap-luat-dai-cuong", "Pháp luật đại cương", "Triết học Mác - Lênin"),
+                new ResourceFolderSeed("giai-tich", "Giải tích", "Xác suất thống kê"),
+                new ResourceFolderSeed("dai-so-tuyen-tinh", "Đại số tuyến tính", "Xác suất thống kê"),
+                new ResourceFolderSeed("cau-truc-roi-rac", "Cấu trúc rời rạc", "Cấu trúc rời rạc"),
+                new ResourceFolderSeed("xac-suat-thong-ke", "Xác suất thống kê", "Xác suất thống kê"),
+                new ResourceFolderSeed("nhap-mon-lap-trinh", "Nhập môn lập trình", "Nhập môn lập trình"),
+                new ResourceFolderSeed("anh-van-1", "Anh văn 1", "Nhập môn lập trình"),
+                new ResourceFolderSeed("anh-van-2", "Anh văn 2", "Nhập môn lập trình"),
+                new ResourceFolderSeed("anh-van-3", "Anh văn 3", "Nhập môn lập trình"),
+                new ResourceFolderSeed("ky-thuat-phan-mem", "Kỹ thuật phần mềm", "Kiến trúc phần mềm"),
+                new ResourceFolderSeed("truyen-thong-da-phuong-tien", "Truyền thông đa phương tiện", "Công nghệ phần mềm nâng cao"),
+                new ResourceFolderSeed("he-thong-thong-tin-chuyen-nganh", "Hệ thống thông tin", "Phân tích thiết kế hệ thống"),
+                new ResourceFolderSeed("thuong-mai-dien-tu", "Thương mại điện tử", "Cơ sở dữ liệu"),
+                new ResourceFolderSeed("khoa-hoc-may-tinh-chuyen-nganh", "Khoa học máy tính", "Trí tuệ nhân tạo"),
+                new ResourceFolderSeed("tri-tue-nhan-tao", "Trí tuệ nhân tạo", "Trí tuệ nhân tạo"),
+                new ResourceFolderSeed("cong-nghe-thong-tin", "Công nghệ thông tin", "Công nghệ phần mềm nâng cao"),
+                new ResourceFolderSeed("khoa-hoc-du-lieu", "Khoa học dữ liệu", "Trí tuệ nhân tạo"),
+                new ResourceFolderSeed("an-toan-thong-tin", "An toàn thông tin", "An toàn thông tin"),
+                new ResourceFolderSeed("mang-may-tinh-truyen-thong-du-lieu", "Mạng máy tính và truyền thông dữ liệu", "Mạng máy tính"),
+                new ResourceFolderSeed("ky-thuat-may-tinh-chuyen-nganh", "Kỹ thuật máy tính", "Mạng máy tính"),
+                new ResourceFolderSeed("thiet-ke-vi-mach", "Thiết kế vi mạch", "Kiến trúc phần mềm"));
     }
 
     private record MemberSeed(
@@ -668,5 +721,26 @@ public class SampleDataSeeder implements CommandLineRunner {
             GenderEnum gender,
             LocalDate dateOfBirth,
             Role role) {
+    }
+
+    private record EventSeed(
+            String name,
+            String location,
+            int dayOffset,
+            int startHour,
+            int endHour,
+            long estimatedCost,
+            int capacity,
+            String organizer,
+            String tag,
+            EventStatusEnum status,
+            ApprovalStatusEnum reqStatus,
+            String description) {
+    }
+
+    private record ResourceFolderSeed(
+            String folderId,
+            String label,
+            String subjectName) {
     }
 }
