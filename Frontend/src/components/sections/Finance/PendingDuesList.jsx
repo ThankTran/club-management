@@ -3,6 +3,16 @@ import styles from './PendingDuesList.module.css';
 const fmtMoney = (value) =>
   `${Number(value || 0).toLocaleString('vi-VN')} đ`;
 
+const STATUS_META = {
+  PENDING: { label: 'Chưa đóng', className: 'statusPending' },
+  PROCESSING: { label: 'Chờ xác nhận', className: 'statusProcessing' },
+  REJECTED: { label: 'Bị từ chối', className: 'statusRejected' },
+  FAILED: { label: 'Bị từ chối', className: 'statusRejected' },
+};
+
+const getStatusMeta = (status) =>
+  STATUS_META[String(status || '').toUpperCase()] || STATUS_META.PENDING;
+
 export default function PendingDuesList({
   members = [],
   loading = false,
@@ -17,10 +27,10 @@ export default function PendingDuesList({
       <div className={styles.header}>
         <div>
           <h3 className={styles.title}>
-            Thành viên chưa đóng quỹ
+            Thành viên chưa hoàn thành quỹ
           </h3>
           <p className={styles.subtitle}>
-            Danh sách chưa hoàn thành quỹ tháng hiện tại
+            Bao gồm chưa đóng, chờ xác nhận và bị từ chối
           </p>
         </div>
 
@@ -38,36 +48,47 @@ export default function PendingDuesList({
               <th>Thành viên</th>
               <th>Vai trò</th>
               <th>Kỳ quỹ</th>
+              <th>Trạng thái</th>
               <th>Số tiền</th>
             </tr>
           </thead>
 
           <tbody>
-            {members.map((member) => (
-              <tr key={member.transactionId || member.id}>
-                <td>
-                  <span className={styles.idBadge}>
-                    {member.id}
-                  </span>
-                </td>
+            {members.map((member) => {
+              const statusMeta = getStatusMeta(member.status);
 
-                <td className={styles.name}>
-                  {member.name}
-                </td>
+              return (
+                <tr key={member.transactionId || member.id}>
+                  <td>
+                    <span className={styles.idBadge}>
+                      {member.id}
+                    </span>
+                  </td>
 
-                <td>{member.role}</td>
+                  <td className={styles.name}>
+                    {member.name}
+                  </td>
 
-                <td>
-                  <span className={styles.monthBadge}>
-                    {member.month}
-                  </span>
-                </td>
+                  <td>{member.role}</td>
 
-                <td className={styles.amount}>
-                  {fmtMoney(member.amount)}
-                </td>
-              </tr>
-            ))}
+                  <td>
+                    <span className={styles.monthBadge}>
+                      {member.month}
+                    </span>
+                  </td>
+
+                  <td>
+                    <span className={`${styles.statusBadge} ${styles[statusMeta.className]}`}>
+                      {statusMeta.label}
+                    </span>
+                  </td>
+
+                  <td className={styles.amount}>
+                    {fmtMoney(member.amount)}
+                  </td>
+                </tr>
+              );
+            })}
           </tbody>
         </table>
 
@@ -79,7 +100,7 @@ export default function PendingDuesList({
 
         {loading && (
           <div className={styles.empty}>
-            Đang tải danh sách chưa đóng quỹ...
+            Đang tải danh sách chưa hoàn thành quỹ...
           </div>
         )}
       </div>

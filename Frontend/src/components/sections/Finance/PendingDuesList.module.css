@@ -67,7 +67,7 @@
   width: 100%;
   border-collapse: collapse;
   font-size: 13.5px;
-  min-width: 560px;
+  min-width: 680px;
 }
 
 .table thead tr {
@@ -153,6 +153,30 @@
   color: #a16207;
   font-size: 11px;
   font-weight: 700;
+}
+
+.statusBadge {
+  display: inline-flex;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.statusPending {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.statusProcessing {
+  background: #dbeafe;
+  color: #1d4ed8;
+}
+
+.statusRejected {
+  background: #fee2e2;
+  color: #b91c1c;
 }
 
 .amount {
