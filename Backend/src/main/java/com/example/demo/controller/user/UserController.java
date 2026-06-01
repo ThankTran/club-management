@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.PatchMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -108,5 +109,20 @@ public class UserController {
             return ResponseEntity.status(HttpStatus.FORBIDDEN).body("Ban khong co quyen xem phien dang nhap nay");
         }
         return ResponseEntity.ok(loginSessionService.getSessionsByUser(id));
+    }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteUser(
+            @PathVariable Long id,
+            @RequestAttribute(value = AccessControlInterceptor.CURRENT_USER_ATTRIBUTE, required = false) UserResponse currentUser) {
+        if (currentUser != null && id != null && id.equals(currentUser.getUserId())) {
+            return ResponseEntity.badRequest().body("Không thể xóa tài khoản đang đăng nhập.");
+        }
+        try {
+            userService.deleteUser(id, currentUser == null ? null : currentUser.getUserId());
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
     }
 }

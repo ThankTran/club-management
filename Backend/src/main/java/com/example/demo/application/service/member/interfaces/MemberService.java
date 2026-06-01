@@ -25,6 +25,8 @@ public interface MemberService {
 
     MemberResponse updateMember(Long memberId, JoinClubRequest request);
 
+    void deleteMember(Long memberId);
+
     CompletableFuture<Page<MemberResponse>> searchMembersAsync(MemberSearchRequest request, Pageable pageable);
 
     CompletableFuture<List<MemberResponse>> getAllMembersAsync();

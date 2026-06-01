@@ -212,9 +212,7 @@ public class TransactionServiceImpl implements com.example.demo.application.serv
         }
         Member actor = currentMemberId == null ? null : memberRepository.findById(currentMemberId).orElse(null);
         if (transaction.getType() == TransactionType.INCOME && !currentUserIsManager) {
-            transaction.setStatus(TransactionStatus.PROCESSING);
-            transaction.setApprovedBy(null);
-            transaction.setApprovedAt(null);
+            markAwaitingConfirmation(transaction);
         } else {
             transaction.setStatus(TransactionStatus.COMPLETED);
             transaction.setApprovedBy(actor);
@@ -226,10 +224,10 @@ public class TransactionServiceImpl implements com.example.demo.application.serv
         Transaction savedTransaction = transactionRepository.save(transaction);
         notifyFinance(
                 savedTransaction,
-                savedTransaction.getStatus() == TransactionStatus.PROCESSING
+                isAwaitingConfirmation(savedTransaction)
                         ? "Thanh toan dang cho xac nhan"
                         : "Dong tien thanh cong",
-                savedTransaction.getStatus() == TransactionStatus.PROCESSING
+                isAwaitingConfirmation(savedTransaction)
                         ? "Khoan " + describeTransaction(savedTransaction) + " dang cho ban quan ly xac nhan."
                         : "Khoan " + describeTransaction(savedTransaction) + " da duoc hoan tat.",
                 savedTransaction.getApprovedBy());
@@ -249,12 +247,7 @@ public class TransactionServiceImpl implements com.example.demo.application.serv
             throw new IllegalArgumentException("Ban chi co the thanh toan khoan thu cua chinh minh");
         }
 
-        transaction.setStatus(TransactionStatus.PROCESSING);
-        transaction.setApprovedBy(null);
-        transaction.setApprovedAt(null);
-        if (transaction.getTransactionDate() == null) {
-            transaction.setTransactionDate(LocalDateTime.now());
-        }
+        markAwaitingConfirmation(transaction);
         Transaction savedTransaction = transactionRepository.save(transaction);
         notifyFinance(
                 savedTransaction,
@@ -336,6 +329,23 @@ public class TransactionServiceImpl implements com.example.demo.application.serv
                 "Khoản quỹ tháng mới",
                 "Bạn có khoản " + describeTransaction(savedDue) + " cần thanh toán.",
                 null);
+    }
+
+    private void markAwaitingConfirmation(Transaction transaction) {
+        transaction.setStatus(TransactionStatus.PENDING);
+        transaction.setApprovedBy(null);
+        transaction.setApprovedAt(LocalDateTime.now());
+        if (transaction.getTransactionDate() == null) {
+            transaction.setTransactionDate(LocalDateTime.now());
+        }
+    }
+
+    private boolean isAwaitingConfirmation(Transaction transaction) {
+        return transaction != null
+                && transaction.getType() == TransactionType.INCOME
+                && transaction.getStatus() == TransactionStatus.PENDING
+                && transaction.getApprovedBy() == null
+                && transaction.getApprovedAt() != null;
     }
 
     private String buildMonthlyDueId(YearMonth month, Long memberId) {
