@@ -5,14 +5,7 @@ const API_ORIGIN = new URL(API_BASE_URL).origin
 const resolveResourceLink = (link = '') => {
   if (!link) return ''
   if (link.startsWith('/uploads/')) return `${API_ORIGIN}${link}`
-  if (/^https?:\/\//i.test(link)) {
-    try {
-      const url = new URL(link)
-      return url.pathname.startsWith('/uploads/') ? link : ''
-    } catch {
-      return ''
-    }
-  }
+  if (/^https?:\/\//i.test(link)) return link
   return ''
 }
 
