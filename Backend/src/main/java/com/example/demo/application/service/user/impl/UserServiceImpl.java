@@ -6,6 +6,7 @@ import com.example.demo.application.dto.request.user.LoginRequest;
 import com.example.demo.application.dto.response.user.UserPasswordResponse;
 import com.example.demo.application.dto.response.user.UserResponse;
 import com.example.demo.application.mapper.user.UserMapper;
+import com.example.demo.application.service.notification.interfaces.NotificationDispatchService;
 import com.example.demo.domain.model.member.Member;
 import com.example.demo.domain.model.user.User;
 import com.example.demo.domain.repository.member.MemberRepository;
@@ -14,6 +15,7 @@ import com.example.demo.domain.service.user.PasswordHasher;
 import com.example.demo.domain.service.user.UserDomainService;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -30,17 +32,20 @@ public class UserServiceImpl implements com.example.demo.application.service.use
     private final UserMapper userMapper;
     private final UserDomainService userDomainService;
     private final PasswordHasher passwordHasher;
+    private final NotificationDispatchService notificationDispatchService;
 
     public UserServiceImpl(UserRepository userRepository,
                            MemberRepository memberRepository,
                            UserMapper userMapper,
                            UserDomainService userDomainService,
-                           PasswordHasher passwordHasher) {
+                           PasswordHasher passwordHasher,
+                           NotificationDispatchService notificationDispatchService) {
         this.userRepository = userRepository;
         this.memberRepository = memberRepository;
         this.userMapper = userMapper;
         this.userDomainService = userDomainService;
         this.passwordHasher = passwordHasher;
+        this.notificationDispatchService = notificationDispatchService;
     }
 
     @Override
@@ -128,6 +133,34 @@ public class UserServiceImpl implements com.example.demo.application.service.use
     @Cacheable(key = "'password:' + #userId")
     public UserPasswordResponse getPasswordHashForAdmin(Long userId) {
         return userMapper.toPasswordResponse(findUserById(userId));
+    }
+
+    @Override
+    @CacheEvict(allEntries = true)
+    public void deleteUser(Long userId, Long currentUserId) {
+        if (userId == null) {
+            throw new IllegalArgumentException("Không xác định được userId cần xóa.");
+        }
+        if (currentUserId != null && userId.equals(currentUserId)) {
+            throw new IllegalArgumentException("Không thể xóa tài khoản đang đăng nhập.");
+        }
+
+        User user = findUserById(userId);
+        try {
+            userRepository.delete(user);
+            userRepository.flush();
+
+            String username = user.getMember() != null ? user.getMember().getStudentId() : String.valueOf(userId);
+            String fullName = user.getMember() != null ? user.getMember().getFullName() : username;
+
+            notificationDispatchService.toManagers(
+                    "Tài khoản đã bị xóa",
+                    "Đã xóa tài khoản: " + fullName + " (" + username + ").",
+                    "USER",
+                    null);
+        } catch (DataIntegrityViolationException ex) {
+            throw new IllegalArgumentException("Không thể xóa tài khoản vì dữ liệu đang được sử dụng ở phiên đăng nhập hoặc hồ sơ liên quan.");
+        }
     }
 
     @Override

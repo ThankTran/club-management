@@ -15,12 +15,12 @@ export default function MemberPaymentPage() {
   const memberCode = currentUser?.studentId || (memberId ? `TV${String(memberId).padStart(3, '0')}` : '');
 
   const [dues, setDues] = useState([]);
-  const [activeDue, setActiveDue] = useState(null);
-  const [bulkDues, setBulkDues] = useState([]);
+  const [paymentRequest, setPaymentRequest] = useState(null);
+  const [paymentStep, setPaymentStep] = useState('method');
   const [selectedDueIds, setSelectedDueIds] = useState([]);
   const [apiError, setApiError] = useState('');
   const [loading, setLoading] = useState(false);
-  const [bulkProcessing, setBulkProcessing] = useState(false);
+  const [paymentProcessing, setPaymentProcessing] = useState(false);
 
   const loadDues = useCallback(() => {
     if (!memberId) {
@@ -77,31 +77,31 @@ export default function MemberPaymentPage() {
     setSelectedDueIds(allPendingSelected ? [] : pending.map((due) => due.id));
   };
 
-  const handlePay = async (id) => {
-    try {
-      const completed = await submitTransactionPaymentAPI(id);
-      const normalized = normalizeDueFromTransaction(completed);
-      setDues((prev) => prev.map((due) => (due.id === id ? normalized : due)).filter(Boolean));
-      setSelectedDueIds((prev) => prev.filter((selectedId) => selectedId !== id));
-      window.dispatchEvent(new CustomEvent('finance:transactions-updated'));
-      setActiveDue(null);
-      setApiError('');
-    } catch (error) {
-      setApiError(error?.message || 'Không ghi nhận được thanh toán.');
-    }
+  const openPaymentRequest = (duesToPay) => {
+    if (!duesToPay.length) return;
+    setPaymentRequest({ dues: duesToPay });
+    setPaymentStep('method');
+    setApiError('');
   };
 
   const handleOpenBulkPayment = () => {
     if (selectedDues.length === 0) return;
-    setBulkDues(selectedDues);
+    openPaymentRequest(selectedDues);
   };
 
-  const handleBulkPay = async () => {
-    if (bulkDues.length === 0) return;
+  const closePaymentRequest = () => {
+    if (paymentProcessing) return;
+    setPaymentRequest(null);
+    setPaymentStep('method');
+  };
 
-    setBulkProcessing(true);
+  const handleConfirmPayment = async () => {
+    const duesToPay = paymentRequest?.dues || [];
+    if (duesToPay.length === 0) return;
+
+    setPaymentProcessing(true);
     const results = await Promise.allSettled(
-      bulkDues.map((due) => submitTransactionPaymentAPI(due.id)),
+      duesToPay.map((due) => submitTransactionPaymentAPI(due.id)),
     );
 
     const completed = results
@@ -121,15 +121,16 @@ export default function MemberPaymentPage() {
       window.dispatchEvent(new CustomEvent('finance:transactions-updated'));
     }
 
-    setBulkProcessing(false);
+    setPaymentProcessing(false);
 
     if (failedCount > 0) {
-      setApiError(`Đã ghi nhận ${completed.length}/${bulkDues.length} khoản. ${failedCount} khoản chưa thành công.`);
-      setBulkDues((prev) => prev.filter((due) => !completedIds.includes(due.id)));
+      setApiError(`Đã ghi nhận ${completed.length}/${duesToPay.length} khoản. ${failedCount} khoản chưa thành công.`);
+      setPaymentRequest({ dues: duesToPay.filter((due) => !completedIds.includes(due.id)) });
       return;
     }
 
-    setBulkDues([]);
+    setPaymentRequest(null);
+    setPaymentStep('method');
     setApiError('');
   };
 
@@ -206,7 +207,7 @@ export default function MemberPaymentPage() {
                   due={due}
                   selected={selectedDueIds.includes(due.id)}
                   onToggle={handleToggleDue}
-                  onPay={setActiveDue}
+                  onPay={(item) => openPaymentRequest([item])}
                 />
               ))}
             </div>
@@ -264,26 +265,35 @@ export default function MemberPaymentPage() {
         )}
       </div>
 
-      {activeDue && (
-        <QrPaymentModal
-          due={activeDue}
-          memberName={memberName}
-          memberCode={memberCode}
-          onClose={() => setActiveDue(null)}
-          onConfirm={() => handlePay(activeDue.id)}
+      {paymentRequest?.dues?.length > 0 && paymentStep === 'method' && (
+        <PaymentMethodModal
+          dues={paymentRequest.dues}
+          onClose={closePaymentRequest}
+          onSelect={setPaymentStep}
         />
       )}
 
-      {bulkDues.length > 0 && (
-        <BulkPaymentModal
-          dues={bulkDues}
+      {paymentRequest?.dues?.length > 0 && paymentStep === 'cash' && (
+        <CashPaymentModal
+          dues={paymentRequest.dues}
           memberName={memberName}
           memberCode={memberCode}
-          processing={bulkProcessing}
-          onClose={() => {
-            if (!bulkProcessing) setBulkDues([]);
-          }}
-          onConfirm={handleBulkPay}
+          processing={paymentProcessing}
+          onBack={() => setPaymentStep('method')}
+          onClose={closePaymentRequest}
+          onConfirm={handleConfirmPayment}
+        />
+      )}
+
+      {paymentRequest?.dues?.length > 0 && paymentStep === 'transfer' && (
+        <QrPaymentModal
+          dues={paymentRequest.dues}
+          memberName={memberName}
+          memberCode={memberCode}
+          processing={paymentProcessing}
+          onBack={() => setPaymentStep('method')}
+          onClose={closePaymentRequest}
+          onConfirm={handleConfirmPayment}
         />
       )}
     </div>
@@ -329,9 +339,8 @@ function PaymentCard({ due, selected, onToggle, onPay }) {
   );
 }
 
-function BulkPaymentModal({ dues, memberName, memberCode, processing, onClose, onConfirm }) {
+function PaymentMethodModal({ dues, onClose, onSelect }) {
   const total = dues.reduce((sum, due) => sum + Number(due.soTien || 0), 0);
-  const transferCodes = dues.map((due) => due.transferCode).join(', ');
 
   return (
     <div className={styles.modalOverlay} role="presentation" onClick={onClose}>
@@ -339,70 +348,97 @@ function BulkPaymentModal({ dues, memberName, memberCode, processing, onClose, o
         className={styles.qrModal}
         role="dialog"
         aria-modal="true"
-        aria-labelledby="bulk-payment-title"
+        aria-labelledby="payment-method-title"
         onClick={(event) => event.stopPropagation()}
       >
         <div className={styles.momoHeader}>
           <div>
-            <span>Thanh toán hàng loạt</span>
-            <h2 id="bulk-payment-title">Xác nhận nộp {dues.length} khoản</h2>
+            <span>Chọn hình thức thanh toán</span>
+            <h2 id="payment-method-title">Bạn muốn thanh toán bằng cách nào?</h2>
           </div>
-          <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Đóng" disabled={processing}>
+          <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Đóng">
             x
           </button>
         </div>
 
-        <div className={styles.qrPanel}>
-          <div className={styles.momoBrand}>
-            <span className={styles.momoLogo}>MoMo</span>
-            <strong>CLB Học thuật THMN</strong>
-          </div>
-          <div className={styles.bulkTotal}>
-            <span>Tổng cộng</span>
+        <div className={styles.modalBody}>
+          <div className={styles.methodSummary}>
+            <span>{dues.length} khoản đã chọn</span>
             <strong>{fmtMoney(total)}</strong>
           </div>
-          <p className={styles.scanHint}>Ghi nhận một lần cho tất cả khoản đã chọn</p>
-        </div>
-
-        <div className={styles.modalBody}>
-          <div className={styles.paymentInfo}>
-            <div>
-              <span>Người nộp</span>
-              <strong>{memberName} - {memberCode}</strong>
-            </div>
-            <div>
-              <span>Số khoản</span>
-              <strong>{dues.length} khoản</strong>
-            </div>
-            <div>
-              <span>Mã chuyển khoản</span>
-              <strong>{transferCodes}</strong>
-            </div>
+          <div className={styles.methodGrid}>
+            <button type="button" className={styles.methodBtn} onClick={() => onSelect('cash')}>
+              <span className={styles.methodIcon}>₫</span>
+              <strong>Tiền mặt</strong>
+              <small>Nộp trực tiếp cho ban quản lý, sau đó chờ admin xác nhận.</small>
+            </button>
+            <button type="button" className={styles.methodBtn} onClick={() => onSelect('transfer')}>
+              <span className={styles.methodIcon}>QR</span>
+              <strong>Chuyển khoản</strong>
+              <small>Hiển thị mã QR và báo đã chuyển khoản để admin kiểm tra.</small>
+            </button>
           </div>
-          <div className={styles.bulkList}>
-            {dues.map((due) => (
-              <div key={due.id} className={styles.bulkItem}>
-                <span>{due.lyDo}</span>
-                <strong>{fmtMoney(due.soTien)}</strong>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        <div className={styles.modalActions}>
-          <button type="button" className={styles.secondaryBtn} onClick={onClose} disabled={processing}>
-            Để sau
-          </button>
-          <button type="button" className={styles.confirmBtn} onClick={onConfirm} disabled={processing}>
-            {processing ? 'Đang xử lý...' : 'Thanh toán tất cả'}
-          </button>
         </div>
       </div>
     </div>
   );
 }
 
-function QrPaymentModal({ due, memberName, memberCode, onClose, onConfirm }) {
+function CashPaymentModal({ dues, memberName, memberCode, processing, onBack, onClose, onConfirm }) {
+  return (
+    <PaymentConfirmationModal
+      dues={dues}
+      memberName={memberName}
+      memberCode={memberCode}
+      processing={processing}
+      title="Xác nhận nộp tiền mặt"
+      subtitle="Tiền mặt"
+      hint="Sau khi xác nhận, khoản này sẽ chuyển xuống Chờ xác nhận để admin kiểm tra tiền đã thu."
+      confirmLabel="Tôi sẽ nộp tiền mặt"
+      onBack={onBack}
+      onClose={onClose}
+      onConfirm={onConfirm}
+    />
+  );
+}
+
+function QrPaymentModal({ dues, memberName, memberCode, processing, onBack, onClose, onConfirm }) {
+  return (
+    <PaymentConfirmationModal
+      dues={dues}
+      memberName={memberName}
+      memberCode={memberCode}
+      processing={processing}
+      title="Quét QR để nộp tiền"
+      subtitle="Chuyển khoản"
+      hint="Dùng ứng dụng MoMo hoặc ngân hàng để quét mã, sau đó báo đã chuyển khoản để admin xác nhận."
+      confirmLabel={dues.length > 1 ? 'Đã chuyển khoản tất cả' : 'Đã chuyển khoản'}
+      showQr
+      onBack={onBack}
+      onClose={onClose}
+      onConfirm={onConfirm}
+    />
+  );
+}
+
+function PaymentConfirmationModal({
+  dues,
+  memberName,
+  memberCode,
+  processing,
+  title,
+  subtitle,
+  hint,
+  confirmLabel,
+  showQr = false,
+  onBack,
+  onClose,
+  onConfirm,
+}) {
+  const total = dues.reduce((sum, due) => sum + Number(due.soTien || 0), 0);
+  const transferCodes = dues.map((due) => due.transferCode).join(', ');
+  const firstDue = dues[0];
+
   return (
     <div className={styles.modalOverlay} role="presentation" onClick={onClose}>
       <div
@@ -414,10 +450,10 @@ function QrPaymentModal({ due, memberName, memberCode, onClose, onConfirm }) {
       >
         <div className={styles.momoHeader}>
           <div>
-            <span>Thanh toán MoMo</span>
-            <h2 id="qr-payment-title">Quét QR để nộp tiền</h2>
+            <span>{subtitle}</span>
+            <h2 id="qr-payment-title">{title}</h2>
           </div>
-          <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Đóng">
+          <button type="button" className={styles.closeBtn} onClick={onClose} aria-label="Đóng" disabled={processing}>
             x
           </button>
         </div>
@@ -427,33 +463,40 @@ function QrPaymentModal({ due, memberName, memberCode, onClose, onConfirm }) {
             <span className={styles.momoLogo}>MoMo</span>
             <strong>CLB Học thuật THMN</strong>
           </div>
-          <div className={styles.fakeQr} aria-label={`QR thanh toán ${due.transferCode}`}>
-            <span />
-            <span />
-            <span />
-            <small>{due.id}</small>
-          </div>
-          <p className={styles.scanHint}>Dùng ứng dụng MoMo hoặc ngân hàng để quét mã</p>
+          {showQr ? (
+            <div className={styles.fakeQr} aria-label={`QR thanh toán ${transferCodes}`}>
+              <span />
+              <span />
+              <span />
+              <small>{dues.length > 1 ? `${dues.length} khoản` : firstDue.id}</small>
+            </div>
+          ) : (
+            <div className={styles.cashPanel}>
+              <strong>{fmtMoney(total)}</strong>
+              <span>{dues.length} khoản chờ nộp tiền mặt</span>
+            </div>
+          )}
+          <p className={styles.scanHint}>{hint}</p>
         </div>
 
         <div className={styles.modalBody}>
           <div className={styles.paymentInfo}>
             <div>
               <span>Số tiền</span>
-              <strong className={styles.modalAmount}>{fmtMoney(due.soTien)}</strong>
+              <strong className={styles.modalAmount}>{fmtMoney(total)}</strong>
             </div>
             <div>
               <span>Nội dung</span>
-              <strong>CLB THMN | {due.transferCode}</strong>
+              <strong>CLB THMN | {transferCodes}</strong>
             </div>
             <div>
-              <span>Mã chuyển khoản</span>
-              <strong>{due.transferCode}</strong>
+              <span>Mã khoản thu</span>
+              <strong>{transferCodes}</strong>
             </div>
-            {due.maSuKien && (
+            {dues.length === 1 && firstDue.maSuKien && (
               <div>
                 <span>Mã sự kiện</span>
-                <strong>{due.maSuKien}</strong>
+                <strong>{firstDue.maSuKien}</strong>
               </div>
             )}
             <div>
@@ -461,14 +504,24 @@ function QrPaymentModal({ due, memberName, memberCode, onClose, onConfirm }) {
               <strong>{memberName} - {memberCode}</strong>
             </div>
           </div>
+          {dues.length > 1 && (
+            <div className={styles.bulkList}>
+              {dues.map((due) => (
+                <div key={due.id} className={styles.bulkItem}>
+                  <span>{due.lyDo}</span>
+                  <strong>{fmtMoney(due.soTien)}</strong>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className={styles.modalActions}>
-          <button type="button" className={styles.secondaryBtn} onClick={onClose}>
-            Để sau
+          <button type="button" className={styles.secondaryBtn} onClick={onBack} disabled={processing}>
+            Quay lại
           </button>
-          <button type="button" className={styles.confirmBtn} onClick={onConfirm}>
-            Thanh toán
+          <button type="button" className={styles.confirmBtn} onClick={onConfirm} disabled={processing}>
+            {processing ? 'Đang xử lý...' : confirmLabel}
           </button>
         </div>
       </div>
@@ -482,7 +535,8 @@ function normalizeDueFromTransaction(transaction = {}) {
     return null;
   }
 
-  const normalizedStatus = status === 'PROCESSING'
+  const awaitingConfirmation = isAwaitingConfirmationTransaction(transaction);
+  const normalizedStatus = awaitingConfirmation
     ? 'processing'
     : ['COMPLETED', 'APPROVED'].includes(status)
       ? 'paid'
@@ -500,6 +554,12 @@ function normalizeDueFromTransaction(transaction = {}) {
     targetName: transaction.memberName || transaction.counterpartyName || '',
     raw: transaction,
   };
+}
+
+function isAwaitingConfirmationTransaction(transaction = {}) {
+  const status = String(transaction.status || '').toUpperCase();
+  return status === 'PROCESSING'
+    || (status === 'PENDING' && Boolean(transaction.approvedAt) && !transaction.approvedById);
 }
 
 function normalizeDueDescription(description = '') {

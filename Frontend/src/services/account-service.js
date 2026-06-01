@@ -12,6 +12,9 @@ export const createUserAPI = (payload) =>
 export const updateUserForAdminAPI = (userId, payload) =>
   api.patch(`users/${userId}/admin`, payload)
 
+export const deleteUserAPI = (userId) =>
+  api.delete(`users/${userId}`)
+
 export const getUserSessionsAPI = (userId) =>
   api.get(`users/${userId}/sessions`)
 

@@ -126,6 +126,16 @@ public class MemberController {
         }
     }
 
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteMember(@PathVariable Long id) {
+        try {
+            memberUseCase.deleteMember(id);
+            return ResponseEntity.noContent().build();
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
     @GetMapping("/departments")
     public ResponseEntity<?> getAllDepartments() {
         try {

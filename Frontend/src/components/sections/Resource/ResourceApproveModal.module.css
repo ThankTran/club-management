@@ -152,6 +152,12 @@
   cursor: pointer;
 }
 
+.cancelBtn:disabled,
+.approveBtn:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
 .cancelBtn {
   border: 1.5px solid var(--gray-300);
   background: var(--white-hard);

@@ -8,11 +8,14 @@ import MemberDetailModal from '../../components/sections/Member/MemberDetailModa
 import MemberHistoryModal from '../../components/sections/Member/MemberHistoryModal';
 import MemberReviewModal from '../../components/sections/Member/MemberReviewModal';
 import MemberDeleteConfirmModal from '../../components/sections/Member/MemberDeleteConfirmModal';
+import ActionToast from '../../components/common/ActionToast/ActionToast';
 import useAuthStore from '../../store/auth-store';
 import { getMeAPI } from '../../services/auth-services';
 import { getRolesAPI } from '../../services/role-service';
+import { getSystemSettingByKeyAPI } from '../../services/system-setting-service';
 import {
   approveMemberAPI,
+  deleteMemberAPI,
   getMemberDepartmentsAPI,
   getMembersAPI,
   normalizeMemberFromApi,
@@ -21,6 +24,8 @@ import {
   toMemberPayload,
   updateMemberAPI,
 } from '../../services/member-service';
+import { matchesVietnameseSearch, normalizeVietnameseText } from '../../utils/vietnamese-search';
+import useActionToast from '../../hooks/useActionToast';
 import styles from './MemberAdminPage.module.css';
 
 const PAGE_SIZE = 8;
@@ -31,28 +36,19 @@ const STATUS = {
   rejected: 'Từ chối',
 };
 
-const normalizeSearchText = (value) =>
-  String(value ?? '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-
 const matchesMemberSearch = (member, query) => {
   if (!query) return true;
 
-  const normalizedQuery = normalizeSearchText(query);
+  const normalizedQuery = normalizeVietnameseText(query);
   if (/^\d/.test(normalizedQuery)) {
-    return normalizeSearchText(member[STUDENT_ID_KEY]).includes(normalizedQuery);
+    return matchesVietnameseSearch(member[STUDENT_ID_KEY], normalizedQuery);
   }
 
-  const nameTokens = normalizeSearchText(member.name).split(/\s+/).filter(Boolean);
-  const matchesName = nameTokens.some((token) => token.startsWith(normalizedQuery));
-  const matchesEmail = normalizeSearchText(member.email).includes(normalizedQuery);
-  const matchesPhone = normalizeSearchText(member.phone).replace(/\s+/g, '').includes(
-    normalizedQuery.replace(/\s+/g, ''),
+  return (
+    matchesVietnameseSearch(member.name, normalizedQuery) ||
+    matchesVietnameseSearch(member.email, normalizedQuery) ||
+    matchesVietnameseSearch(String(member.phone || '').replace(/\s+/g, ''), normalizedQuery.replace(/\s+/g, ''))
   );
-
-  return matchesName || matchesEmail || matchesPhone;
 };
 
 export default function MemberAdminPage() {
@@ -65,6 +61,7 @@ export default function MemberAdminPage() {
   const [apiError, setApiError] = useState('');
   const [departmentOptions, setDepartmentOptions] = useState([]);
   const [roleOptions, setRoleOptions] = useState([]);
+  const [ageBounds, setAgeBounds] = useState({ min: 18, max: 30 });
   const [activeTab, setActiveTab] = useState('review');
   const [search, setSearch] = useState('');
   const [page, setPage] = useState(1);
@@ -82,6 +79,8 @@ export default function MemberAdminPage() {
   const [departmentFilter, setDepartmentFilter] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
   const [roleFilter, setRoleFilter] = useState('');
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const { toast, showPending, showSuccess, showError } = useActionToast();
 
   useEffect(() => {
     let ignore = false;
@@ -125,6 +124,28 @@ export default function MemberAdminPage() {
       .finally(() => {
         if (!ignore) setLoading(false);
       });
+
+    return () => {
+      ignore = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let ignore = false;
+
+    Promise.allSettled([
+      getSystemSettingByKeyAPI('member.age.min'),
+      getSystemSettingByKeyAPI('member.age.max'),
+    ]).then(([minResult, maxResult]) => {
+      if (ignore) return;
+
+      const minAge = Number(minResult.status === 'fulfilled' ? minResult.value?.settingValue : 18);
+      const maxAge = Number(maxResult.status === 'fulfilled' ? maxResult.value?.settingValue : 30);
+      setAgeBounds({
+        min: Number.isFinite(minAge) && minAge > 0 ? minAge : 18,
+        max: Number.isFinite(maxAge) && maxAge > 0 ? maxAge : 30,
+      });
+    });
 
     return () => {
       ignore = true;
@@ -224,6 +245,28 @@ export default function MemberAdminPage() {
     }
   };
 
+  const confirmDelete = async () => {
+    if (!deleteConfirm?.memberId) {
+      setDeleteConfirm(null);
+      return;
+    }
+
+    try {
+      setDeleteLoading(true);
+      showPending('Đang xóa thành viên...');
+      await deleteMemberAPI(deleteConfirm.memberId);
+      setMembers((prev) => prev.filter((member) => member.memberId !== deleteConfirm.memberId));
+      setDeleteConfirm(null);
+      setApiError('');
+      setDeleteLoading(false);
+      showSuccess('Xóa thành viên thành công.');
+    } catch (error) {
+      const message = error?.message || 'Không xóa được thành viên.';
+      setDeleteLoading(false);
+      showError(message);
+    }
+  };
+
   const openReview = (member, type) => {
     setReviewTarget(member);
     setReviewType(type);
@@ -259,6 +302,7 @@ export default function MemberAdminPage() {
     setReviewLoading(true);
     setReviewError('');
     try {
+      showPending(reviewData?.requestStatus === STATUS.rejected ? 'Đang từ chối hồ sơ...' : 'Đang duyệt hồ sơ...');
       const approverMemberId = await resolveCurrentMemberId();
       if (!approverMemberId) {
         throw new Error('Không xác định được memberId của tài khoản đang đăng nhập.');
@@ -274,22 +318,20 @@ export default function MemberAdminPage() {
       setMembers((prev) => prev.map((m) => (m.memberId === member.memberId ? nextMember : m)));
       setReviewTarget(null);
       setApiError('');
+      showSuccess(reviewData?.requestStatus === STATUS.rejected ? 'Đã từ chối hồ sơ.' : 'Đã duyệt hồ sơ.');
     } catch (error) {
       const message = error?.message || 'Không cập nhật được trạng thái xét duyệt.';
       setReviewError(message);
       setApiError(message);
+      showError(message);
     } finally {
       setReviewLoading(false);
     }
   };
 
-  const confirmDelete = () => {
-    setDeleteConfirm(null);
-    setApiError('Backend chưa hỗ trợ xóa thành viên, nên thao tác xóa chưa được thực hiện.');
-  };
-
   return (
     <div className={styles.page}>
+      <ActionToast toast={toast} />
       {apiError && <div className={styles.apiError}>{apiError}</div>}
 
       <div className={styles.pageHeader}>
@@ -431,6 +473,7 @@ export default function MemberAdminPage() {
         existingMembers={members}
         departments={departmentNames}
         roles={roleNames}
+        ageBounds={ageBounds}
       />
 
       <MemberDetailModal member={detailTarget} onClose={() => setDetailTarget(null)} />
@@ -450,8 +493,9 @@ export default function MemberAdminPage() {
       />
       <MemberDeleteConfirmModal
         member={deleteConfirm}
-        onClose={() => setDeleteConfirm(null)}
+        onClose={() => { if (!deleteLoading) setDeleteConfirm(null); }}
         onConfirm={confirmDelete}
+        loading={deleteLoading}
       />
     </div>
   );

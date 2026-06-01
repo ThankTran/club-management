@@ -11,7 +11,7 @@ export default function ResourceReviewModal({ resource, onClose, onApprove, onRe
   if (!resource) return null;
 
   const status = STATUS_CONFIG[resource.status] || STATUS_CONFIG.pending;
-  const canReview = resource.status === 'pending';
+  const canReview = resource.status === 'pending' || resource.status === 'fixing';
 
   const handleApprove = () => {
     onApprove(resource.id, new Date().toISOString().split('T')[0]);
@@ -64,7 +64,9 @@ export default function ResourceReviewModal({ resource, onClose, onApprove, onRe
                   Mở tài liệu
                 </a>
               ) : (
-                <span className={styles.pendingLink}>{resource.link || '—'}</span>
+                <a href={resource.link} target="_blank" rel="noopener noreferrer" className={styles.linkBtn}>
+                  Xem tài liệu
+                </a>
               )}
             </div>
           </div>

@@ -2,7 +2,12 @@ import { useEffect, useRef } from 'react';
 
 import styles from './FinanceFilter.module.css';
 
-const HINH_THUC_OPTIONS = ['Tiền mặt', 'Chuyển khoản', 'Ví điện tử'];
+const THU_STATUS_OPTIONS = [
+  { value: 'PENDING', label: 'Chờ đóng' },
+  { value: 'PROCESSING', label: 'Chờ xác nhận' },
+  { value: 'COMPLETED', label: 'Đã thu' },
+  { value: 'FAILED', label: 'Không thành công' },
+];
 
 const CHI_STATUS_OPTIONS = [
   { value: 'PENDING', label: 'Chờ duyệt' },
@@ -103,15 +108,15 @@ export default function FinanceFilter({
               </div>
 
               <div className={styles.group}>
-                <label className={styles.groupLabel}>Hình thức</label>
+                <label className={styles.groupLabel}>Trạng thái</label>
                 <select
                   className={styles.select}
                   value={filters.hinhThuc}
                   onChange={(e) => updateFilter('hinhThuc', e.target.value)}
                 >
                   <option value="">Tất cả</option>
-                  {HINH_THUC_OPTIONS.map(item => (
-                    <option key={item} value={item}>{item}</option>
+                  {THU_STATUS_OPTIONS.map(item => (
+                    <option key={item.value} value={item.value}>{item.label}</option>
                   ))}
                 </select>
               </div>

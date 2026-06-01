@@ -6,7 +6,7 @@ import {
 } from '../../../data/Resource/resourceFolderData';
 import styles from './ResourceApproveModal.module.css';
 
-export default function ResourceApproveModal({ resource, onCancel, onConfirm }) {
+export default function ResourceApproveModal({ resource, onCancel, onConfirm, loading = false }) {
   const [folderId, setFolderId] = useState(DEFAULT_RESOURCE_FOLDER_ID);
 
   useEffect(() => {
@@ -46,9 +46,9 @@ export default function ResourceApproveModal({ resource, onCancel, onConfirm }) 
         </div>
 
         <div className={styles.actions}>
-          <button type="button" className={styles.cancelBtn} onClick={onCancel}>Hủy</button>
-          <button type="button" className={styles.approveBtn} onClick={() => onConfirm(resource.id, folderId)}>
-            Xác nhận duyệt
+          <button type="button" className={styles.cancelBtn} onClick={onCancel} disabled={loading}>Hủy</button>
+          <button type="button" className={styles.approveBtn} onClick={() => onConfirm(resource.id, folderId)} disabled={loading}>
+            {loading ? 'Đang duyệt...' : 'Xác nhận duyệt'}
           </button>
         </div>
       </div>

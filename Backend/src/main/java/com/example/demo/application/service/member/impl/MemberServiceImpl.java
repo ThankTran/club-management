@@ -7,6 +7,7 @@ import com.example.demo.application.dto.response.member.MemberPublicResponse;
 import com.example.demo.application.dto.response.member.MemberResponse;
 import com.example.demo.application.mapper.member.MemberMapper;
 import com.example.demo.application.service.notification.interfaces.NotificationDispatchService;
+import com.example.demo.application.service.system.interfaces.SystemSettingService;
 import com.example.demo.domain.model.member.Member;
 import com.example.demo.domain.model.department.Department;
 import com.example.demo.domain.model.role.Role;
@@ -18,8 +19,11 @@ import com.example.demo.domain.enums.GenderEnum;
 import com.example.demo.domain.enums.GraduatedStatusEnum;
 import com.example.demo.domain.service.member.MemberDomainService;
 
+import java.time.LocalDate;
+import java.time.Period;
 import java.text.Normalizer;
 import java.util.concurrent.CompletableFuture;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
@@ -40,6 +44,10 @@ public class MemberServiceImpl implements com.example.demo.application.service.m
     private static final int MIN_ROLE_PRIORITY = 1;
     private static final int MAX_ROLE_PRIORITY = 10;
     private static final String DEFAULT_ROLE_NAME = "Thành viên";
+    private static final String AGE_MIN_SETTING_KEY = "member.age.min";
+    private static final String AGE_MAX_SETTING_KEY = "member.age.max";
+    private static final int DEFAULT_MIN_AGE = 18;
+    private static final int DEFAULT_MAX_AGE = 30;
     private static final String TARGET_MEMBER = "MEMBER";
 
     private final MemberRepository memberRepository;
@@ -48,19 +56,22 @@ public class MemberServiceImpl implements com.example.demo.application.service.m
     private final MemberMapper memberMapper;
     private final MemberDomainService memberDomainService; 
     private final NotificationDispatchService notificationDispatchService;
+    private final SystemSettingService systemSettingService;
 
     public MemberServiceImpl(MemberRepository memberRepository,
                              DepartmentRepository departmentRepository,
                              RoleRepository roleRepository,
                              MemberMapper memberMapper,
                              MemberDomainService memberDomainService,
-                             NotificationDispatchService notificationDispatchService) {
+                             NotificationDispatchService notificationDispatchService,
+                             SystemSettingService systemSettingService) {
         this.memberRepository = memberRepository;
         this.departmentRepository = departmentRepository;
         this.roleRepository = roleRepository;
         this.memberMapper = memberMapper;
         this.memberDomainService = memberDomainService;
         this.notificationDispatchService = notificationDispatchService;
+        this.systemSettingService = systemSettingService;
     }
 
 
@@ -80,6 +91,7 @@ public class MemberServiceImpl implements com.example.demo.application.service.m
         memberDomainService.validateGender(
                 GenderEnum.valueOf(request.getGender().toUpperCase())
         );
+        validateDateOfBirth(request.getDateOfBirth());
 
         if (memberRepository.existsByStudentId(request.getStudentId())) {
             throw new IllegalArgumentException("MSSV đã tồn tại trong hệ thống");
@@ -203,6 +215,34 @@ public class MemberServiceImpl implements com.example.demo.application.service.m
                 .toLowerCase();
     }
 
+    private void validateDateOfBirth(LocalDate dateOfBirth) {
+        if (dateOfBirth == null) {
+            throw new IllegalArgumentException("Ngày sinh không được để trống");
+        }
+
+        LocalDate today = LocalDate.now();
+        if (!dateOfBirth.isBefore(today)) {
+            throw new IllegalArgumentException("Ngày sinh phải nhỏ hơn ngày hiện tại");
+        }
+
+        int minAge = getAgeSetting(AGE_MIN_SETTING_KEY, DEFAULT_MIN_AGE);
+        int maxAge = getAgeSetting(AGE_MAX_SETTING_KEY, DEFAULT_MAX_AGE);
+        int age = Period.between(dateOfBirth, today).getYears();
+        if (age < minAge || age > maxAge) {
+            throw new IllegalArgumentException(
+                    "Tuổi phải nằm trong khoảng từ " + minAge + " đến " + maxAge + " tuổi");
+        }
+    }
+
+    private int getAgeSetting(String key, int defaultValue) {
+        try {
+            String value = systemSettingService.getByKeyOrDefault(key, String.valueOf(defaultValue), "").getSettingValue();
+            return Integer.parseInt(value);
+        } catch (Exception ex) {
+            return defaultValue;
+        }
+    }
+
     @Override
     @Cacheable(key = "'all'")
     public List<MemberResponse> getAllMembers() {
@@ -250,6 +290,7 @@ public class MemberServiceImpl implements com.example.demo.application.service.m
         memberDomainService.validateEmailFormat(request.getEmail());
         memberDomainService.validatePhoneFormat(request.getPhoneNumber());
         memberDomainService.validateNotGraduated(request.getGraduatedStatus());
+        validateDateOfBirth(request.getDateOfBirth());
         if (!member.getEmail().equals(request.getEmail())
                 && memberRepository.existsByEmail(request.getEmail())) {
             throw new IllegalArgumentException("Email đã tồn tại trong hệ thống");
@@ -279,6 +320,27 @@ public class MemberServiceImpl implements com.example.demo.application.service.m
         }
 
         return memberMapper.toResponse(savedMember);
+    }
+
+    @Override
+    @CacheEvict(allEntries = true)
+    public void deleteMember(Long memberId) {
+        Member member = memberRepository.findById(memberId)
+                .orElseThrow(() -> new IllegalArgumentException(
+                        "Không tìm thấy thành viên với ID: " + memberId));
+        try {
+            memberRepository.delete(member);
+            memberRepository.flush();
+
+            notificationDispatchService.toManagers(
+                    "Thành viên đã bị xóa",
+                    "Đã xóa thành viên: " + member.getFullName() + " (" + member.getStudentId() + ").",
+                    TARGET_MEMBER,
+                    null);
+        } catch (DataIntegrityViolationException ex) {
+            throw new IllegalArgumentException(
+                    "Không thể xóa thành viên vì dữ liệu đang được sử dụng ở sự kiện, giao dịch hoặc hồ sơ liên quan.");
+        }
     }
 
     private Role resolveRoleOrDefault(String roleName) {

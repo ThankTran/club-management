@@ -8,7 +8,7 @@ import setting from "../../../assets/icons/setting.svg";
 import NotificationPopover from "./NotificationPopover";
 import { getNotificationsByMemberAPI } from "../../../services/notification-service";
 import useAuthStore from "../../../store/auth-store";
-import { isManager } from "../../../utils/access-control";
+import { canAccessPath, isManager } from "../../../utils/access-control";
 import {
   PROFILE_CUSTOM_UPDATED_EVENT,
   getCustomProfileKey,
@@ -78,9 +78,12 @@ const NavbarFM = () => {
   const [profileAvatar, setProfileAvatar] = useState("");
   const profileRef = useRef(null);
   const currentUser = useAuthStore((state) => state.user);
+  const token = useAuthStore((state) => state.token);
   const logout = useAuthStore((state) => state.logout);
   const currentMemberId = currentUser?.memberId;
   const canOpenSettings = isManager(currentUser);
+  const canOpenProfile = canAccessPath("/profile", currentUser, token);
+  const canOpenNotifications = true;
 
   const [isDarkMode, setIsDarkMode] = useState(() => {
     return localStorage.getItem("theme") === "dark";
@@ -252,29 +255,31 @@ const NavbarFM = () => {
           </button>
         )}
 
-        <div className={styles.notificationContainer}>
-          <button
-            className={`${styles.iconBtn} ${showNoti ? styles.activeIconBtn : ""}`}
-            title="Notifications"
-            onClick={() => setShowNoti(!showNoti)}
-            data-bell-button="true"
-          >
-            <img src={noti} alt="Notifications" className={styles.iconImg} />
-            {unreadCount > 0 && (
-              <span className={styles.bellBadge}>{unreadCount}</span>
-            )}
-          </button>
+        {canOpenNotifications && (
+          <div className={styles.notificationContainer}>
+            <button
+              className={`${styles.iconBtn} ${showNoti ? styles.activeIconBtn : ""}`}
+              title="Notifications"
+              onClick={() => setShowNoti(!showNoti)}
+              data-bell-button="true"
+            >
+              <img src={noti} alt="Notifications" className={styles.iconImg} />
+              {unreadCount > 0 && (
+                <span className={styles.bellBadge}>{unreadCount}</span>
+              )}
+            </button>
 
-          {showNoti && (
-            <NotificationPopover
-              notifications={notifications}
-              setNotifications={setNotifications}
-              isLoading={notificationLoading}
-              error={notificationError}
-              onClose={() => setShowNoti(false)}
-            />
-          )}
-        </div>
+            {showNoti && (
+              <NotificationPopover
+                notifications={notifications}
+                setNotifications={setNotifications}
+                isLoading={notificationLoading}
+                error={notificationError}
+                onClose={() => setShowNoti(false)}
+              />
+            )}
+          </div>
+        )}
 
         <div className={styles.profileContainer} ref={profileRef}>
           <button
@@ -297,15 +302,17 @@ const NavbarFM = () => {
 
           {openMenu && (
             <div className={styles.dropdownMenu}>
-              <button
-                className={styles.dropdownItem}
-                onClick={() => {
-                  navigate("/profile");
-                  setOpenMenu(false);
-                }}
-              >
-                Hồ sơ
-              </button>
+              {canOpenProfile && (
+                <button
+                  className={styles.dropdownItem}
+                  onClick={() => {
+                    navigate("/profile");
+                    setOpenMenu(false);
+                  }}
+                >
+                  Hồ sơ
+                </button>
+              )}
 
               <button className={styles.dropdownItem} onClick={handleLogout}>
                 Đăng xuất

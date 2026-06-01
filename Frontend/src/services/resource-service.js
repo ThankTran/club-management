@@ -33,10 +33,13 @@ export const normalizeResourceFromApi = (resource = {}, member = null) => ({
     subject: resource.subjectName || '',
     status: resource.reqStatus === 'APPROVED'
         ? 'approved'
-        : resource.reqStatus === 'REJECTED'
-            ? 'rejected'
-            : 'pending',
+        : resource.reqStatus === 'REQUESTED_CHANGES'
+            ? 'fixing'
+            : resource.reqStatus === 'REJECTED'
+                ? 'rejected'
+                : 'pending',
     reqStatus: resource.reqStatus,
+    workflowStatus: resource.reqStatus === 'REQUESTED_CHANGES' ? 'fixing' : 'working',
     format: detectFormat(resource),
     source: resource.source || '',
     description: resource.note || '',
@@ -45,6 +48,7 @@ export const normalizeResourceFromApi = (resource = {}, member = null) => ({
     fileSize: resource.fileSize || resource.files?.[0]?.fileSize || 0,
     mimeType: resource.mimeType || resource.files?.[0]?.mimeType || '',
     lookupFolderId: resource.lookupFolderId || '',
+    approvedAt: resource.approvedAt ? String(resource.approvedAt).slice(0, 10) : '',
 
     uploadedBy: member?.name || member?.fullName || resource.proposedByName || '—',
     memberId: resource.proposedById || member?.memberId || '—',

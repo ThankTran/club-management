@@ -116,6 +116,11 @@ public class EventServiceImpl implements com.example.demo.application.service.ev
         event.setOrganizer(request.getOrganizer());
         event.setTag(request.getTag());
         if (request.getStatus() != null) {
+            if (request.getStatus() == EventStatusEnum.Cancelled
+                    && event.getStatus() != null
+                    && event.getStatus() != EventStatusEnum.NotStarted) {
+                throw new IllegalArgumentException("Chỉ được hủy khi và chỉ khi sự kiện chưa hoạt động.");
+            }
             event.setStatus(request.getStatus());
         }
         if (request.getReqStatus() != null) {
@@ -257,6 +262,9 @@ public class EventServiceImpl implements com.example.demo.application.service.ev
     public void delete(String id) {
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Khong tim thay event: " + id));
+        if (event.getStatus() == EventStatusEnum.InProgress) {
+            throw new IllegalArgumentException("Chỉ được hủy khi và chỉ khi sự kiện chưa hoạt động.");
+        }
         if (eventOrganizerRepository.existsByEventEventId(id)) {
             throw new IllegalArgumentException(
                     "Cannot delete event because organizers still reference it.");

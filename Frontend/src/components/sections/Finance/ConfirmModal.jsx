@@ -1,6 +1,6 @@
 import styles from './ConfirmModal.module.css';
 
-export default function ConfirmModal({ item, onConfirm, onCancel }) {
+export default function ConfirmModal({ item, onConfirm, onCancel, loading = false }) {
   if (!item) return null;
   return (
     <div className={styles.overlay} onClick={onCancel}>
@@ -9,8 +9,10 @@ export default function ConfirmModal({ item, onConfirm, onCancel }) {
         <h3 className={styles.confirmTitle}>Xoá phiếu?</h3>
         <p className={styles.confirmMsg}>Bạn có chắc muốn xoá <strong>{item.id}</strong>? Hành động này không thể hoàn tác.</p>
         <div className={styles.confirmActions}>
-          <button className={styles.cancelBtn} onClick={onCancel}>Huỷ</button>
-          <button className={`${styles.submitBtn} ${styles.deleteConfirmBtn}`} onClick={onConfirm}>Xoá</button>
+          <button className={styles.cancelBtn} onClick={onCancel} disabled={loading}>Huỷ</button>
+          <button className={`${styles.submitBtn} ${styles.deleteConfirmBtn}`} onClick={onConfirm} disabled={loading}>
+            {loading ? 'Đang xóa...' : 'Xoá'}
+          </button>
         </div>
       </div>
     </div>

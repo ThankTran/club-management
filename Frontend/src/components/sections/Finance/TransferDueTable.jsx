@@ -8,9 +8,9 @@ export default function TransferDueTable({ dues, onRefresh, onConfirmPaid, onRej
     <div className={styles.section}>
       <div className={styles.header}>
         <div>
-          <h3 className={styles.title}>Danh sách chờ xác nhận chuyển khoản</h3>
+          <h3 className={styles.title}>Danh sách chờ xác nhận thu</h3>
           <p className={styles.subtitle}>
-            Các khoản này do thành viên báo đã thanh toán trên trang Đóng quỹ. Admin kiểm tra giao dịch thực tế rồi tick để xác nhận hoặc bấm X nếu chưa nhận được tiền.
+            Các khoản này do thành viên báo đã thanh toán trên trang Đóng quỹ. Admin kiểm tra tiền thực tế rồi tick để xác nhận hoặc bấm X nếu chưa nhận được tiền.
           </p>
         </div>
         <button type="button" className={styles.refreshBtn} onClick={onRefresh} title="Làm mới danh sách">
@@ -29,13 +29,13 @@ export default function TransferDueTable({ dues, onRefresh, onConfirmPaid, onRej
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>Mã QR</th>
+              <th>Mã khoản</th>
               <th>Lý do</th>
               <th>Mã sự kiện</th>
               <th>Người cần đóng</th>
               <th>Số tiền</th>
               <th>Trạng thái</th>
-              <th>Ghi nhận</th>
+              <th>Người báo đóng</th>
               <th>Thời gian</th>
               <th>Thao tác</th>
             </tr>
@@ -59,7 +59,6 @@ export default function TransferDueTable({ dues, onRefresh, onConfirmPaid, onRej
                 <td>
                   <div className={styles.paidCell}>
                     <span>{due.paidBy || '-'}</span>
-                    {due.paidMethod && <small>{due.paidMethod}</small>}
                   </div>
                 </td>
                 <td>{due.paidAt ? new Date(due.paidAt).toLocaleString('vi-VN') : '-'}</td>
@@ -69,8 +68,8 @@ export default function TransferDueTable({ dues, onRefresh, onConfirmPaid, onRej
                       type="button"
                       className={styles.cashBtn}
                       onClick={() => onConfirmPaid?.(due.id)}
-                      title="Xác nhận đã chuyển khoản"
-                      aria-label="Xác nhận đã chuyển khoản"
+                      title="Xác nhận đã thu"
+                      aria-label="Xác nhận đã thu"
                     >
                       <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.5">
                         <path d="M5 13l4 4L19 7" />
@@ -94,7 +93,7 @@ export default function TransferDueTable({ dues, onRefresh, onConfirmPaid, onRej
             ))}
             {dues.length === 0 && (
               <tr>
-                <td colSpan={9} className={styles.empty}>Chưa có khoản nào chờ xác nhận chuyển khoản.</td>
+                <td colSpan={9} className={styles.empty}>Chưa có khoản nào chờ xác nhận thu.</td>
               </tr>
             )}
           </tbody>

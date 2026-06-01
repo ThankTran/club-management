@@ -1,6 +1,6 @@
 ﻿import styles from './MemberDeleteConfirmModal.module.css';
 
-export default function MemberDeleteConfirmModal({ member, onClose, onConfirm }) {
+export default function MemberDeleteConfirmModal({ member, onClose, onConfirm, loading = false }) {
   if (!member) return null;
 
   return (
@@ -18,8 +18,10 @@ export default function MemberDeleteConfirmModal({ member, onClose, onConfirm })
           Bạn có chắc muốn xóa <strong>{member.name}</strong>? Hành động này không thể hoàn tác.
         </p>
         <div className={styles.confirmActions}>
-          <button className={styles.confirmCancel} onClick={onClose}>Hủy</button>
-          <button className={styles.confirmDelete} onClick={onConfirm}>Xóa</button>
+          <button className={styles.confirmCancel} onClick={onClose} disabled={loading}>Hủy</button>
+          <button className={styles.confirmDelete} onClick={onConfirm} disabled={loading}>
+            {loading ? 'Đang xóa...' : 'Xóa'}
+          </button>
         </div>
       </div>
     </div>

@@ -1,7 +1,7 @@
 const MANAGER_PRIORITY_MAX = 1;
+const SHARED_ROUTES = ["/home", "/help", "/profile"];
 
 export const MEMBER_ROUTES = [
-  "/home",
   "/profile",
   "/help",
   "/resourcesuser",
@@ -33,9 +33,13 @@ export const canAccessPath = (path, user, token) => {
   if (!path || path === "/" || path === "/signin") return true;
   if (!isAuthenticated(user, token)) return false;
 
-  if (MANAGER_ROUTES.some((route) => path === route || path.startsWith(`${route}/`))) {
-    return isManager(user);
+  const isSharedRoute = SHARED_ROUTES.some((route) => path === route || path.startsWith(`${route}/`));
+  const isManagerRoute = MANAGER_ROUTES.some((route) => path === route || path.startsWith(`${route}/`));
+  const isMemberRoute = MEMBER_ROUTES.some((route) => path === route || path.startsWith(`${route}/`));
+
+  if (isManager(user)) {
+    return isSharedRoute || isManagerRoute;
   }
 
-  return MEMBER_ROUTES.some((route) => path === route || path.startsWith(`${route}/`));
+  return isSharedRoute || isMemberRoute;
 };

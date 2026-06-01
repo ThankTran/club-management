@@ -11,6 +11,7 @@ import financeIcon from "../../assets/icons/finance.svg";
 import VERIFY_ICON from "../../assets/icons/verify.svg";
 import infoIcon from "../../assets/icons/infor.svg";
 import { askHelpAiAPI } from "../../services/help-ai-service";
+import useAuthStore from "../../store/auth-store";
 
 const FAQ_DATA = [
   {
@@ -66,6 +67,8 @@ const CATEGORIES = [
 ];
 
 export default function HelpPage() {
+  const currentUser = useAuthStore((state) => state.user);
+  const greetingName = currentUser?.fullName?.trim() || "bạn";
 
 
   const [searchQuery, setSearchQuery] = useState("");
@@ -106,6 +109,17 @@ export default function HelpPage() {
   const [isSpinning, setIsSpinning] = useState(false);
   const chatEndRef = useRef(null);
   const chatContainerRef = useRef(null);
+
+  useEffect(() => {
+    const welcomeBubble = Array.from(
+      document.querySelectorAll('[class*="botBubbleWelcome"]')
+    ).find((element) =>
+      element.textContent?.includes("CLB hỗ trợ về điều gì")
+      && element.textContent?.includes("hãy hỏi ngay")
+    );
+    if (!welcomeBubble) return;
+    welcomeBubble.innerHTML = `Chào <strong>${greetingName}</strong> 🌹, hôm nay bạn cần CLB hỗ trợ về điều gì, hãy hỏi ngay để được giải đáp nhanh chóng nhất nha! 🎉🥰`;
+  }, [greetingName]);
 
   // Auto scroll chat
   useEffect(() => {

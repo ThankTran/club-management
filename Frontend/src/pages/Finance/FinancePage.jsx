@@ -14,6 +14,7 @@ import IncomeFormModal from '../../components/sections/Finance/IncomeFormModal';
 import ExpenseFormModal from '../../components/sections/Finance/ExpenseFormModal';
 import ConfirmModal from '../../components/sections/Finance/ConfirmModal';
 import TransferDueTable from '../../components/sections/Finance/TransferDueTable';
+import ActionToast from '../../components/common/ActionToast/ActionToast';
 import {
   completeTransactionAPI,
   createTransactionAPI,
@@ -27,9 +28,11 @@ import {
   toIncomePayload,
   updateTransactionAPI,
 } from '../../services/finance-service';
+import { getEventsAPI, normalizeEventFromApi } from '../../services/event-service';
 import { getMembersAPI, normalizeMemberFromApi } from '../../services/member-service';
 import useAuthStore from '../../store/auth-store';
 import { isManager } from '../../utils/access-control';
+import useActionToast from '../../hooks/useActionToast';
 
 export default function FinancePage() {
   const currentUser = useAuthStore((state) => state.user);
@@ -37,6 +40,7 @@ export default function FinancePage() {
   const [chiList, setChiList] = useState([]);
   const [transferDues, setTransferDues] = useState([]);
   const [memberOptions, setMemberOptions] = useState([]);
+  const [eventOptions, setEventOptions] = useState([]);
   const [pendingDues, setPendingDues] = useState([]);
   const [pendingDuesLoading, setPendingDuesLoading] = useState(false);
   const [apiError, setApiError] = useState('');
@@ -68,6 +72,8 @@ export default function FinancePage() {
   const [editChi, setEditChi]       = useState(null);
   const [formLoading, setFormLoading] = useState(false);
   const [deleteTarget, setDeleteTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const { toast, showPending, showSuccess, showError } = useActionToast();
 
   const [baocaoThang, setBaocaoThang] = useState(new Date().getMonth() + 1);
 
@@ -79,29 +85,33 @@ export default function FinancePage() {
   const loadFinanceData = useCallback((ignoreRef = { current: false }) => {
     setPendingDuesLoading(true);
 
-    return Promise.allSettled([getTransactionsAPI(), getPendingMonthlyDuesAPI(), getMembersAPI()])
-      .then(([transactionsResult, dueResult, membersResult]) => {
+    return Promise.allSettled([getTransactionsAPI(), getPendingMonthlyDuesAPI(), getMembersAPI(), getEventsAPI()])
+      .then(([transactionsResult, dueResult, membersResult, eventsResult]) => {
         if (ignoreRef.current) return;
         const data = transactionsResult.status === 'fulfilled' ? transactionsResult.value : [];
         const dueData = dueResult.status === 'fulfilled' ? dueResult.value : [];
         const memberData = membersResult.status === 'fulfilled' ? membersResult.value : [];
+        const eventData = eventsResult.status === 'fulfilled' ? eventsResult.value : [];
         const transactions = Array.isArray(data) ? data.map(normalizeTransactionFromApi) : [];
         const income = transactions.filter((item) => item.raw?.type === 'INCOME');
         const expense = transactions.filter((item) => item.raw?.type !== 'INCOME');
 
         setThuList(income);
         setChiList(expense);
-        setTransferDues(income.filter((item) => String(item.status || '').toUpperCase() === 'PROCESSING').map(toTransferDueRow));
+        setTransferDues(income.filter(isAwaitingConfirmationTransaction).map(toTransferDueRow));
         setPendingDues(Array.isArray(dueData) ? dueData.map(normalizeMemberDueFromApi) : []);
         setMemberOptions(Array.isArray(memberData) ? memberData.map(normalizeMemberFromApi) : []);
+        setEventOptions(Array.isArray(eventData) ? eventData.map(normalizeEventFromApi) : []);
         setApiError('');
       })
       .catch((error) => {
         if (ignoreRef.current) return;
         setThuList([]);
         setChiList([]);
+        setTransferDues([]);
         setPendingDues([]);
         setMemberOptions([]);
+        setEventOptions([]);
         setApiError(error?.message || 'Không tải được dữ liệu thu chi từ API.');
       })
       .finally(() => {
@@ -183,7 +193,9 @@ export default function FinancePage() {
 
       const matchHinhThuc =
         !thuFilters.hinhThuc ||
-        r.hinhThuc === thuFilters.hinhThuc;
+        (thuFilters.hinhThuc === 'PROCESSING'
+          ? isAwaitingConfirmationTransaction(r)
+          : String(r.status || '').toUpperCase() === thuFilters.hinhThuc);
 
       const matchDate = matchDateFilter(r.ngayThu, thuFilters);
 
@@ -244,21 +256,27 @@ export default function FinancePage() {
 
   const handleConfirmTransferPaid = async (id) => {
     try {
+      showPending('Đang xác nhận chuyển khoản...');
       await completeTransactionAPI(id);
       await loadFinanceData();
       setApiError('');
+      showSuccess('Đã xác nhận chuyển khoản.');
     } catch (error) {
-      setApiError(error?.message || 'Không xác nhận được khoản chuyển khoản.');
+      setApiError(error?.message || 'Không xác nhận được khoản thu.');
+      showError(error?.message || 'Không xác nhận được khoản thu.');
     }
   };
 
   const handleRejectTransferPaid = async (id) => {
     try {
+      showPending('Đang từ chối chuyển khoản...');
       await rejectTransactionPaymentAPI(id);
       await loadFinanceData();
       setApiError('');
+      showSuccess('Đã từ chối chuyển khoản.');
     } catch (error) {
-      setApiError(error?.message || 'Không từ chối được khoản chuyển khoản.');
+      setApiError(error?.message || 'Không từ chối được khoản thu.');
+      showError(error?.message || 'Không từ chối được khoản thu.');
     }
   };
 
@@ -266,19 +284,18 @@ export default function FinancePage() {
     setFormLoading(true);
     try {
       if (editThu) {
-        const updated = await updateTransactionAPI(editThu.id, toIncomePayload({ ...editThu, ...data }));
-        setThuList(p => p.map(r => r.id === editThu.id ? normalizeTransactionFromApi(updated) : r));
+        await updateTransactionAPI(editThu.id, toIncomePayload({ ...editThu, ...data }));
       } else {
         const records = Array.isArray(data) ? data : [data];
-        const created = await Promise.all(records.map((record, index) => {
+        await Promise.all(records.map((record, index) => {
           const localRecord = {
             ...record,
             id: record.id || `THU${String(thuList.length + index + 1).padStart(3, '0')}`,
           };
           return createTransactionAPI(toIncomePayload(localRecord));
         }));
-        setThuList(p => [...p, ...created.map(normalizeTransactionFromApi)]);
       }
+      await loadFinanceData();
       setThuOpen(false);
       setEditThu(null);
       setApiError('');
@@ -293,13 +310,12 @@ export default function FinancePage() {
     setFormLoading(true);
     try {
       if (editChi) {
-        const updated = await updateTransactionAPI(editChi.id, toExpensePayload({ ...editChi, ...data }));
-        setChiList(p => p.map(r => r.id === editChi.id ? normalizeTransactionFromApi(updated) : r));
+        await updateTransactionAPI(editChi.id, toExpensePayload({ ...editChi, ...data }));
       } else {
         const localRecord = { ...data, id: data.id || `CHI${String(chiList.length + 1).padStart(3, '0')}` };
-        const created = await createTransactionAPI(toExpensePayload(localRecord));
-        setChiList(p => [...p, normalizeTransactionFromApi(created)]);
+        await createTransactionAPI(toExpensePayload(localRecord));
       }
+      await loadFinanceData();
       setChiOpen(false);
       setEditChi(null);
       setApiError('');
@@ -312,42 +328,58 @@ export default function FinancePage() {
 
   const handleApproveExpense = async (item) => {
     try {
+      showPending('Đang duyệt phiếu chi...');
       const updated = await completeTransactionAPI(item.id);
       setChiList((prev) => prev.map((row) => row.id === item.id ? normalizeTransactionFromApi(updated) : row));
       setApiError('');
+      showSuccess('Đã duyệt phiếu chi.');
     } catch (error) {
-      setApiError(error?.message || 'KhÃ´ng duyá»‡t Ä‘Æ°á»£c phiáº¿u chi.');
+      const message = error?.message || 'Không duyệt được phiếu chi.';
+      setApiError(message);
+      showError(message);
     }
   };
 
   const handleRejectExpense = async (item) => {
     try {
+      showPending('Đang từ chối phiếu chi...');
       const updated = await updateTransactionAPI(
         item.id,
         toExpensePayload({ ...item, status: 'REJECTED' }),
       );
       setChiList((prev) => prev.map((row) => row.id === item.id ? normalizeTransactionFromApi(updated) : row));
       setApiError('');
+      showSuccess('Đã từ chối phiếu chi.');
     } catch (error) {
-      setApiError(error?.message || 'Không từ chối được phiếu chi.');
+      const message = error?.message || 'Không từ chối được phiếu chi.';
+      setApiError(message);
+      showError(message);
     }
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
     try {
+      setDeleteLoading(true);
+      showPending('Đang xóa phiếu...');
       await deleteTransactionAPI(deleteTarget.id);
       setThuList(p => p.filter(r => r.id !== deleteTarget.id));
       setChiList(p => p.filter(r => r.id !== deleteTarget.id));
       setDeleteTarget(null);
       setApiError('');
+      setDeleteLoading(false);
+      showSuccess('Đã xóa phiếu.');
     } catch (error) {
-      setApiError(error?.message || 'Không xoá được giao dịch.');
+      const message = error?.message || 'Không xoá được giao dịch.';
+      setApiError(message);
+      setDeleteLoading(false);
+      showError(message);
     }
   };
 
   return (
     <div className={styles.page}>
+      <ActionToast toast={toast} />
       {apiError && <div className={styles.apiError}>{apiError}</div>}
 
       <FinanceHeader
@@ -451,8 +483,14 @@ export default function FinancePage() {
         onSubmit={handleChiSubmit}
         initial={editChi}
         loading={formLoading}
+        eventOptions={eventOptions}
       />
-      <ConfirmModal item={deleteTarget} onConfirm={handleDelete} onCancel={() => setDeleteTarget(null)} />
+      <ConfirmModal
+        item={deleteTarget}
+        onConfirm={handleDelete}
+        onCancel={() => { if (!deleteLoading) setDeleteTarget(null); }}
+        loading={deleteLoading}
+      />
     </div>
 
     
@@ -461,6 +499,14 @@ export default function FinancePage() {
 
 function isSettledTransaction(item) {
   return ['COMPLETED', 'APPROVED'].includes(String(item?.status || item?.raw?.status || '').toUpperCase());
+}
+
+function isAwaitingConfirmationTransaction(item) {
+  const status = String(item?.status || item?.raw?.status || '').toUpperCase();
+  const approvedAt = item?.raw?.approvedAt || '';
+  const approvedById = item?.raw?.approvedById;
+  return status === 'PROCESSING'
+    || (status === 'PENDING' && Boolean(approvedAt) && !approvedById);
 }
 
 function toTransferDueRow(item) {
@@ -473,8 +519,7 @@ function toTransferDueRow(item) {
     soTien: item.soTien,
     status: 'processing',
     paidBy: item.nguoiNop,
-    paidMethod: 'Chuyển khoản',
-    paidAt: item.raw?.updatedAt || item.raw?.transactionDate || item.ngayThu,
+    paidAt: item.raw?.approvedAt || item.raw?.updatedAt || item.raw?.transactionDate || item.ngayThu,
     raw: item.raw,
   };
 }

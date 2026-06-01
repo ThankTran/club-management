@@ -75,19 +75,34 @@ const SAMPLE_LOOKUP_RESOURCES = LEAF_FOLDERS.map((folder, index) => ({
   lookupFolderId: folder.id,
 }));
 
-export default function ResourceLookupTable({ resources, search, onView }) {
+const WORKFLOW_STATUS = {
+  working: { label: 'working', bg: '#dcfce7', color: '#15803d' },
+  fixing: { label: 'fixing', bg: '#e0f2fe', color: '#0369a1' },
+};
+
+export default function ResourceLookupTable({
+  resources,
+  search,
+  onView,
+  onEdit,
+  onDelete,
+  typeFilter = 'all',
+  formatFilter = 'all',
+  subjectFilter = 'all',
+  statusFilter = 'all',
+}) {
   const [selectedFolderId, setSelectedFolderId] = useState(DEFAULT_FOLDER_ID);
   const [openFolderIds, setOpenFolderIds] = useState(() => new Set(FOLDER_TREE.map((node) => node.id)));
 
   const approvedResources = useMemo(() => {
-    const approved = resources
-      .filter((resource) => resource.status === 'approved')
+    const published = resources
+      .filter((resource) => resource.approvedAt || resource.status === 'approved' || resource.status === 'fixing')
       .map((resource) => ({
         ...resource,
         lookupFolderId: resource.lookupFolderId || resolveFolderId(resource),
       }));
 
-    return approved
+    return published
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [resources]);
 
@@ -105,6 +120,10 @@ export default function ResourceLookupTable({ resources, search, onView }) {
         selectedFolder.pathLabel.toLowerCase().includes(normalizedSearch)
       );
     })
+    .filter((resource) => typeFilter === 'all' || resource.type === typeFilter)
+    .filter((resource) => formatFilter === 'all' || resource.format === formatFilter)
+    .filter((resource) => subjectFilter === 'all' || resource.subject === subjectFilter)
+    .filter((resource) => statusFilter === 'all' || resource.status === statusFilter)
     .slice(0, RESOURCE_LOOKUP_MAX_DISPLAY);
 
   const countsByFolder = approvedResources.reduce((counts, resource) => {
@@ -172,16 +191,19 @@ export default function ResourceLookupTable({ resources, search, onView }) {
                   <th>Chủ đề / Môn học</th>
                   <th>Loại</th>
                   <th>Định dạng</th>
+                  <th>Trạng thái sử dụng</th>
                   <th>Link</th>
+                  <th>Thao tác</th>
                 </tr>
               </thead>
               <tbody>
                 {rows.length === 0 ? (
                   <tr>
-                    <td colSpan={6} className={styles.emptyCell}>Không có tài liệu đã duyệt phù hợp</td>
+                    <td colSpan={8} className={styles.emptyCell}>Không có tài liệu đã duyệt phù hợp</td>
                   </tr>
                 ) : rows.map((resource, index) => {
                   const format = FORMAT_CONFIG[resource.format] || FORMAT_CONFIG.Khác;
+                  const workflow = WORKFLOW_STATUS[resource.workflowStatus] || WORKFLOW_STATUS.working;
                   return (
                     <tr key={resource.id} className={styles.dataRow} onClick={() => onView?.(resource)}>
                       <td className={styles.indexCell}>{index + 1}</td>
@@ -194,6 +216,11 @@ export default function ResourceLookupTable({ resources, search, onView }) {
                         </span>
                       </td>
                       <td>
+                        <span className={styles.formatBadge} style={{ background: workflow.bg, color: workflow.color }}>
+                          {workflow.label}
+                        </span>
+                      </td>
+                      <td>
                         {resource.link ? (
                           <a className={styles.linkBtn} href={resource.link} target="_blank" rel="noopener noreferrer">
                             Xem tài liệu
@@ -201,6 +228,16 @@ export default function ResourceLookupTable({ resources, search, onView }) {
                         ) : (
                           <span className={styles.noLink}>-</span>
                         )}
+                      </td>
+                      <td onClick={(event) => event.stopPropagation()}>
+                        <div className={styles.rowActions}>
+                          <button type="button" className={styles.actionBtn} onClick={() => onEdit?.(resource)}>
+                            Sửa
+                          </button>
+                          <button type="button" className={styles.actionBtnDanger} onClick={() => onDelete?.(resource)}>
+                            Xóa
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   );

@@ -145,26 +145,37 @@ public class DocumentServiceImpl implements DocumentService {
         validateApprovalRequest(request);
         Document document = documentRepository.findById(request.getDocumentId())
                 .orElseThrow(() -> new BusinessException("Khong tim thay document: " + request.getDocumentId()));
-        if (document.getReqStatus() != ApprovalStatusEnum.PENDING) {
-            throw new BusinessException("Phieu tai lieu da duoc xu ly: " + request.getDocumentId());
-        }
 
         Member approver = memberRepository.findById(request.getApprovedBy())
                 .orElseThrow(() -> new BusinessException("Khong tim thay nguoi duyet: " + request.getApprovedBy()));
-        memberDomainService.validateApproverPermission(approver);
+        if (request.getStatus() != ApprovalStatusEnum.REQUESTED_CHANGES) {
+            memberDomainService.validateApproverPermission(approver);
+        }
 
         document.setReqStatus(request.getStatus());
         document.setApprovedBy(approver);
-        document.setApprovedAt(LocalDateTime.now());
         document.setNote(request.getNote());
-        document.setLookupFolderId(
-                request.getStatus() == ApprovalStatusEnum.APPROVED ? request.getLookupFolderId() : null);
+        if (request.getStatus() == ApprovalStatusEnum.APPROVED) {
+            document.setApprovedAt(LocalDateTime.now());
+            document.setLookupFolderId(request.getLookupFolderId());
+        } else {
+            document.setLookupFolderId(null);
+            if (request.getStatus() == ApprovalStatusEnum.REQUESTED_CHANGES && document.getApprovedAt() == null) {
+                document.setApprovedAt(null);
+            }
+        }
 
         Document savedDocument = documentRepository.save(document);
         if (request.getStatus() == ApprovalStatusEnum.APPROVED) {
             notificationDispatchService.toApprovedActiveMembers(
                     "Tài liệu đã được duyệt",
                     "Tài liệu " + savedDocument.getDocumentName() + " đã được duyệt và có thể tra cứu.",
+                    TARGET_DOCUMENT,
+                    approver);
+        } else if (request.getStatus() == ApprovalStatusEnum.REQUESTED_CHANGES) {
+            notificationDispatchService.toManagers(
+                    "Tài liệu cần chỉnh sửa",
+                    "Tài liệu " + savedDocument.getDocumentName() + " đang chờ duyệt chỉnh sửa.",
                     TARGET_DOCUMENT,
                     approver);
         } else {
@@ -274,8 +285,9 @@ public class DocumentServiceImpl implements DocumentService {
         }
         if (request.getStatus() == null
                 || (request.getStatus() != ApprovalStatusEnum.APPROVED
-                && request.getStatus() != ApprovalStatusEnum.REJECTED)) {
-            throw new BusinessException("Approval status must be APPROVED or REJECTED");
+                && request.getStatus() != ApprovalStatusEnum.REJECTED
+                && request.getStatus() != ApprovalStatusEnum.REQUESTED_CHANGES)) {
+            throw new BusinessException("Approval status must be APPROVED, REJECTED or REQUESTED_CHANGES");
         }
         if (request.getStatus() == ApprovalStatusEnum.APPROVED) {
             String folderId = normalizeBlank(request.getLookupFolderId());
@@ -283,6 +295,12 @@ public class DocumentServiceImpl implements DocumentService {
                 throw new BusinessException("Thu muc tai lieu khong hop le");
             }
             request.setLookupFolderId(folderId);
+        } else if (request.getStatus() == ApprovalStatusEnum.REQUESTED_CHANGES) {
+            String note = normalizeBlank(request.getNote());
+            if (note == null) {
+                throw new BusinessException("Ly do yeu cau chinh sua khong duoc de trong");
+            }
+            request.setNote(note);
         }
     }
 

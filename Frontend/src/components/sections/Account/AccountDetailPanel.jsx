@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
-import { KeyRound, Monitor, Save, X } from "lucide-react";
+import { KeyRound, Monitor, Save, Trash2, X } from "lucide-react";
 import styles from "./AccountDetailPanel.module.css";
 
-export default function AccountDetailPanel({ account, onAccountUpdate, saving = false }) {
+export default function AccountDetailPanel({ account, onAccountUpdate, onDelete, saving = false, deleting = false }) {
   const [editingAccount, setEditingAccount] = useState(false);
   const [passwordDraft, setPasswordDraft] = useState("");
   const [accountSaved, setAccountSaved] = useState(false);
@@ -95,6 +95,15 @@ export default function AccountDetailPanel({ account, onAccountUpdate, saving = 
             Hủy
           </button>
         )}
+        <button
+          className={`${styles.actionBtn} ${styles.deleteBtn}`}
+          type="button"
+          onClick={() => onDelete?.(account)}
+          disabled={saving || deleting}
+        >
+          <Trash2 size={15} />
+          Xóa tài khoản
+        </button>
       </div>
 
       <div className={styles.section}>

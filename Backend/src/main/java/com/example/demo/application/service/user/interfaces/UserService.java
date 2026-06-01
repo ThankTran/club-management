@@ -25,6 +25,8 @@ public interface UserService {
 
     UserPasswordResponse getPasswordHashForAdmin(Long userId);
 
+    void deleteUser(Long userId, Long currentUserId);
+
     CompletableFuture<UserResponse> getUserByIdAsync(Long userId);
 
     CompletableFuture<UserResponse> getUserByMemberIdAsync(Long memberId);

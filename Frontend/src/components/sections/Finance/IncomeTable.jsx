@@ -44,7 +44,7 @@ export default function IncomeTable({
               <th>MÃ PHIẾU</th>
               <th>NGƯỜI NỘP</th>
               <th>LÝ DO</th>
-              <th>HÌNH THỨC</th>
+              <th>TRẠNG THÁI</th>
               <th>
                 <button
                   className={styles.sortBtn}
@@ -64,7 +64,7 @@ export default function IncomeTable({
                 <td><span className={styles.idBadge}>{r.id}</span></td>
                 <td className={styles.nameCell}>{r.nguoiNop}</td>
                 <td>{r.lyDo}</td>
-                <td><span className={styles.hinhThucBadge}>{r.hinhThuc}</span></td>
+                <td><span className={styles.hinhThucBadge}>{formatIncomeStatus(r)}</span></td>
                 <td className={styles.dateCell}>{fmtDate(r.ngayThu)}</td>
                 <td><span className={styles.amtThu}>{fmtMoney(r.soTien)}</span></td>
                 <td>{r.maSuKien ? <span className={styles.skBadge}>{r.maSuKien}</span> : <span className={styles.naBadge}>—</span>}</td>
@@ -109,4 +109,14 @@ export default function IncomeTable({
       </div>
     </div>
   );
+}
+
+function formatIncomeStatus(row) {
+  const value = String(row?.status || '').toUpperCase();
+  const awaitingConfirmation = value === 'PROCESSING'
+    || (value === 'PENDING' && Boolean(row?.raw?.approvedAt) && !row?.raw?.approvedById);
+  if (value === 'COMPLETED' || value === 'APPROVED') return 'Đã thu';
+  if (awaitingConfirmation) return 'Chờ xác nhận';
+  if (value === 'FAILED') return 'Không thành công';
+  return 'Chờ đóng';
 }

@@ -8,6 +8,6 @@ export const TABS = [
   { id: 'overview', label: 'Tổng quan', icon: '📊' },
   { id: 'thu',      label: 'Phiếu Thu', icon: '💰' },
   { id: 'chi',      label: 'Phiếu Chi', icon: '💸' },
-  { id: 'chuyenKhoan', label: 'Chờ chuyển khoản', icon: '🏦' },
+  { id: 'chuyenKhoan', label: 'Chờ xác nhận thu', icon: '🏦' },
   { id: 'baocao',   label: 'Báo cáo Quỹ', icon: '📋' },
 ];

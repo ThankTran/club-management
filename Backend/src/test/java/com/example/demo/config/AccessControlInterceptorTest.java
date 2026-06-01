@@ -62,12 +62,40 @@ class AccessControlInterceptorTest {
     }
 
     @Test
+    void memberCanSearchMembers() throws Exception {
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        boolean allowed = interceptor.preHandle(request("GET", "/api/members/search"), response, new Object());
+
+        assertTrue(allowed);
+    }
+
+    @Test
     void memberCanReadOwnMemberProfile() throws Exception {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         boolean allowed = interceptor.preHandle(request("GET", "/api/members/7"), response, new Object());
 
         assertTrue(allowed);
+    }
+
+    @Test
+    void memberCanReadOwnLoginSessions() throws Exception {
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        boolean allowed = interceptor.preHandle(request("GET", "/api/users/7/sessions"), response, new Object());
+
+        assertTrue(allowed);
+    }
+
+    @Test
+    void memberCannotAccessAdminSystemSettings() throws Exception {
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        boolean allowed = interceptor.preHandle(request("GET", "/api/system-settings"), response, new Object());
+
+        assertFalse(allowed);
+        assertEquals(403, response.getStatus());
     }
 
     @Test
@@ -93,6 +121,15 @@ class AccessControlInterceptorTest {
         MockHttpServletResponse response = new MockHttpServletResponse();
 
         boolean allowed = interceptor.preHandle(request("POST", "/api/ai/help"), response, new Object());
+
+        assertTrue(allowed);
+    }
+
+    @Test
+    void memberCanRequestDocumentChanges() throws Exception {
+        MockHttpServletResponse response = new MockHttpServletResponse();
+
+        boolean allowed = interceptor.preHandle(request("POST", "/api/documents/approve"), response, new Object());
 
         assertTrue(allowed);
     }

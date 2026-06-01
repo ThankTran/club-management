@@ -88,6 +88,7 @@ public class AccessControlInterceptor implements HandlerInterceptor {
                         || matches(path, "/api/document-files/by-document/**")
                         || matches(path, "/api/document-types/**")
                         || matches(path, "/api/subjects/**")
+                        || matches(path, "/api/members/search")
                         || matches(path, "/api/events")
                         || matches(path, "/api/events/*")
                         || matches(path, "/api/events/search")
@@ -107,7 +108,8 @@ public class AccessControlInterceptor implements HandlerInterceptor {
                 "^/api/events/registrations/by-member/(\\d+)$",
                 "^/api/event-organizers/by-member/(\\d+)$",
                 "^/api/notification-recipients/by-member/(\\d+)$",
-                "^/api/transactions/member-dues/(\\d+)$")) {
+                "^/api/transactions/member-dues/(\\d+)$",
+                "^/api/users/(\\d+)/sessions$")) {
             return true;
         }
 
@@ -132,7 +134,8 @@ public class AccessControlInterceptor implements HandlerInterceptor {
                 matches(path, "/api/events/*/registrations")
                         || matches(path, "/api/ai/help")
                         || matches(path, "/api/documents")
-                        || matches(path, "/api/document-files"))) {
+                        || matches(path, "/api/document-files")
+                        || matches(path, "/api/documents/approve"))) {
             return true;
         }
 

@@ -1,11 +1,14 @@
 import { useEffect, useMemo, useState } from "react";
 import { UserCog } from "lucide-react";
 import AccountCreateModal from "../../components/sections/Account/AccountCreateModal";
+import AccountDeleteConfirmModal from "../../components/sections/Account/AccountDeleteConfirmModal";
 import AccountDetailPanel from "../../components/sections/Account/AccountDetailPanel";
 import AccountTable from "../../components/sections/Account/AccountTable";
 import AccountToolbar from "../../components/sections/Account/AccountToolbar";
+import ActionToast from "../../components/common/ActionToast/ActionToast";
 import {
   createUserAPI,
+  deleteUserAPI,
   getUserSessionsAPI,
   loadAccountUsersAPI,
   normalizeAccountFromApi,
@@ -14,6 +17,7 @@ import {
 } from "../../services/account-service";
 import { getMembersAPI, normalizeMemberFromApi } from "../../services/member-service";
 import useAuthStore from "../../store/auth-store";
+import useActionToast from "../../hooks/useActionToast";
 import styles from "./AccountPage.module.css";
 
 const PAGE_SIZE = 10;
@@ -30,7 +34,10 @@ export default function AccountPage() {
   const [createdAtSort, setCreatedAtSort] = useState("desc");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [apiError, setApiError] = useState("");
+  const { toast, showPending, showSuccess, showError } = useActionToast();
 
   const reloadAccounts = async () => {
     const nextAccounts = applyVisiblePasswords(await loadAccountUsersAPI());
@@ -174,6 +181,40 @@ export default function AccountPage() {
     }
   };
 
+  const requestDelete = (account) => {
+    if (!account) return;
+    setDeleteConfirm(account);
+  };
+
+  const confirmDelete = async () => {
+    if (!deleteConfirm?.id) {
+      setDeleteConfirm(null);
+      return;
+    }
+
+    const currentUserId = currentUser?.userId ? String(currentUser.userId) : "";
+    if (currentUserId && String(deleteConfirm.id) === currentUserId) {
+      showError("Không thể xóa tài khoản đang đăng nhập.");
+      return;
+    }
+
+    setDeleting(true);
+    try {
+      showPending("Đang xóa tài khoản...");
+      await deleteUserAPI(deleteConfirm.id);
+      setDeleteConfirm(null);
+      await reloadAccounts();
+      setApiError("");
+      showSuccess("Xóa tài khoản thành công.");
+    } catch (error) {
+      const message = error?.message || "Không xóa được tài khoản.";
+      setApiError(message);
+      showError(message);
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const createAccount = async (formData) => {
     const memberId = Number(formData.memberId);
 
@@ -206,6 +247,7 @@ export default function AccountPage() {
 
   return (
     <div className={styles.page}>
+      <ActionToast toast={toast} />
       {apiError && <div className={styles.apiError}>{apiError}</div>}
 
       <div className={styles.pageHeader}>
@@ -291,7 +333,9 @@ export default function AccountPage() {
         <AccountDetailPanel
           account={selectedAccount}
           onAccountUpdate={(fields) => updateAccount(selectedAccount.id, fields)}
+          onDelete={requestDelete}
           saving={saving}
+          deleting={deleting}
         />
       </div>
 
@@ -301,6 +345,13 @@ export default function AccountPage() {
         onSubmit={createAccount}
         existingAccounts={accounts}
         members={members}
+      />
+
+      <AccountDeleteConfirmModal
+        account={deleteConfirm}
+        onCancel={() => { if (!deleting) setDeleteConfirm(null); }}
+        onConfirm={confirmDelete}
+        loading={deleting}
       />
     </div>
   );
