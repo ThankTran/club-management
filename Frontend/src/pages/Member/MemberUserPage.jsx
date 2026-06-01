@@ -22,12 +22,14 @@ const matchesMemberSearch = (member, query) => {
     return matchesVietnameseSearch(member[STUDENT_ID_KEY], normalizedQuery);
   }
 
-  return Object.entries(member).some(([key, value]) => (
-    key !== STUDENT_ID_KEY &&
-    value !== null &&
-    typeof value !== 'object' &&
-    matchesVietnameseSearch(value, normalizedQuery)
-  ));
+  return (
+    matchesVietnameseSearch(member.name, normalizedQuery) ||
+    matchesVietnameseSearch(member.email, normalizedQuery) ||
+    matchesVietnameseSearch(
+      String(member.phone || '').replace(/\s+/g, ''),
+      normalizedQuery.replace(/\s+/g, ''),
+    )
+  );
 };
 
 export default function MemberUserPage() {
