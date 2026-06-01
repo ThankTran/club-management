@@ -41,19 +41,72 @@ export const RESOURCE_FOLDER_TREE = [
     id: 'major',
     label: 'CHUYÊN NGÀNH',
     children: [
-      { id: 'cong-nghe-phan-mem', label: 'Công nghệ phần mềm' },
-      { id: 'he-thong-thong-tin', label: 'Hệ thống thông tin' },
-      { id: 'khoa-hoc-may-tinh', label: 'Khoa học máy tính' },
-      { id: 'ky-thuat-may-tinh', label: 'Kỹ thuật máy tính' },
-      { id: 'mang-may-tinh', label: 'Mạng máy tính và truyền thông dữ liệu' },
-      { id: 'an-toan-thong-tin', label: 'An toàn thông tin' },
-      { id: 'thuong-mai-dien-tu', label: 'Thương mại điện tử' },
+      {
+        id: 'cong-nghe-phan-mem',
+        label: 'Công nghệ phần mềm',
+        children: [
+          { id: 'ky-thuat-phan-mem', label: 'Kỹ thuật phần mềm' },
+          { id: 'truyen-thong-da-phuong-tien', label: 'Truyền thông đa phương tiện' },
+        ],
+      },
+      {
+        id: 'he-thong-thong-tin',
+        label: 'Hệ thống thông tin',
+        children: [
+          { id: 'he-thong-thong-tin-chuyen-nganh', label: 'Hệ thống thông tin' },
+          { id: 'thuong-mai-dien-tu', label: 'Thương mại điện tử' },
+        ],
+      },
+      {
+        id: 'khoa-hoc-may-tinh',
+        label: 'Khoa học máy tính',
+        children: [
+          { id: 'khoa-hoc-may-tinh-chuyen-nganh', label: 'Khoa học máy tính' },
+          { id: 'tri-tue-nhan-tao', label: 'Trí tuệ nhân tạo' },
+        ],
+      },
+      {
+        id: 'khoa-hoc-ky-thuat-thong-tin',
+        label: 'Khoa học & Kỹ thuật thông tin',
+        children: [
+          { id: 'cong-nghe-thong-tin', label: 'Công nghệ thông tin' },
+          { id: 'khoa-hoc-du-lieu', label: 'Khoa học dữ liệu' },
+        ],
+      },
+      {
+        id: 'mang-may-tinh-truyen-thong',
+        label: 'Mạng máy tính & Truyền thông',
+        children: [
+          { id: 'an-toan-thong-tin', label: 'An toàn thông tin' },
+          { id: 'mang-may-tinh-truyen-thong-du-lieu', label: 'Mạng máy tính & Truyền thông dữ liệu' },
+        ],
+      },
+      {
+        id: 'ky-thuat-may-tinh',
+        label: 'Kỹ thuật máy tính',
+        children: [
+          { id: 'ky-thuat-may-tinh-chuyen-nganh', label: 'Kỹ thuật máy tính' },
+          { id: 'thiet-ke-vi-mach', label: 'Thiết kế vi mạch' },
+        ],
+      },
     ],
   },
 ];
 
 export const RESOURCE_LEAF_FOLDERS = flattenLeaves(RESOURCE_FOLDER_TREE);
 export const DEFAULT_RESOURCE_FOLDER_ID = RESOURCE_LEAF_FOLDERS[0].id;
+export const LEGACY_RESOURCE_FOLDER_ID_MAP = {
+  'cong-nghe-phan-mem': 'ky-thuat-phan-mem',
+  'he-thong-thong-tin': 'he-thong-thong-tin-chuyen-nganh',
+  'khoa-hoc-may-tinh': 'khoa-hoc-may-tinh-chuyen-nganh',
+  'ky-thuat-may-tinh': 'ky-thuat-may-tinh-chuyen-nganh',
+  'mang-may-tinh': 'mang-may-tinh-truyen-thong-du-lieu',
+};
+
+export function normalizeResourceFolderId(folderId) {
+  if (!folderId) return '';
+  return LEGACY_RESOURCE_FOLDER_ID_MAP[folderId] || folderId;
+}
 
 export function flattenLeaves(nodes, parentLabels = []) {
   return nodes.flatMap((node) => {

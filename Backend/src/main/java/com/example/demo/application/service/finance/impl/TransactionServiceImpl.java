@@ -225,11 +225,11 @@ public class TransactionServiceImpl implements com.example.demo.application.serv
         notifyFinance(
                 savedTransaction,
                 isAwaitingConfirmation(savedTransaction)
-                        ? "Thanh toan dang cho xac nhan"
-                        : "Dong tien thanh cong",
+                        ? "Thanh toán đang chờ xác nhận"
+                        : "Đóng tiền thành công",
                 isAwaitingConfirmation(savedTransaction)
-                        ? "Khoan " + describeTransaction(savedTransaction) + " dang cho ban quan ly xac nhan."
-                        : "Khoan " + describeTransaction(savedTransaction) + " da duoc hoan tat.",
+                        ? "Khoản " + describeTransaction(savedTransaction) + " đang chờ ban quản lý xác nhận."
+                        : "Khoản " + describeTransaction(savedTransaction) + " đã được hoàn tất.",
                 savedTransaction.getApprovedBy());
         return transactionMapper.toResponse(savedTransaction);
     }
@@ -251,8 +251,8 @@ public class TransactionServiceImpl implements com.example.demo.application.serv
         Transaction savedTransaction = transactionRepository.save(transaction);
         notifyFinance(
                 savedTransaction,
-                "Thanh toan dang cho xac nhan",
-                "Khoan " + describeTransaction(savedTransaction) + " dang cho ban quan ly xac nhan.",
+                "Thanh toán đang chờ xác nhận",
+                "Khoản " + describeTransaction(savedTransaction) + " đang chờ ban quản lý xác nhận.",
                 null);
         return transactionMapper.toResponse(savedTransaction);
     }
@@ -260,12 +260,12 @@ public class TransactionServiceImpl implements com.example.demo.application.serv
     @CacheEvict(cacheNames = {"transactions", "finance"}, allEntries = true)
     public TransactionResponse rejectPayment(String id, Long currentMemberId, boolean currentUserIsManager) {
         if (!currentUserIsManager) {
-            throw new IllegalArgumentException("Chi co thanh vien co chuc vu moi duoc tu choi xac nhan thanh toan");
+            throw new IllegalArgumentException("Chỉ có thành viên có chức vụ mới được phép từ chối xác nhận thanh toán");
         }
         Transaction transaction = transactionRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy khoản tài chính: " + id));
         if (transaction.getType() != TransactionType.INCOME) {
-            throw new IllegalArgumentException("Chi co the tu choi xac nhan khoan thu");
+            throw new IllegalArgumentException("Chỉ có thể từ chối xác nhận khoản thu");
         }
 
         transaction.setStatus(TransactionStatus.FAILED);

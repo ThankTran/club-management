@@ -1,63 +1,17 @@
 import { useMemo, useState } from 'react';
+import { Pencil, Trash2 } from 'lucide-react';
 import { FORMAT_CONFIG, RESOURCE_LOOKUP_MAX_DISPLAY } from '../../../data/Resource/resourceAdminData';
+import {
+  DEFAULT_RESOURCE_FOLDER_ID,
+  normalizeResourceFolderId,
+  RESOURCE_FOLDER_TREE,
+  RESOURCE_LEAF_FOLDERS,
+} from '../../../data/Resource/resourceFolderData';
 import styles from './ResourceLookupTable.module.css';
 
-const FOLDER_TREE = [
-  {
-    id: 'general',
-    label: 'ĐẠI CƯƠNG',
-    children: [
-      {
-        id: 'politics-law',
-        label: 'Lý luận chính trị và pháp luật',
-        children: [
-          { id: 'tu-tuong-ho-chi-minh', label: 'Tư tưởng Hồ Chí Minh' },
-          { id: 'triet-hoc-mac-lenin', label: 'Triết học Mác - Lênin' },
-          { id: 'kinh-te-chinh-tri', label: 'Kinh tế Chính trị Mác - Lênin' },
-          { id: 'chu-nghia-xa-hoi-khoa-hoc', label: 'Chủ nghĩa xã hội khoa học' },
-          { id: 'lich-su-dang', label: 'Lịch sử Đảng Cộng sản Việt Nam' },
-          { id: 'phap-luat-dai-cuong', label: 'Pháp luật đại cương' },
-        ],
-      },
-      {
-        id: 'math-it-science',
-        label: 'Toán - Tin học - Khoa học tự nhiên',
-        children: [
-          { id: 'giai-tich', label: 'Giải tích' },
-          { id: 'dai-so-tuyen-tinh', label: 'Đại số tuyến tính' },
-          { id: 'cau-truc-roi-rac', label: 'Cấu trúc rời rạc' },
-          { id: 'xac-suat-thong-ke', label: 'Xác suất thống kê' },
-          { id: 'nhap-mon-lap-trinh', label: 'Nhập môn lập trình' },
-        ],
-      },
-      {
-        id: 'foreign-language',
-        label: 'Ngoại ngữ',
-        children: [
-          { id: 'anh-van-1', label: 'Anh văn 1' },
-          { id: 'anh-van-2', label: 'Anh văn 2' },
-          { id: 'anh-van-3', label: 'Anh văn 3' },
-        ],
-      },
-    ],
-  },
-  {
-    id: 'major',
-    label: 'CHUYÊN NGÀNH',
-    children: [
-      { id: 'cong-nghe-phan-mem', label: 'Công nghệ phần mềm' },
-      { id: 'he-thong-thong-tin', label: 'Hệ thống thông tin' },
-      { id: 'khoa-hoc-may-tinh', label: 'Khoa học máy tính' },
-      { id: 'ky-thuat-may-tinh', label: 'Kỹ thuật máy tính' },
-      { id: 'mang-may-tinh', label: 'Mạng máy tính và truyền thông dữ liệu' },
-      { id: 'an-toan-thong-tin', label: 'An toàn thông tin' },
-      { id: 'thuong-mai-dien-tu', label: 'Thương mại điện tử' },
-    ],
-  },
-];
-
-const LEAF_FOLDERS = flattenLeaves(FOLDER_TREE);
-const DEFAULT_FOLDER_ID = LEAF_FOLDERS[0].id;
+const FOLDER_TREE = RESOURCE_FOLDER_TREE;
+const LEAF_FOLDERS = RESOURCE_LEAF_FOLDERS;
+const DEFAULT_FOLDER_ID = DEFAULT_RESOURCE_FOLDER_ID;
 
 const SAMPLE_LOOKUP_RESOURCES = LEAF_FOLDERS.map((folder, index) => ({
   id: `sample-${folder.id}`,
@@ -76,8 +30,9 @@ const SAMPLE_LOOKUP_RESOURCES = LEAF_FOLDERS.map((folder, index) => ({
 }));
 
 const WORKFLOW_STATUS = {
-  working: { label: 'working', bg: '#dcfce7', color: '#15803d' },
-  fixing: { label: 'fixing', bg: '#e0f2fe', color: '#0369a1' },
+  working: { label: 'Đang sử dụng', bg: '#dcfce7', color: '#15803d' },
+  fixing: { label: 'Đang chỉnh sửa', bg: '#e0f2fe', color: '#0369a1' },
+  cancelled: { label: 'Ngừng sử dụng', bg: '#fee2e2', color: '#b91c1c' },
 };
 
 export default function ResourceLookupTable({
@@ -99,7 +54,7 @@ export default function ResourceLookupTable({
       .filter((resource) => resource.approvedAt || resource.status === 'approved' || resource.status === 'fixing')
       .map((resource) => ({
         ...resource,
-        lookupFolderId: resource.lookupFolderId || resolveFolderId(resource),
+        lookupFolderId: normalizeResourceFolderId(resource.lookupFolderId) || resolveFolderId(resource),
       }));
 
     return published
@@ -203,7 +158,8 @@ export default function ResourceLookupTable({
                   </tr>
                 ) : rows.map((resource, index) => {
                   const format = FORMAT_CONFIG[resource.format] || FORMAT_CONFIG.Khác;
-                  const workflow = WORKFLOW_STATUS[resource.workflowStatus] || WORKFLOW_STATUS.working;
+                  const workflowKey = String(resource.workflowStatus || resource.status || 'working').toLowerCase();
+                  const workflow = WORKFLOW_STATUS[workflowKey] || WORKFLOW_STATUS.working;
                   return (
                     <tr key={resource.id} className={styles.dataRow} onClick={() => onView?.(resource)}>
                       <td className={styles.indexCell}>{index + 1}</td>
@@ -231,11 +187,11 @@ export default function ResourceLookupTable({
                       </td>
                       <td onClick={(event) => event.stopPropagation()}>
                         <div className={styles.rowActions}>
-                          <button type="button" className={styles.actionBtn} onClick={() => onEdit?.(resource)}>
-                            Sửa
+                          <button type="button" className={styles.actionBtn} onClick={() => onEdit?.(resource)} title="Sửa tài liệu" aria-label="Sửa tài liệu">
+                            <Pencil size={15} strokeWidth={2.2} />
                           </button>
-                          <button type="button" className={styles.actionBtnDanger} onClick={() => onDelete?.(resource)}>
-                            Xóa
+                          <button type="button" className={styles.actionBtnDanger} onClick={() => onDelete?.(resource)} title="Xóa tài liệu" aria-label="Xóa tài liệu">
+                            <Trash2 size={15} strokeWidth={2.2} />
                           </button>
                         </div>
                       </td>
@@ -301,16 +257,6 @@ function FolderNode({ node, depth, selectedFolderId, countsByFolder, openFolderI
   );
 }
 
-function flattenLeaves(nodes, parentLabels = []) {
-  return nodes.flatMap((node) => {
-    const path = [...parentLabels, node.label];
-    if (!node.children?.length) {
-      return [{ ...node, pathLabel: path.join(' / ') }];
-    }
-    return flattenLeaves(node.children, path);
-  });
-}
-
 function resolveFolderId(resource) {
   const text = `${resource.subject || ''} ${resource.title || ''}`.toLowerCase();
   const directMatch = LEAF_FOLDERS.find((folder) => text.includes(folder.label.toLowerCase()));
@@ -322,15 +268,21 @@ function resolveFolderId(resource) {
     ['giải tích', 'giai-tich'],
     ['đại số', 'dai-so-tuyen-tinh'],
     ['xác suất', 'xac-suat-thong-ke'],
-    ['lập trình', 'cong-nghe-phan-mem'],
-    ['cơ sở dữ liệu', 'he-thong-thong-tin'],
-    ['hệ thống', 'he-thong-thong-tin'],
-    ['trí tuệ nhân tạo', 'khoa-hoc-may-tinh'],
-    ['hệ điều hành', 'khoa-hoc-may-tinh'],
-    ['kiến trúc máy tính', 'ky-thuat-may-tinh'],
-    ['mạng máy tính', 'mang-may-tinh'],
+    ['kỹ thuật phần mềm', 'ky-thuat-phan-mem'],
+    ['lập trình', 'ky-thuat-phan-mem'],
+    ['truyền thông đa phương tiện', 'truyen-thong-da-phuong-tien'],
+    ['cơ sở dữ liệu', 'he-thong-thong-tin-chuyen-nganh'],
+    ['hệ thống', 'he-thong-thong-tin-chuyen-nganh'],
+    ['trí tuệ nhân tạo', 'tri-tue-nhan-tao'],
+    ['hệ điều hành', 'khoa-hoc-may-tinh-chuyen-nganh'],
+    ['khoa học dữ liệu', 'khoa-hoc-du-lieu'],
+    ['công nghệ thông tin', 'cong-nghe-thong-tin'],
+    ['kiến trúc máy tính', 'ky-thuat-may-tinh-chuyen-nganh'],
+    ['kỹ thuật máy tính', 'ky-thuat-may-tinh-chuyen-nganh'],
+    ['thiết kế vi mạch', 'thiet-ke-vi-mach'],
+    ['mạng máy tính', 'mang-may-tinh-truyen-thong-du-lieu'],
     ['an toàn thông tin', 'an-toan-thong-tin'],
-    ['web', 'cong-nghe-phan-mem'],
+    ['web', 'ky-thuat-phan-mem'],
     ['ui/ux', 'thuong-mai-dien-tu'],
   ];
 

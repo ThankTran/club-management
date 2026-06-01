@@ -1,3 +1,4 @@
+import { Check, Pencil, Trash2, X } from 'lucide-react';
 import styles from './ResourceTable.module.css';
 
 const FORMAT_ICON = {
@@ -156,33 +157,33 @@ export default function ResourceTable({
                           className={styles.approveBtn}
                           onClick={() => onApprove?.(r.id)}
                           title="Duyệt"
+                          aria-label="Duyệt"
                         >
-                          ✓
+                          <Check size={15} strokeWidth={2.4} />
                         </button>
                         <button
                           className={styles.rejectBtn}
                           onClick={() => onReject?.(r.id)}
                           title="Từ chối"
+                          aria-label="Từ chối"
                         >
-                          ✕
+                          <X size={15} strokeWidth={2.4} />
                         </button>
                         <button
                           className={styles.editBtn}
                           onClick={() => onEdit?.(r)}
                           title="Chỉnh sửa"
+                          aria-label="Chỉnh sửa"
                         >
-                          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/>
-                          </svg>
+                          <Pencil size={15} strokeWidth={2.2} />
                         </button>
                         <button
                           className={styles.deleteBtn}
                           onClick={() => onDelete?.(r)}
                           title="Xoá"
+                          aria-label="Xóa"
                         >
-                          <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-                            <circle cx="12" cy="12" r="10"/><path d="M15 9l-6 6M9 9l6 6"/>
-                          </svg>
+                          <Trash2 size={15} strokeWidth={2.2} />
                         </button>
                       </div>
                     </td>

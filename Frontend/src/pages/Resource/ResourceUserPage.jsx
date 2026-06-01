@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import ResourceCard from '../../components/sections/Resource/ResourceCard';
 import ResourceForm from '../../components/sections/Resource/ResourceForm';
 import ResourceFolderView from '../../components/sections/Resource/ResourceFolderView';
-import { RESOURCE_LEAF_FOLDERS } from '../../data/Resource/resourceFolderData';
+import { normalizeResourceFolderId, RESOURCE_LEAF_FOLDERS } from '../../data/Resource/resourceFolderData';
 import { INITIAL_MEMBER_SUBMISSIONS, MOCK_RESOURCES, PAGE_SIZE, FORMAT_OPTIONS, SOURCE_OPTIONS, TYPE_TABS } from '../../data/Resource/resourceUserData';
 import {
   createResourceAPI,
@@ -626,7 +626,7 @@ export default function ResourceUserPage() {
 
 /* ── Sub-components ── */
 function resolveUserFolderId(resource) {
-  if (resource.lookupFolderId) return resource.lookupFolderId;
+  if (resource.lookupFolderId) return normalizeResourceFolderId(resource.lookupFolderId);
 
   const text = `${resource.major || ''} ${resource.subject || ''} ${resource.title || ''}`.toLowerCase();
   const directMatch = RESOURCE_LEAF_FOLDERS.find((folder) => text.includes(folder.label.toLowerCase()));
@@ -638,19 +638,24 @@ function resolveUserFolderId(resource) {
     ['giải tích', 'giai-tich'],
     ['đại số', 'dai-so-tuyen-tinh'],
     ['xác suất', 'xac-suat-thong-ke'],
-    ['lập trình hướng đối tượng', 'cong-nghe-phan-mem'],
-    ['công nghệ phần mềm', 'cong-nghe-phan-mem'],
-    ['cơ sở dữ liệu', 'he-thong-thong-tin'],
-    ['hệ thống thông tin', 'he-thong-thong-tin'],
-    ['trí tuệ nhân tạo', 'khoa-hoc-may-tinh'],
-    ['hệ điều hành', 'khoa-hoc-may-tinh'],
-    ['khoa học máy tính', 'khoa-hoc-may-tinh'],
-    ['kiến trúc máy tính', 'ky-thuat-may-tinh'],
-    ['kỹ thuật máy tính', 'ky-thuat-may-tinh'],
-    ['mạng máy tính', 'mang-may-tinh'],
+    ['kỹ thuật phần mềm', 'ky-thuat-phan-mem'],
+    ['lập trình hướng đối tượng', 'ky-thuat-phan-mem'],
+    ['công nghệ phần mềm', 'ky-thuat-phan-mem'],
+    ['truyền thông đa phương tiện', 'truyen-thong-da-phuong-tien'],
+    ['cơ sở dữ liệu', 'he-thong-thong-tin-chuyen-nganh'],
+    ['hệ thống thông tin', 'he-thong-thong-tin-chuyen-nganh'],
+    ['trí tuệ nhân tạo', 'tri-tue-nhan-tao'],
+    ['hệ điều hành', 'khoa-hoc-may-tinh-chuyen-nganh'],
+    ['khoa học máy tính', 'khoa-hoc-may-tinh-chuyen-nganh'],
+    ['khoa học dữ liệu', 'khoa-hoc-du-lieu'],
+    ['công nghệ thông tin', 'cong-nghe-thong-tin'],
+    ['kiến trúc máy tính', 'ky-thuat-may-tinh-chuyen-nganh'],
+    ['kỹ thuật máy tính', 'ky-thuat-may-tinh-chuyen-nganh'],
+    ['thiết kế vi mạch', 'thiet-ke-vi-mach'],
+    ['mạng máy tính', 'mang-may-tinh-truyen-thong-du-lieu'],
     ['an toàn thông tin', 'an-toan-thong-tin'],
     ['thương mại điện tử', 'thuong-mai-dien-tu'],
-    ['web', 'cong-nghe-phan-mem'],
+    ['web', 'ky-thuat-phan-mem'],
     ['ui/ux', 'thuong-mai-dien-tu'],
   ];
 

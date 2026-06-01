@@ -50,13 +50,18 @@ public class DocumentServiceImpl implements DocumentService {
             "anh-van-1",
             "anh-van-2",
             "anh-van-3",
-            "cong-nghe-phan-mem",
-            "he-thong-thong-tin",
-            "khoa-hoc-may-tinh",
-            "ky-thuat-may-tinh",
-            "mang-may-tinh",
+            "ky-thuat-phan-mem",
+            "truyen-thong-da-phuong-tien",
+            "he-thong-thong-tin-chuyen-nganh",
+            "thuong-mai-dien-tu",
+            "khoa-hoc-may-tinh-chuyen-nganh",
+            "tri-tue-nhan-tao",
+            "cong-nghe-thong-tin",
+            "khoa-hoc-du-lieu",
             "an-toan-thong-tin",
-            "thuong-mai-dien-tu");
+            "mang-may-tinh-truyen-thong-du-lieu",
+            "ky-thuat-may-tinh-chuyen-nganh",
+            "thiet-ke-vi-mach");
 
     private final DocumentRepository documentRepository;
     private final DocumentTypeRepository documentTypeRepository;
@@ -103,11 +108,11 @@ public class DocumentServiceImpl implements DocumentService {
                                 request.getSource()));
 
         DocumentType type = documentTypeRepository.findById(request.getTypeId())
-                .orElseThrow(() -> new BusinessException("Khong tim thay loai tai lieu: " + request.getTypeId()));
+                .orElseThrow(() -> new BusinessException("Không tìm thấy loại tài liệu: " + request.getTypeId()));
         Subject subject = subjectRepository.findById(request.getSubjectId())
-                .orElseThrow(() -> new BusinessException("Khong tim thay chu de: " + request.getSubjectId()));
+                .orElseThrow(() -> new BusinessException("Không tìm thấy chủ đề: " + request.getSubjectId()));
         Member proposedBy = memberRepository.findById(request.getProposedById())
-                .orElseThrow(() -> new BusinessException("Khong tim thay thanh vien de xuat: " + request.getProposedById()));
+                .orElseThrow(() -> new BusinessException("Không tìm thấy thành viên đề xuất: " + request.getProposedById()));
 
         documentDomainService.validateProposer(proposedBy);
 
@@ -144,10 +149,10 @@ public class DocumentServiceImpl implements DocumentService {
     public DocumentResponse approve(DocumentApprovalRequest request) {
         validateApprovalRequest(request);
         Document document = documentRepository.findById(request.getDocumentId())
-                .orElseThrow(() -> new BusinessException("Khong tim thay document: " + request.getDocumentId()));
+                .orElseThrow(() -> new BusinessException("Không tìm thấy tài liệu: " + request.getDocumentId()));
 
         Member approver = memberRepository.findById(request.getApprovedBy())
-                .orElseThrow(() -> new BusinessException("Khong tim thay nguoi duyet: " + request.getApprovedBy()));
+                .orElseThrow(() -> new BusinessException("Không tìm thấy người duyệt: " + request.getApprovedBy()));
         if (request.getStatus() != ApprovalStatusEnum.REQUESTED_CHANGES) {
             memberDomainService.validateApproverPermission(approver);
         }
@@ -216,14 +221,14 @@ public class DocumentServiceImpl implements DocumentService {
     public DocumentResponse getById(Long id) {
         return documentRepository.findById(id)
                 .map(this::toResponseWithPrimaryFile)
-                .orElseThrow(() -> new BusinessException("Khong tim thay document: " + id));
+                .orElseThrow(() -> new BusinessException("Không tìm thấy tài liệu: " + id));
     }
 
     @Override
     @CacheEvict(allEntries = true)
     public void softDeleteById(Long id) {
         Document document = documentRepository.findById(id)
-                .orElseThrow(() -> new BusinessException("Khong tim thay document: " + id));
+                .orElseThrow(() -> new BusinessException("Không tìm thấy tài liệu: " + id));
         documentRepository.softDeleteById(id);
         if (document.getReqStatus() == ApprovalStatusEnum.APPROVED) {
             notificationDispatchService.toApprovedActiveMembers(
@@ -245,7 +250,7 @@ public class DocumentServiceImpl implements DocumentService {
     @CacheEvict(allEntries = true)
     public void hardDeleteById(Long id) {
         if (!documentRepository.existsById(id)) {
-            throw new BusinessException("Khong tim thay document: " + id);
+            throw new BusinessException("Không tìm thấy tài liệu: " + id);
         }
         if (documentFileRepository.existsByDocumentDocumentId(id)) {
             throw new BusinessException(
@@ -292,13 +297,13 @@ public class DocumentServiceImpl implements DocumentService {
         if (request.getStatus() == ApprovalStatusEnum.APPROVED) {
             String folderId = normalizeBlank(request.getLookupFolderId());
             if (folderId == null || !LOOKUP_FOLDER_IDS.contains(folderId)) {
-                throw new BusinessException("Thu muc tai lieu khong hop le");
+                throw new BusinessException("Thư mục tra cứu không hợp lệ. Vui lòng chọn một trong các thư mục hợp lệ.");
             }
             request.setLookupFolderId(folderId);
         } else if (request.getStatus() == ApprovalStatusEnum.REQUESTED_CHANGES) {
             String note = normalizeBlank(request.getNote());
             if (note == null) {
-                throw new BusinessException("Ly do yeu cau chinh sua khong duoc de trong");
+                throw new BusinessException("Lý do yêu cầu chỉnh sửa không được để trống");
             }
             request.setNote(note);
         }
@@ -312,7 +317,7 @@ public class DocumentServiceImpl implements DocumentService {
         try {
             return ApprovalStatusEnum.valueOf(normalized.toUpperCase());
         } catch (IllegalArgumentException e) {
-            throw new BusinessException("Trang thai duyet khong hop le: " + reqStatus);
+            throw new BusinessException("Trạng thái duyệt không hợp lệ: " + reqStatus);
         }
     }
 

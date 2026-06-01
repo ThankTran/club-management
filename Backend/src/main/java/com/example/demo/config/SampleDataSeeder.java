@@ -597,12 +597,16 @@ public class SampleDataSeeder implements CommandLineRunner {
                 "xac-suat-thong-ke",
                 "nhap-mon-lap-trinh",
                 "triet-hoc-mac-lenin",
-                "cong-nghe-phan-mem",
-                "he-thong-thong-tin",
-                "mang-may-tinh",
+                "ky-thuat-phan-mem",
+                "truyen-thong-da-phuong-tien",
+                "he-thong-thong-tin-chuyen-nganh",
+                "thuong-mai-dien-tu",
+                "tri-tue-nhan-tao",
+                "khoa-hoc-du-lieu",
+                "mang-may-tinh-truyen-thong-du-lieu",
                 "an-toan-thong-tin",
-                "khoa-hoc-may-tinh",
-                "ky-thuat-may-tinh");
+                "ky-thuat-may-tinh-chuyen-nganh",
+                "thiet-ke-vi-mach");
         return folderIds.get((index - 1) % folderIds.size());
     }
 

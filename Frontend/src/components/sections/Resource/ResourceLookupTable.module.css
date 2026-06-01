@@ -290,17 +290,23 @@
 
 .rowActions {
   display: flex;
+  align-items: center;
   gap: 8px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .actionBtn,
 .actionBtnDanger {
-  height: 30px;
-  padding: 0 11px;
+  width: 32px;
+  height: 32px;
+  padding: 0;
   border: 0;
   border-radius: 8px;
   cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
   font-family: var(--font-family);
   font-size: 12px;
   font-weight: 800;
