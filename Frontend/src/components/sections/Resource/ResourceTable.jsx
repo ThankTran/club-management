@@ -8,7 +8,8 @@ const FORMAT_ICON = {
 };
 
 const STATUS_STYLE = {
-  pending:  { label: 'Chờ duyệt', bg: '#fef3c7', color: '#92400e', dot: '#f59e0b' },
+  pending:  { label: 'Chờ duyệt thêm', bg: '#fef3c7', color: '#92400e', dot: '#f59e0b' },
+  fixing:   { label: 'Chờ duyệt sửa', bg: '#e0f2fe', color: '#0369a1', dot: '#0ea5e9' },
   approved: { label: 'Đã duyệt',  bg: '#dcfce7', color: '#15803d', dot: '#16a34a' },
   rejected: { label: 'Từ chối',   bg: '#fee2e2', color: '#b91c1c', dot: '#ef4444' },
 };
@@ -141,7 +142,7 @@ export default function ResourceTable({
                         rel="noopener noreferrer"
                         title="Mở tài liệu"
                       >
-                        Mở link
+                        Mở tài liệu
                       </a>
                     ) : (
                       <span className={styles.noLink}>—</span>

@@ -7,31 +7,26 @@ import {
   getMembersAPI,
   normalizeMemberFromApi,
 } from '../../services/member-service';
+import { matchesVietnameseSearch, normalizeVietnameseText } from '../../utils/vietnamese-search';
 import styles from './MemberUserPage.module.css';
 
 const PAGE_SIZE = 10;
 const STUDENT_ID_KEY = 'id';
 const APPROVED_STATUS = 'APPROVED';
 
-const normalizeSearchText = (value) =>
-  String(value ?? '')
-    .toLowerCase()
-    .normalize('NFD')
-    .replace(/[\u0300-\u036f]/g, '');
-
 const matchesMemberSearch = (member, query) => {
   if (!query) return true;
 
-  const normalizedQuery = normalizeSearchText(query);
+  const normalizedQuery = normalizeVietnameseText(query);
   if (/^\d/.test(normalizedQuery)) {
-    return normalizeSearchText(member[STUDENT_ID_KEY]).includes(normalizedQuery);
+    return matchesVietnameseSearch(member[STUDENT_ID_KEY], normalizedQuery);
   }
 
   return Object.entries(member).some(([key, value]) => (
     key !== STUDENT_ID_KEY &&
     value !== null &&
     typeof value !== 'object' &&
-    normalizeSearchText(value).includes(normalizedQuery)
+    matchesVietnameseSearch(value, normalizedQuery)
   ));
 };
 

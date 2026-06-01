@@ -5,6 +5,7 @@ import exportEventsExcel from '../../utils/Export/exportEventsExcel';
 
 import EventAdminHeader from '../../components/sections/Event/EventAdminHeader';
 import EventDeleteConfirmModal from '../../components/sections/Event/EventDeleteConfirmModal';
+import ActionToast from '../../components/common/ActionToast/ActionToast';
 import EventEvaluationHistoryModal from '../../components/sections/Event/EventEvaluationHistoryModal';
 import EventEvaluationModal from '../../components/sections/Event/EventEvaluationModal';
 import EventFiscalSummary from '../../components/sections/Event/EventFiscalSummary';
@@ -36,6 +37,7 @@ import {
   createEvaluationCode,
 } from '../../utils/Event/eventAdminUtils';
 import styles from './EventAdminPage.module.css';
+import useActionToast from '../../hooks/useActionToast';
 
 const getTodayDateInputValue = () => {
   const today = new Date();
@@ -139,6 +141,8 @@ export default function EventAdminPage() {
   const [editTarget, setEditTarget] = useState(null);
   const [formLoading, setFormLoading] = useState(false);
   const [page, setPage] = useState(1);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const { toast, showPending, showSuccess, showError } = useActionToast();
   const [dateSort, setDateSort] = useState('nearest');
   const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [evaluationTarget, setEvaluationTarget] = useState(null);
@@ -404,19 +408,34 @@ export default function EventAdminPage() {
 
   const confirmDelete = async () => {
     if (!deleteConfirm) return;
+
+    const canCancel = ['draft', 'upcoming'].includes(deleteConfirm.status);
+    if (!canCancel) {
+      showError('Chỉ được hủy khi và chỉ khi sự kiện chưa hoạt động.');
+      return;
+    }
     try {
-      await deleteEventAPI(deleteConfirm.id);
-      setEvents((prev) => prev.filter((event) => event.id !== deleteConfirm.id));
-      setEvaluations((prev) => prev.filter((item) => item.eventCode !== deleteConfirm.eventCode));
-      setRegistrationsByEvent((prev) => {
-        const next = { ...prev };
-        delete next[deleteConfirm.id];
-        return next;
-      });
+      setDeleteLoading(true);
+      showPending('Đang hủy sự kiện...');
+      const updated = await updateEventAPI(
+        deleteConfirm.id,
+        toEventPayload({
+          ...deleteConfirm,
+          status: 'cancelled',
+        }),
+      );
+      const nextEvent = applyRegistrationCounts(
+        [normalizeEventFromApi(updated)],
+        registrationsByEvent,
+      )[0];
+      setEvents((prev) => prev.map((event) => (event.id === deleteConfirm.id ? nextEvent : event)));
       setDeleteConfirm(null);
       setApiError('');
+      setDeleteLoading(false);
+      showSuccess('Đã hủy sự kiện.');
     } catch (error) {
-      setApiError(error?.message || 'Không xoá được sự kiện.');
+      setDeleteLoading(false);
+      showError(error?.message || 'Không hủy được sự kiện.');
     }
   };
 
@@ -514,6 +533,7 @@ export default function EventAdminPage() {
 
   return (
     <div className={styles.page}>
+      <ActionToast toast={toast} />
       {apiError && <div className={styles.apiError}>{apiError}</div>}
 
       <EventAdminHeader
@@ -588,8 +608,10 @@ export default function EventAdminPage() {
 
       <EventDeleteConfirmModal
         event={deleteConfirm}
-        onCancel={() => setDeleteConfirm(null)}
+        onCancel={() => { if (!deleteLoading) setDeleteConfirm(null); }}
         onConfirm={confirmDelete}
+        loading={deleteLoading}
+        label="Hủy"
       />
 
       <EventRegistrationModal

@@ -103,6 +103,9 @@ export const approveMemberAPI = (payload) =>
 export const updateMemberAPI = (id, payload) =>
   api.put(`members/${id}`, payload)
 
+export const deleteMemberAPI = (id) =>
+  api.delete(`members/${id}`)
+
 export const getMemberDepartmentsAPI = () =>
   api.get('members/departments')
 

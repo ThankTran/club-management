@@ -1,6 +1,6 @@
 import styles from './ResourceDeleteConfirmModal.module.css';
 
-export default function ResourceDeleteConfirmModal({ resource, onCancel, onConfirm }) {
+export default function ResourceDeleteConfirmModal({ resource, onCancel, onConfirm, loading = false }) {
   if (!resource) return null;
 
   return (
@@ -13,8 +13,10 @@ export default function ResourceDeleteConfirmModal({ resource, onCancel, onConfi
           Hành động này không thể hoàn tác.
         </p>
         <div className={styles.actions}>
-          <button type="button" className={styles.cancelBtn} onClick={onCancel}>Hủy</button>
-          <button type="button" className={styles.deleteBtn} onClick={onConfirm}>Xóa</button>
+          <button type="button" className={styles.cancelBtn} onClick={onCancel} disabled={loading}>Hủy</button>
+          <button type="button" className={styles.deleteBtn} onClick={onConfirm} disabled={loading}>
+            {loading ? 'Đang xóa...' : 'Xóa'}
+          </button>
         </div>
       </div>
     </div>

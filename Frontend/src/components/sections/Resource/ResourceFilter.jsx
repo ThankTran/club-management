@@ -138,7 +138,8 @@ export default function ResourceFilter({
                 onChange={(e) => setStatusFilter(e.target.value)}
               >
                 <option value="all">Tất cả</option>
-                <option value="pending">Chờ duyệt</option>
+                <option value="pending">Chờ duyệt thêm</option>
+                <option value="fixing">Chờ duyệt sửa</option>
                 <option value="approved">Đã duyệt</option>
                 <option value="rejected">Từ chối</option>
               </select>

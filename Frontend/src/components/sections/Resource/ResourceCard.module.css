@@ -13,6 +13,30 @@
   flex-shrink: 0;
 }
 
+.workflowBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 20px;
+  padding: 0 9px;
+  border-radius: 999px;
+  font-size: 10px;
+  font-weight: 800;
+  letter-spacing: 0.4px;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.statusDot {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 10px;
+  height: 10px;
+  border-radius: 999px;
+  box-shadow: 0 0 0 3px rgba(255, 255, 255, 0.85);
+}
+
 /* ══════════════════════════════
    LIST CARD
 ══════════════════════════════ */
@@ -79,7 +103,10 @@
 }
 
 .listTop {
-  display: block;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  flex-wrap: wrap;
   min-height: 24px;
 }
 
@@ -89,6 +116,8 @@
   color: var(--gray-900);
   margin: 0;
   line-height: 1.35;
+  flex: 1 1 auto;
+  min-width: 0;
   /* max 2 dòng */
   display: -webkit-box;
   -webkit-line-clamp: 2;
@@ -123,6 +152,31 @@
   gap: 10px;
   flex-wrap: wrap;
   margin-top: 2px;
+}
+
+.fixButton {
+  min-height: 34px;
+  padding: 0 12px;
+  border: 1.5px solid #bae6fd;
+  border-radius: 9px;
+  background: #e0f2fe;
+  color: #0369a1;
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.fixButton:hover:not(:disabled) {
+  background: #0369a1;
+  border-color: #0369a1;
+  color: var(--white-hard);
+}
+
+.fixButtonDisabled {
+  opacity: 0.7;
+  cursor: not-allowed;
 }
 
 .metaTag {
@@ -251,6 +305,15 @@
   text-overflow: ellipsis;
 }
 
+.gridCard .workflowBadge {
+  position: absolute;
+  top: 42px;
+  right: 12px;
+  max-width: 116px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .gridDate {
   font-size: 11px;
   color: var(--gray-400);
@@ -276,11 +339,17 @@
   align-self: flex-end;
 }
 
-.gridCard .resourceLink,
-.listCard .resourceLinkCompact {
+.cardActions {
   position: absolute;
   right: 18px;
   bottom: 14px;
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+}
+
+.gridCard .cardActions,
+.listCard .cardActions {
   margin-top: 0;
 }
 

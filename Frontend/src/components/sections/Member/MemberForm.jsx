@@ -42,6 +42,7 @@ export default function MemberForm({
   existingMembers = [],
   departments = DEPARTMENTS,
   roles = ROLES,
+  ageBounds = { min: 18, max: 30 },
 }) {
   const isEdit = !!initial;
   const [form, setForm] = useState(EMPTY_FORM);
@@ -90,6 +91,28 @@ export default function MemberForm({
 
     if (!form.department) errs.department = 'Vui lòng chọn khoa';
     if (!form.dateOfBirth) errs.dateOfBirth = 'Vui lòng chọn ngày sinh';
+    else {
+      const birthDate = new Date(`${form.dateOfBirth}T00:00:00`);
+      const today = new Date();
+      today.setHours(0, 0, 0, 0);
+
+      if (Number.isNaN(birthDate.getTime())) {
+        errs.dateOfBirth = 'Ngày sinh không hợp lệ';
+      } else if (birthDate >= today) {
+        errs.dateOfBirth = 'Ngày sinh phải nhỏ hơn ngày hiện tại';
+      } else {
+        let age = today.getFullYear() - birthDate.getFullYear();
+        const monthDiff = today.getMonth() - birthDate.getMonth();
+        const dayDiff = today.getDate() - birthDate.getDate();
+        if (monthDiff < 0 || (monthDiff === 0 && dayDiff < 0)) {
+          age -= 1;
+        }
+
+        if (age < ageBounds.min || age > ageBounds.max) {
+          errs.dateOfBirth = `Tuổi phải nằm trong khoảng từ ${ageBounds.min} đến ${ageBounds.max} tuổi`;
+        }
+      }
+    }
     if (!GENDERS.includes(form.gender)) errs.gender = 'Giới tính chỉ được là Nam hoặc Nữ';
     if (!phone) errs.phone = 'Vui lòng nhập số điện thoại';
     else if (!/^(0\d{9}|\+84\d{9})$/.test(phone)) errs.phone = 'Số điện thoại phải có dạng 0xxxxxxxxx hoặc +84xxxxxxxxx';

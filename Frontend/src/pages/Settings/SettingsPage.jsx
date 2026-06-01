@@ -1,6 +1,8 @@
 import React, { useEffect, useState } from "react";
 import styles from "./SettingsPage.module.css";
 import useScrollReveal from "../../hooks/useScrollReveal";
+import ActionToast from "../../components/common/ActionToast/ActionToast";
+import useActionToast from "../../hooks/useActionToast";
 
 import notiIcon from "../../assets/icons/noti.svg";
 import shieldIcon from "../../assets/icons/shield.svg";
@@ -46,8 +48,7 @@ export default function SettingsPage() {
   // Active Tab State: 'notifications' | 'system'
   const [activeTab, setActiveTab] = useState("notifications");
 
-  // Toast feedback state
-  const [toast, setToast] = useState({ show: false, message: "", type: "success" });
+  const { toast, showSuccess, showError, showPending } = useActionToast();
 
     const [notifications, setNotifications] = useState({
         emailAlerts: true,
@@ -78,10 +79,15 @@ export default function SettingsPage() {
     const [removingSubjectId, setRemovingSubjectId] = useState(null);
 
   const showToast = (message, type = "success") => {
-    setToast({ show: true, message, type });
-    setTimeout(() => {
-      setToast({ show: false, message: "", type: "success" });
-    }, 3500);
+    if (type === "error") {
+      showError(message);
+      return;
+    }
+    if (type === "info") {
+      showPending(message);
+      return;
+    }
+    showSuccess(message);
   };
 
   useEffect(() => {
@@ -309,14 +315,7 @@ export default function SettingsPage() {
 
   return (
     <div className={styles.container}>
-      {toast.show && (
-        <div className={`${styles.toast} ${styles[toast.type]}`}>
-          <div className={styles.toastIcon}>
-            {toast.type === "success" ? "✓" : "⚠"}
-          </div>
-          <div className={styles.toastMessage}>{toast.message}</div>
-        </div>
-      )}
+      <ActionToast toast={toast} />
 
       <div className={`${styles.headerBlock} reveal`}>
         <div className={styles.coverBanner}>

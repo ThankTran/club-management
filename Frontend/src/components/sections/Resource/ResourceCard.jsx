@@ -1,40 +1,48 @@
 import styles from './ResourceCard.module.css';
 
 const FORMAT_CONFIG = {
-  PDF:  { icon: '📄', label: 'PDF',  bg: '#fee2e2', color: '#b91c1c', accent: '#ef4444' },
+  PDF: { icon: '📄', label: 'PDF', bg: '#fee2e2', color: '#b91c1c', accent: '#ef4444' },
   DOCX: { icon: '📝', label: 'DOCX', bg: '#dbeafe', color: '#1d4ed8', accent: '#3b82f6' },
-  PPT:  { icon: '📊', label: 'PPT',  bg: '#fef3c7', color: '#b45309', accent: '#f59e0b' },
-  Khác: { icon: '📎', label: '—',    bg: '#f3e8ff', color: '#7c3aed', accent: '#8b5cf6' },
+  PPT: { icon: '📊', label: 'PPT', bg: '#fef3c7', color: '#b45309', accent: '#f59e0b' },
+  'Khác': { icon: '📎', label: '—', bg: '#f3e8ff', color: '#7c3aed', accent: '#8b5cf6' },
 };
 
 const TYPE_CONFIG = {
-  'Giáo trình':          { bg: '#e0f2fe', color: '#0369a1' },
-  'Slide bài giảng':     { bg: '#dcfce7', color: '#15803d' },
+  'Giáo trình': { bg: '#e0f2fe', color: '#0369a1' },
+  'Slide bài giảng': { bg: '#dcfce7', color: '#15803d' },
   'Tài liệu tham khảo': { bg: '#fef9c3', color: '#a16207' },
-  'Khác':                { bg: '#f3e8ff', color: '#7c3aed' },
+  'Khác': { bg: '#f3e8ff', color: '#7c3aed' },
 };
 
-/**
- * Props:
- *   resource    – { id, title, subject, type, format, description, uploadedBy, createdAt, source }
- *   onClick     – () => void
- *   viewMode    – 'grid' | 'list'
- */
-export default function ResourceCard({ resource, viewMode = 'list' }) {
-  const { title, subject, type, format, description, createdAt, source, link } = resource;
+export default function ResourceCard({ resource, viewMode = 'list', onRequestFix }) {
+  const {
+    title,
+    subject,
+    type,
+    format,
+    description,
+    createdAt,
+    source,
+    link,
+    workflowStatus,
+  } = resource;
 
   const fmt = FORMAT_CONFIG[format] || FORMAT_CONFIG['Khác'];
-  const ts  = TYPE_CONFIG[type]     || { bg: '#f3f4f6', color: '#374151' };
+  const typeStyle = TYPE_CONFIG[type] || { bg: '#f3f4f6', color: '#374151' };
+  const isFixing = workflowStatus === 'fixing';
+  const statusDot = isFixing
+    ? { label: 'Fixing', color: '#f59e0b' }
+    : { label: 'Working', color: '#22c55e' };
 
   const dateStr = createdAt
     ? new Date(createdAt).toLocaleDateString('vi-VN', { day: '2-digit', month: 'short', year: 'numeric' })
     : '—';
 
-  /* ─── GRID CARD ─── */
   if (viewMode === 'grid') {
     return (
       <div className={styles.gridCard}>
         <div className={styles.gridAccent} style={{ background: fmt.accent }} />
+        <span className={styles.statusDot} style={{ background: statusDot.color }} title={statusDot.label} />
 
         <div className={styles.gridFmtWrap} style={{ background: fmt.bg }}>
           <span className={styles.gridFmtIcon}>{fmt.icon}</span>
@@ -43,10 +51,9 @@ export default function ResourceCard({ resource, viewMode = 'list' }) {
 
         <h3 className={styles.gridTitle}>{title}</h3>
         <p className={styles.gridSubject}>{subject}</p>
-
         {description && <p className={styles.gridDesc}>{description}</p>}
 
-        <span className={styles.typeBadge} style={{ background: ts.bg, color: ts.color }}>
+        <span className={styles.typeBadge} style={{ background: typeStyle.bg, color: typeStyle.color }}>
           {type}
         </span>
 
@@ -54,25 +61,36 @@ export default function ResourceCard({ resource, viewMode = 'list' }) {
           <span className={styles.gridDate}>{dateStr}</span>
         </div>
 
-        <ResourceLink link={link} />
+        <div className={styles.cardActions}>
+          {onRequestFix && (
+            <button
+              type="button"
+              className={`${styles.fixButton} ${isFixing ? styles.fixButtonDisabled : ''}`}
+              onClick={() => onRequestFix(resource)}
+              disabled={isFixing}
+              title={isFixing ? 'Tài liệu đang trong quá trình sửa/đợi duyệt' : 'Đề xuất sửa tài liệu'}
+            >
+              Đề xuất sửa
+            </button>
+          )}
+          <ResourceLink link={link} />
+        </div>
       </div>
     );
   }
 
-  /* ─── LIST ROW ─── */
   return (
     <div className={styles.listCard}>
-      {/* Left: format */}
+      <span className={styles.statusDot} style={{ background: statusDot.color }} title={statusDot.label} />
       <div className={styles.listFmt} style={{ background: fmt.bg }}>
         <span className={styles.listFmtIcon}>{fmt.icon}</span>
         <span className={styles.listFmtLabel} style={{ color: fmt.color }}>{fmt.label}</span>
       </div>
 
-      {/* Center */}
       <div className={styles.listBody}>
         <div className={styles.listTop}>
           <h3 className={styles.listTitle}>{title}</h3>
-          <span className={styles.typeBadge} style={{ background: ts.bg, color: ts.color }}>
+          <span className={styles.typeBadge} style={{ background: typeStyle.bg, color: typeStyle.color }}>
             {type}
           </span>
         </div>
@@ -92,8 +110,20 @@ export default function ResourceCard({ resource, viewMode = 'list' }) {
         </div>
       </div>
 
-      {/* Right */}
-      <ResourceLink link={link} compact />
+      <div className={styles.cardActions}>
+        {onRequestFix && (
+          <button
+            type="button"
+            className={`${styles.fixButton} ${isFixing ? styles.fixButtonDisabled : ''}`}
+            onClick={() => onRequestFix(resource)}
+            disabled={isFixing}
+            title={isFixing ? 'Tài liệu đang trong quá trình sửa/đợi duyệt' : 'Đề xuất sửa tài liệu'}
+          >
+            Đề xuất sửa
+          </button>
+        )}
+        <ResourceLink link={link} compact />
+      </div>
     </div>
   );
 }
@@ -124,12 +154,12 @@ function MetaTag({ icon, children }) {
     <span className={styles.metaTag}>
       {icon === 'user' ? (
         <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/>
-          <circle cx="12" cy="7" r="4"/>
+          <path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2" />
+          <circle cx="12" cy="7" r="4" />
         </svg>
       ) : (
         <svg width="10" height="10" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
-          <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/>
+          <path d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
         </svg>
       )}
       {children}

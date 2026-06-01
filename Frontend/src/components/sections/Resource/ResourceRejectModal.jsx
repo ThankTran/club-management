@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import styles from './ResourceRejectModal.module.css';
 
-export default function ResourceRejectModal({ resource, onCancel, onConfirm }) {
+export default function ResourceRejectModal({ resource, onCancel, onConfirm, loading = false }) {
   const [reason, setReason] = useState('');
   const [error, setError] = useState('');
 
@@ -52,8 +52,10 @@ export default function ResourceRejectModal({ resource, onCancel, onConfirm }) {
         {error && <p className={styles.error}>{error}</p>}
 
         <div className={styles.actions}>
-          <button type="button" className={styles.cancelBtn} onClick={onCancel}>Hủy</button>
-          <button type="submit" className={styles.rejectBtn}>Xác nhận từ chối</button>
+          <button type="button" className={styles.cancelBtn} onClick={onCancel} disabled={loading}>Hủy</button>
+          <button type="submit" className={styles.rejectBtn} disabled={loading}>
+            {loading ? 'Đang xử lý...' : 'Xác nhận từ chối'}
+          </button>
         </div>
       </form>
     </div>

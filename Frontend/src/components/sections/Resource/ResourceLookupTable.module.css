@@ -226,7 +226,7 @@
 
 .table {
   width: 100%;
-  min-width: 900px;
+  min-width: 1080px;
   border-collapse: collapse;
   font-size: 13.5px;
 }
@@ -286,6 +286,44 @@
   border-radius: 999px;
   font-size: 11px;
   font-weight: 800;
+}
+
+.rowActions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.actionBtn,
+.actionBtnDanger {
+  height: 30px;
+  padding: 0 11px;
+  border: 0;
+  border-radius: 8px;
+  cursor: pointer;
+  font-family: var(--font-family);
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.actionBtn {
+  background: var(--primary-100);
+  color: var(--primary-700);
+}
+
+.actionBtnDanger {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.actionBtn:hover {
+  background: var(--primary-700);
+  color: var(--white-hard);
+}
+
+.actionBtnDanger:hover {
+  background: #b91c1c;
+  color: var(--white-hard);
 }
 
 .linkBtn {

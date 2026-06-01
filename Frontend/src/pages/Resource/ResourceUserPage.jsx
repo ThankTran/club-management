@@ -7,6 +7,7 @@ import { INITIAL_MEMBER_SUBMISSIONS, MOCK_RESOURCES, PAGE_SIZE, FORMAT_OPTIONS, 
 import {
   createResourceAPI,
   createResourceFileAPI,
+  approveResourceAPI,
   getResourceTypesAPI,
   getResourcesAPI,
   normalizeResourceFromApi,
@@ -37,6 +38,9 @@ export default function ResourceUserPage() {
   const [page, setPage]           = useState(1);
   const [formOpen, setFormOpen]   = useState(false);
   const [formLoading, setFormLoading] = useState(false);
+  const [fixEditOpen, setFixEditOpen] = useState(false);
+  const [fixEditTarget, setFixEditTarget] = useState(null);
+  const [fixLoading, setFixLoading] = useState(false);
   const [submitted, setSubmitted] = useState(false);
   const [submissionsOpen, setSubmissionsOpen] = useState(false);
   const [memberSubmissions, setMemberSubmissions] = useState(INITIAL_MEMBER_SUBMISSIONS);
@@ -102,48 +106,34 @@ export default function ResourceUserPage() {
 
   const selectedFolder = RESOURCE_LEAF_FOLDERS.find((folder) => folder.id === selectedFolderId);
 
+  const approvedResources = useMemo(
+    () => resources.filter(isApprovedResource),
+    [resources],
+  );
+
+  const scopedResources = useMemo(() => {
+    if (!selectedFolderId) {
+      return approvedResources;
+    }
+
+    return approvedResources.filter((resource) => resolveUserFolderId(resource) === selectedFolderId);
+  }, [approvedResources, selectedFolderId]);
+
   const folderCounts = useMemo(() => {
-    const q = search.toLowerCase().trim();
     const counts = {};
 
-    resources
-      .filter(isApprovedResource)
-      .filter((r) => {
-        const matchSearch =
-          !q ||
-          String(r.title || '').toLowerCase().includes(q) ||
-          String(r.subject || '').toLowerCase().includes(q) ||
-          String(r.type || '').toLowerCase().includes(q) ||
-          String(r.format || '').toLowerCase().includes(q);
-
-        const matchType = activeType === "Tất cả" || r.type === activeType;
-        const matchFormat = activeFormat === "Tất cả" || r.format === activeFormat;
-        const matchSource = activeSource === "Tất cả" || r.source === activeSource;
-        return matchSearch && matchType && matchFormat && matchSource;
-      })
-      .forEach((r) => {
-        const folderId = resolveUserFolderId(r);
-        counts[folderId] = (counts[folderId] || 0) + 1;
-      });
+    approvedResources.forEach((resource) => {
+      const folderId = resolveUserFolderId(resource);
+      counts[folderId] = (counts[folderId] || 0) + 1;
+    });
 
     return counts;
-  }, [
-    resources,
-    search,
-    activeType,
-    activeFormat,
-    activeSource,
-  ]);
+  }, [approvedResources]);
 
   const filtered = useMemo(() => {
     const q = search.toLowerCase().trim();
 
-    return resources
-      .filter(isApprovedResource)
-      .filter((r) => {
-        if (!selectedFolderId) return false;
-        return resolveUserFolderId(r) === selectedFolderId;
-      })
+    return scopedResources
       .filter((r) => {
         const matchSearch =
           !q ||
@@ -159,20 +149,19 @@ export default function ResourceUserPage() {
       })
       .sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
   }, [
-    resources,
+    scopedResources,
     search,
     activeType,
     activeFormat,
     activeSource,
-    selectedFolderId,
   ]);
 
   const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
   const paginated  = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   // Stats
-  const totalApproved = resources.filter(isApprovedResource).length;
-  const totalSubjects = new Set(resources.map((r) => r.subject).filter(Boolean)).size;
+  const totalApproved = approvedResources.length;
+  const totalSubjects = new Set(approvedResources.map((r) => r.subject).filter(Boolean)).size;
 
   const hasFilter = activeType !== 'Tất cả' || activeFormat !== 'Tất cả' || activeSource !== 'Tất cả';
 
@@ -216,6 +205,47 @@ export default function ResourceUserPage() {
       setApiError(error?.message || error || 'Không gửi được đề xuất tài liệu.');
     } finally {
       setFormLoading(false);
+    }
+  };
+
+  const openFixRequest = (resource) => {
+    if (!resource || resource.workflowStatus === 'fixing') {
+      return;
+    }
+
+    setFixEditTarget(resource);
+    setFixEditOpen(true);
+  };
+
+  const submitFixEdit = async (formData) => {
+    if (!fixEditTarget) return;
+
+    if (!currentUser?.memberId) {
+      setApiError('Không xác định được tài khoản đang đăng nhập.');
+      return;
+    }
+
+    if (!String(formData?.description || '').trim()) {
+      setApiError('Vui lòng nhập nội dung cần chỉnh sửa (mô tả).');
+      return;
+    }
+
+    setFixLoading(true);
+    try {
+      await approveResourceAPI({
+        documentId: fixEditTarget.id,
+        approvedBy: currentUser.memberId,
+        status: 'REQUESTED_CHANGES',
+        note: String(formData.description || '').trim(),
+      });
+      await loadResources();
+      setFixEditOpen(false);
+      setFixEditTarget(null);
+      setApiError('');
+    } catch (error) {
+      setApiError(error?.message || 'Không gửi được đề xuất sửa tài liệu.');
+    } finally {
+      setFixLoading(false);
     }
   };
 
@@ -309,7 +339,7 @@ export default function ResourceUserPage() {
                 <FilterOption
                   key={t}
                   label={t}
-                  count={t === 'Tất cả' ? resources.length : resources.filter((r) => r.type === t).length}
+                  count={t === 'Tất cả' ? scopedResources.length : scopedResources.filter((r) => r.type === t).length}
                   active={activeType === t}
                   onClick={() => handleFilter(setActiveType)(t)}
                 />
@@ -322,7 +352,7 @@ export default function ResourceUserPage() {
                 <FilterOption
                   key={f}
                   label={f}
-                  count={f === 'Tất cả' ? resources.length : resources.filter((r) => r.format === f).length}
+                  count={f === 'Tất cả' ? scopedResources.length : scopedResources.filter((r) => r.format === f).length}
                   active={activeFormat === f}
                   onClick={() => handleFilter(setActiveFormat)(f)}
                 />
@@ -335,7 +365,7 @@ export default function ResourceUserPage() {
                 <FilterOption
                   key={s}
                   label={s}
-                  count={s === 'Tất cả' ? resources.length : resources.filter((r) => r.source === s).length}
+                  count={s === 'Tất cả' ? scopedResources.length : scopedResources.filter((r) => r.source === s).length}
                   active={activeSource === s}
                   onClick={() => handleFilter(setActiveSource)(s)}
                 />
@@ -505,6 +535,7 @@ export default function ResourceUserPage() {
                     key={r.id}
                     resource={r}
                     viewMode={viewMode}
+                    onRequestFix={openFixRequest}
                   />
                 ))}
               </div>
@@ -559,6 +590,31 @@ export default function ResourceUserPage() {
         subjectOptions={subjectOptions}
       />
 
+      <ResourceForm
+        open={fixEditOpen}
+        initial={fixEditTarget
+          ? {
+            title: fixEditTarget.title,
+            typeId: fixEditTarget.typeId,
+            type: fixEditTarget.type,
+            subjectId: fixEditTarget.subjectId,
+            subject: fixEditTarget.subject,
+            source: fixEditTarget.source,
+            description: fixEditTarget.description || fixEditTarget.note || '',
+          }
+          : null}
+        onClose={() => {
+          if (fixLoading) return;
+          setFixEditOpen(false);
+          setFixEditTarget(null);
+        }}
+        onSubmit={submitFixEdit}
+        loading={fixLoading}
+        isAdmin={false}
+        resourceTypes={resourceTypes}
+        subjectOptions={subjectOptions}
+      />
+
       <SubmissionHistoryModal
         open={submissionsOpen}
         submissions={memberSubmissions}
@@ -602,8 +658,7 @@ function resolveUserFolderId(resource) {
 }
 
 function isApprovedResource(resource) {
-  const status = String(resource.status || resource.reqStatus || '').toLowerCase();
-  return status === 'approved' || status === 'đã duyệt' || status === 'da duyet';
+  return Boolean(resource.approvedAt || resource.raw?.approvedAt) || String(resource.status || '').toLowerCase() === 'approved';
 }
 
 function StatPill({ icon, value, label }) {
@@ -619,7 +674,7 @@ function StatPill({ icon, value, label }) {
 function SubmissionHistoryModal({ open, submissions, onClose }) {
   if (!open) return null;
 
-  const pendingCount = submissions.filter((item) => item.status === 'pending').length;
+  const pendingCount = submissions.filter((item) => item.status === 'pending' || item.status === 'fixing').length;
 
   return (
     <div className={styles.historyOverlay} onClick={onClose}>
@@ -631,7 +686,7 @@ function SubmissionHistoryModal({ open, submissions, onClose }) {
           </div>
           <div className={styles.historyHeaderActions}>
             <span className={styles.historySummary}>
-              {submissions.length} phiếu · {pendingCount} chờ duyệt
+              {submissions.length} phiếu · {pendingCount} chờ duyệt/chờ sửa
             </span>
             <button type="button" className={styles.historyCloseBtn} onClick={onClose}>
               ×
@@ -676,8 +731,59 @@ function SubmissionHistoryModal({ open, submissions, onClose }) {
   );
 }
 
+function ResourceFixRequestModal({ open, resource, reason, loading, onClose, onReasonChange, onSubmit }) {
+  if (!open || !resource) return null;
+
+  return (
+    <div className={styles.historyOverlay} onClick={onClose}>
+      <section className={styles.historyModal} onClick={(event) => event.stopPropagation()}>
+        <div className={styles.historyHeader}>
+          <div>
+            <p className={styles.historyEyebrow}>Đề xuất sửa tài liệu</p>
+            <h2 className={styles.historyTitle}>{resource.title}</h2>
+          </div>
+          <button type="button" className={styles.historyCloseBtn} onClick={onClose}>
+            ×
+          </button>
+        </div>
+
+        <div className={styles.historyList}>
+          <article className={styles.historyItem}>
+            <div className={styles.historyMain}>
+              <p className={styles.historyMeta}>
+                {resource.subject} · {resource.type} · {resource.format}
+              </p>
+              <p className={styles.historyNote}>
+                Tài liệu sẽ chuyển sang trạng thái chờ duyệt sửa cho admin kiểm tra.
+              </p>
+              <textarea
+                className={styles.searchInput}
+                style={{ width: '100%', minHeight: '120px', paddingTop: '12px', paddingBottom: '12px' }}
+                rows={4}
+                value={reason}
+                onChange={(event) => onReasonChange(event.target.value)}
+                placeholder="Nhập lý do hoặc mô tả phần cần chỉnh sửa..."
+              />
+            </div>
+          </article>
+        </div>
+
+        <div className={styles.historyHeaderActions}>
+          <button type="button" className={styles.historyCloseBtn} onClick={onClose}>
+            Hủy
+          </button>
+          <button type="button" className={styles.proposeBtn} onClick={onSubmit} disabled={loading}>
+            {loading ? 'Đang gửi...' : 'Gửi đề xuất sửa'}
+          </button>
+        </div>
+      </section>
+    </div>
+  );
+}
+
 const SUBMISSION_STATUS = {
   pending: { label: 'Chờ duyệt', bg: '#fef3c7', color: '#92400e' },
+  fixing: { label: 'Chờ duyệt sửa', bg: '#e0f2fe', color: '#0369a1' },
   approved: { label: 'Đã duyệt', bg: '#dcfce7', color: '#15803d' },
   rejected: { label: 'Từ chối', bg: '#fee2e2', color: '#b91c1c' },
 };

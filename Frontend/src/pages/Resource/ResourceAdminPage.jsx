@@ -11,6 +11,7 @@ import ResourceDeleteConfirmModal from '../../components/sections/Resource/Resou
 import ResourceHistoryModal from '../../components/sections/Resource/ResourceHistoryModal';
 import ResourceApproveModal from '../../components/sections/Resource/ResourceApproveModal';
 import ResourceRejectModal from '../../components/sections/Resource/ResourceRejectModal';
+import ActionToast from '../../components/common/ActionToast/ActionToast';
 import {
   INITIAL_RESOURCES,
   RESOURCE_RULES,
@@ -28,6 +29,7 @@ import {
 import { getSubjectsAPI } from '../../services/subject-service';
 import useAuthStore from '../../store/auth-store';
 import styles from './ResourceAdminPage.module.css';
+import useActionToast from '../../hooks/useActionToast';
 import {
     getMembersAPI,
     normalizeMemberFromApi,
@@ -39,7 +41,7 @@ export default function ResourceAdminPage() {
   const [resourceTypes, setResourceTypes] = useState([]);
   const [subjectOptions, setSubjectOptions] = useState([]);
   const [formLoading, setFormLoading] = useState(false);
-  const [activeTab, setActiveTab] = useState('review');
+  const [activeTab, setActiveTab] = useState('pending');
   const [search, setSearch] = useState('');
 
   const [filterOpen, setFilterOpen] = useState(false);
@@ -55,6 +57,10 @@ export default function ResourceAdminPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [approveTarget, setApproveTarget] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+  const [approveLoading, setApproveLoading] = useState(false);
+  const [rejectLoading, setRejectLoading] = useState(false);
+  const { toast, showPending, showSuccess, showError } = useActionToast();
 
     const loadResources = () =>
         Promise.all([getResourcesAPI(), getMembersAPI()])
@@ -151,6 +157,7 @@ export default function ResourceAdminPage() {
   const stats = useMemo(() => ({
     total: resources.length,
     pending: resources.filter((resource) => resource.status === 'pending').length,
+    fixing: resources.filter((resource) => resource.status === 'fixing').length,
     approved: resources.filter((resource) => resource.status === 'approved').length,
     rejected: resources.filter((resource) => resource.status === 'rejected').length,
   }), [resources]);
@@ -174,9 +181,11 @@ export default function ResourceAdminPage() {
         const matchesType = typeFilter === 'all' || resource.type === typeFilter;
         const matchesFormat = formatFilter === 'all' || resource.format === formatFilter;
         const matchesStatus =
-          activeTab === 'review'
+          activeTab === 'pending'
             ? resource.status === 'pending'
-            : statusFilter === 'all' || resource.status === statusFilter;
+            : activeTab === 'fixing'
+              ? resource.status === 'fixing'
+              : statusFilter === 'all' || resource.status === statusFilter;
         const matchesSubject = subjectFilter === 'all' || resource.subject === subjectFilter;
 
         return matchesSearch && matchesType && matchesFormat && matchesStatus && matchesSubject;
@@ -208,6 +217,8 @@ export default function ResourceAdminPage() {
     }
 
     try {
+      setApproveLoading(true);
+      showPending('Đang duyệt tài liệu...');
       const updated = await approveResourceAPI({
         documentId: id,
         approvedBy: currentUser.memberId,
@@ -221,8 +232,11 @@ export default function ResourceAdminPage() {
       setSelected(null);
       setApproveTarget(null);
       setRejectTarget(null);
+      setApproveLoading(false);
+      showSuccess('Đã duyệt tài liệu.');
     } catch (error) {
-      setApiError(error?.message || error || 'Không duyệt được tài liệu.');
+      setApproveLoading(false);
+      showError(error?.message || error || 'Không duyệt được tài liệu.');
     }
   };
 
@@ -238,6 +252,8 @@ export default function ResourceAdminPage() {
     }
 
     try {
+      setRejectLoading(true);
+      showPending('Đang từ chối tài liệu...');
       const updated = await approveResourceAPI({
         documentId: id,
         approvedBy: currentUser.memberId,
@@ -249,8 +265,11 @@ export default function ResourceAdminPage() {
       setApiError('');
       setSelected(null);
       setRejectTarget(null);
+      setRejectLoading(false);
+      showSuccess('Đã từ chối tài liệu.');
     } catch (error) {
-      setApiError(error?.message || error || 'Không từ chối được tài liệu.');
+      setRejectLoading(false);
+      showError(error?.message || error || 'Không từ chối được tài liệu.');
     }
   };
 
@@ -320,17 +339,23 @@ export default function ResourceAdminPage() {
   const confirmDelete = async () => {
     if (!deleteTarget) return;
     try {
+      setDeleteLoading(true);
+      showPending('Đang xóa tài liệu...');
       await softDeleteResourceAPI(deleteTarget.id);
       setResources((prev) => prev.filter((resource) => resource.id !== deleteTarget.id));
       setDeleteTarget(null);
       setApiError('');
+      setDeleteLoading(false);
+      showSuccess('Xóa tài liệu thành công.');
     } catch (error) {
-      setApiError(error?.message || error || 'Không xoá được tài liệu.');
+      setDeleteLoading(false);
+      showError(error?.message || error || 'Không xoá được tài liệu.');
     }
   };
 
   return (
     <div className={styles.page}>
+      <ActionToast toast={toast} />
       {apiError && <div className={styles.apiError}>{apiError}</div>}
 
       <ResourceAdminHeader
@@ -344,6 +369,8 @@ export default function ResourceAdminPage() {
       <div className={styles.workflowPanel}>
         <ResourceAdminTabs
           activeTab={activeTab}
+          pendingCount={stats.pending}
+          fixingCount={stats.fixing}
           approvedCount={stats.approved}
           onChange={setActiveTab}
         />
@@ -365,7 +392,7 @@ export default function ResourceAdminPage() {
             )}
           </div>
 
-          {activeTab === 'review' && (
+          {(activeTab === 'pending' || activeTab === 'fixing' || activeTab === 'lookup') && (
             <ResourceFilter
               open={filterOpen}
               setOpen={setFilterOpen}
@@ -378,17 +405,19 @@ export default function ResourceAdminPage() {
               subjects={subjects}
               statusFilter={statusFilter}
               setStatusFilter={setStatusFilter}
-              showStatus={false}
+              showStatus={activeTab === 'lookup'}
             />
           )}
         </div>
       </div>
 
-      {activeTab === 'review' && (
+      {(activeTab === 'pending' || activeTab === 'fixing') && (
         <div className={styles.tableSection}>
           <div className={styles.tableHeader}>
             <div>
-              <h2 className={styles.tableTitle}>Phiếu tài liệu chờ duyệt</h2>
+              <h2 className={styles.tableTitle}>
+                {activeTab === 'pending' ? 'Phiếu tài liệu chờ duyệt thêm' : 'Phiếu tài liệu chờ duyệt sửa'}
+              </h2>
               <p className={styles.tableSubtitle}>
                 Danh sách phiếu đề xuất đang chờ admin xét duyệt.
               </p>
@@ -417,7 +446,20 @@ export default function ResourceAdminPage() {
       )}
 
       {activeTab === 'lookup' && (
-        <ResourceLookupTable resources={resources} search={search} onView={setSelected} />
+        <ResourceLookupTable
+          resources={resources}
+          search={search}
+          onView={setSelected}
+          onEdit={(resource) => {
+            setEditing(resource);
+            setFormOpen(true);
+          }}
+          onDelete={setDeleteTarget}
+          typeFilter={typeFilter}
+          formatFilter={formatFilter}
+          subjectFilter={subjectFilter}
+          statusFilter={statusFilter}
+        />
       )}
 
       <ResourceReviewModal
@@ -443,20 +485,23 @@ export default function ResourceAdminPage() {
 
       <ResourceDeleteConfirmModal
         resource={deleteTarget}
-        onCancel={() => setDeleteTarget(null)}
+        onCancel={() => { if (!deleteLoading) setDeleteTarget(null); }}
         onConfirm={confirmDelete}
+        loading={deleteLoading}
       />
 
       <ResourceApproveModal
         resource={approveTarget}
-        onCancel={() => setApproveTarget(null)}
+        onCancel={() => { if (!approveLoading) setApproveTarget(null); }}
         onConfirm={handleApprove}
+        loading={approveLoading}
       />
 
       <ResourceRejectModal
         resource={rejectTarget}
-        onCancel={() => setRejectTarget(null)}
+        onCancel={() => { if (!rejectLoading) setRejectTarget(null); }}
         onConfirm={handleReject}
+        loading={rejectLoading}
       />
 
       <ResourceHistoryModal

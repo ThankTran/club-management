@@ -3,7 +3,7 @@ import styles from './ExpenseFormModal.module.css';
 import Field from '../Finance/FormField';
 import { EMPTY_CHI } from '../Finance/financeConstants';
 
-export default function PhieuChiModal({ open, onClose, onSubmit, initial, loading }) {
+export default function PhieuChiModal({ open, onClose, onSubmit, initial, loading, eventOptions = [] }) {
   const isEdit = !!initial;
   const [form, setForm] = useState(EMPTY_CHI);
   const [errors, setErrors] = useState({});
@@ -12,8 +12,8 @@ export default function PhieuChiModal({ open, onClose, onSubmit, initial, loadin
     if (open) {
       setForm(
         initial
-          ? { ...EMPTY_CHI, ...initial, soTien: initial.soTien || '' }
-          : EMPTY_CHI
+          ? { ...EMPTY_CHI, ...initial, maSuKien: initial.maSuKien || '', soTien: initial.soTien || '' }
+          : { ...EMPTY_CHI, ngayLap: getTodayInputDate() }
       );
       setErrors({});
     }
@@ -79,8 +79,15 @@ export default function PhieuChiModal({ open, onClose, onSubmit, initial, loadin
               }
               error={errors.maSuKien}
             >
-              <input className={`${styles.input} ${errors.maSuKien ? styles.inputErr : ''}`}
-                placeholder="VD: SK001 (bỏ trống nếu không có)" value={form.maSuKien} onChange={set('maSuKien')} />
+              <select className={`${styles.input} ${errors.maSuKien ? styles.inputErr : ''}`}
+                value={form.maSuKien} onChange={set('maSuKien')}>
+                <option value="">-- Không gắn sự kiện --</option>
+                {eventOptions.map((event) => (
+                  <option key={event.id || event.eventCode} value={event.eventCode || event.id}>
+                    {event.eventCode || event.id} - {event.title || 'Sự kiện'}
+                  </option>
+                ))}
+              </select>
             </Field>
           </div>
           <Field 
@@ -129,4 +136,10 @@ export default function PhieuChiModal({ open, onClose, onSubmit, initial, loadin
       </div>
     </div>
   );
+}
+
+function getTodayInputDate() {
+  const now = new Date();
+  const local = new Date(now.getTime() - now.getTimezoneOffset() * 60_000);
+  return local.toISOString().slice(0, 10);
 }

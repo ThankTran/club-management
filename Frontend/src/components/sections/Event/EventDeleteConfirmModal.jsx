@@ -1,6 +1,6 @@
 import styles from './EventDeleteConfirmModal.module.css';
 
-export default function EventDeleteConfirmModal({ event, onCancel, onConfirm }) {
+export default function EventDeleteConfirmModal({ event, onCancel, onConfirm, loading = false, label = 'Xoá' }) {
   if (!event) return null;
 
   return (
@@ -18,8 +18,10 @@ export default function EventDeleteConfirmModal({ event, onCancel, onConfirm }) 
           Bạn có chắc muốn xoá <strong>{event.title}</strong>? Hành động này không thể hoàn tác.
         </p>
         <div className={styles.actions}>
-          <button className={styles.cancelBtn} onClick={onCancel}>Hủy</button>
-          <button className={styles.deleteBtn} onClick={onConfirm}>Xoá</button>
+          <button className={styles.cancelBtn} onClick={onCancel} disabled={loading}>Hủy</button>
+          <button className={styles.deleteBtn} onClick={onConfirm} disabled={loading}>
+            {loading ? 'Đang xử lý...' : label}
+          </button>
         </div>
       </div>
     </div>
