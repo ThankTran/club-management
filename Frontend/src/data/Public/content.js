@@ -96,7 +96,7 @@ export const galleryData = {
     { id: 8,  label: 'Sinh hoạt CLB',       img: gallery1 },
     { id: 9,  label: 'Teambuilding',           img: gallery9 },
   ],
-  cta: 'Đăng ký ngay',
+  cta: 'Đăng nhập ngay',
 };
 
 export const footerData = {
