@@ -53,7 +53,9 @@ import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
@@ -128,6 +130,7 @@ public class SampleDataSeeder implements CommandLineRunner {
                 || subjectRepository.count() > 0
                 || documentTypeRepository.count() > 0
                 || memberRepository.count() > 0) {
+            normalizeSeedDocumentTimeline();
             return;
         }
 
@@ -142,7 +145,6 @@ public class SampleDataSeeder implements CommandLineRunner {
         seedEventOrganizers(events, members, eventRoles);
         List<EventRegistration> eventRegistrations = seedEventRegistrations(events, members);
         List<Document> documents = seedDocuments(members, subjects, documentTypes);
-        seedDocumentFiles(documents);
         List<Notification> notifications = seedNotifications(members);
         seedNotificationRecipients(notifications, members);
         seedTransactions(events, members, eventRegistrations);
@@ -176,7 +178,7 @@ public class SampleDataSeeder implements CommandLineRunner {
                 "Cấu trúc rời rạc",
                 "Xác suất thống kê",
                 "Nhập môn lập trình",
-                "Triết học Mác - Lênin",
+                "Triết học Mac - Lenin",
                 "Lập trình hướng đối tượng",
                 "Cơ sở dữ liệu",
                 "Phân tích thiết kế hệ thống",
@@ -186,7 +188,7 @@ public class SampleDataSeeder implements CommandLineRunner {
                 "Mạng máy tính",
                 "Công nghệ phần mềm nâng cao",
                 "Chính trị",
-                "Anh văn");
+                "Anh văn chuyên ngành");
 
         List<Subject> subjects = new ArrayList<>();
         for (String name : names) {
@@ -197,7 +199,7 @@ public class SampleDataSeeder implements CommandLineRunner {
 
     private List<DocumentType> seedDocumentTypes() {
         List<String> names = List.of(
-                "Giáo trình",
+                "Giáo trình môn học",
                 "Slide bài giảng",
                 "Tài liệu tham khảo",
                 "Đề thi",
@@ -227,68 +229,67 @@ public class SampleDataSeeder implements CommandLineRunner {
         Department computerEngineering = departments.get(5);
 
         List<MemberSeed> seeds = List.of(
-                // ── Khoa 22 (APPROVED) ──────────────────────────────────────────────────
-                new MemberSeed("22130001", "Nguyen Minh Anh", software, "minhanh@club.local", "0901000001", GenderEnum.FEMALE, LocalDate.of(2004, 1, 15), president),
-                new MemberSeed("22130002", "Tran Quoc Bao", software, "quocbao@club.local", "0901000002", GenderEnum.MALE, LocalDate.of(2004, 2, 18), vicePresident),
-                new MemberSeed("22130003", "Le Hoang Nam", software, "hoangnam@club.local", "0901000003", GenderEnum.MALE, LocalDate.of(2004, 3, 12), academicHead),
-                new MemberSeed("22130004", "Pham Gia Han", software, "giahan@club.local", "0901000004", GenderEnum.FEMALE, LocalDate.of(2004, 5, 9), communicationHead),
-                new MemberSeed("22130005", "Vo Duc Tai", software, "ductai@club.local", "0901000005", GenderEnum.MALE, LocalDate.of(2004, 7, 21), memberRole),
-                new MemberSeed("22130006", "Hoang Trung Kien", software, "trungkien@club.local", "0901000006", GenderEnum.MALE, LocalDate.of(2004, 8, 3), memberRole),
-                new MemberSeed("22130007", "Dang Minh Khoi", software, "minhkhoi@club.local", "0901000007", GenderEnum.MALE, LocalDate.of(2004, 4, 27), memberRole),
-                new MemberSeed("22130008", "Bui Thi Tuyet", software, "thituyet@club.local", "0901000008", GenderEnum.FEMALE, LocalDate.of(2004, 11, 11), memberRole),
-                new MemberSeed("22130009", "Nguyen Van Hung", computerScience, "vanhung@club.local", "0901000009", GenderEnum.MALE, LocalDate.of(2004, 6, 14), memberRole),
-                new MemberSeed("22130010", "Le Thu Thao", computerScience, "thuthao@club.local", "0901000010", GenderEnum.FEMALE, LocalDate.of(2005, 2, 22), memberRole),
-                new MemberSeed("22130011", "Do Anh Tuan", computerScience, "anhtuan@club.local", "0901000011", GenderEnum.MALE, LocalDate.of(2004, 9, 16), memberRole),
-                new MemberSeed("22130012", "Nguyen Hoai Nam", computerScience, "hoainam@club.local", "0901000012", GenderEnum.MALE, LocalDate.of(2005, 1, 5), memberRole),
-                new MemberSeed("22130013", "Phan Van Tai", computerScience, "phanvantai@club.local", "0901000013", GenderEnum.MALE, LocalDate.of(2004, 12, 19), memberRole),
-                new MemberSeed("22130014", "Vu Thi Ha", computerScience, "vuha@club.local", "0901000014", GenderEnum.FEMALE, LocalDate.of(2005, 3, 1), memberRole),
-                new MemberSeed("22130015", "Tran Thanh Son", informationSystem, "thanhson@club.local", "0901000015", GenderEnum.MALE, LocalDate.of(2004, 10, 6), memberRole),
-                new MemberSeed("22130016", "Ly My Linh", informationSystem, "mylinh@club.local", "0901000016", GenderEnum.FEMALE, LocalDate.of(2004, 1, 30), memberRole),
-                new MemberSeed("22130017", "Pham Duc Long", informationSystem, "duclong@club.local", "0901000017", GenderEnum.MALE, LocalDate.of(2004, 8, 28), memberRole),
-                new MemberSeed("22130018", "Ngo Hai Dang", informationSystem, "haidang@club.local", "0901000018", GenderEnum.MALE, LocalDate.of(2004, 4, 8), memberRole),
-                new MemberSeed("22130019", "Mai Khanh Vy", networking, "khanhvy@club.local", "0901000019", GenderEnum.FEMALE, LocalDate.of(2005, 5, 25), memberRole),
-                new MemberSeed("22130020", "Dinh Quoc Cuong", networking, "quoccuong@club.local", "0901000020", GenderEnum.MALE, LocalDate.of(2004, 7, 7), memberRole),
-                // ── Khoa 23 (APPROVED) ──────────────────────────────────────────────────
-                new MemberSeed("23130021", "Huynh Ngoc Mai", networking, "ngocmai@club.local", "0901000021", GenderEnum.FEMALE, LocalDate.of(2005, 6, 4), memberRole),
-                new MemberSeed("23130022", "Ta Minh Quan", networking, "minhquan@club.local", "0901000022", GenderEnum.MALE, LocalDate.of(2005, 8, 13), memberRole),
-                new MemberSeed("23130023", "Cao Phuong Nhi", ai, "phuongnhi@club.local", "0901000023", GenderEnum.FEMALE, LocalDate.of(2005, 9, 17), memberRole),
-                new MemberSeed("23130024", "Truong Nhat Minh", ai, "nhatminh@club.local", "0901000024", GenderEnum.MALE, LocalDate.of(2005, 11, 2), memberRole),
-                new MemberSeed("23130025", "Doan Bao Chau", ai, "baochau@club.local", "0901000025", GenderEnum.FEMALE, LocalDate.of(2005, 12, 20), memberRole),
-                new MemberSeed("23130026", "Ho Gia Bao", software, "giabao@club.local", "0901000026", GenderEnum.MALE, LocalDate.of(2005, 3, 18), memberRole),
-                new MemberSeed("23130027", "Nguyen Ha My", computerScience, "hamy@club.local", "0901000027", GenderEnum.FEMALE, LocalDate.of(2005, 4, 9), memberRole),
-                new MemberSeed("23130028", "Lam Tuan Kiet", informationSystem, "tuankiet@club.local", "0901000028", GenderEnum.MALE, LocalDate.of(2005, 7, 29), memberRole),
-                // ── Khoa 24 (APPROVED) ──────────────────────────────────────────────────
-                new MemberSeed("24130029", "Phung Minh Khang", networking, "minhkhang@club.local", "0901000029", GenderEnum.MALE, LocalDate.of(2006, 1, 6), memberRole),
-                new MemberSeed("24130030", "Do Khanh Linh", ai, "khanhlinh@club.local", "0901000030", GenderEnum.FEMALE, LocalDate.of(2006, 2, 14), memberRole),
-                new MemberSeed("24130031", "Nguyen Nhat Ha", software, "nhatha@club.local", "0901000031", GenderEnum.FEMALE, LocalDate.of(2006, 5, 23), memberRole),
-                new MemberSeed("24130032", "Tran Duy Phuc", computerScience, "duyphuc@club.local", "0901000032", GenderEnum.MALE, LocalDate.of(2006, 8, 8), memberRole),
-                new MemberSeed("24130033", "Le Bao Ngoc", informationSystem, "baongoc@club.local", "0901000033", GenderEnum.FEMALE, LocalDate.of(2006, 9, 10), memberRole),
-                new MemberSeed("24130034", "Vo Minh Triet", networking, "minhtriet@club.local", "0901000034", GenderEnum.MALE, LocalDate.of(2006, 10, 12), memberRole),
-                new MemberSeed("24130035", "Pham Hoai An", ai, "hoaian@club.local", "0901000035", GenderEnum.FEMALE, LocalDate.of(2006, 11, 15), memberRole),
-                new MemberSeed("24130036", "Bui Quang Huy", software, "quanghuy@club.local", "0901000036", GenderEnum.MALE, LocalDate.of(2006, 12, 3), memberRole),
-                new MemberSeed("24130037", "Ngo Thuy Duong", computerScience, "thuyduong@club.local", "0901000037", GenderEnum.FEMALE, LocalDate.of(2006, 4, 26), memberRole),
-                new MemberSeed("24130038", "Dang Quoc Viet", informationSystem, "quocviet@club.local", "0901000038", GenderEnum.MALE, LocalDate.of(2006, 6, 18), memberRole),
-                new MemberSeed("24130039", "Luong Gia Huy", networking, "giahuy@club.local", "0901000039", GenderEnum.MALE, LocalDate.of(2006, 7, 21), memberRole),
-                new MemberSeed("24130040", "To Minh Nguyet", ai, "minhnguyet@club.local", "0901000040", GenderEnum.FEMALE, LocalDate.of(2006, 9, 28), memberRole),
-                // ── Khoa 24 (PENDING - 10 thanh vien moi) ──────────────────────────────
-                 new MemberSeed("24130046", "Đinh Thái Bình", software, "thaibinhk24@club.local", "0901000046", GenderEnum.MALE, LocalDate.of(2006, 1, 17), memberRole, ApprovalStatusEnum.PENDING, "Chờ xác minh thông tin sinh viên khóa 24"),
-                new MemberSeed("24130047", "Nguyễn Thu Hương", computerScience, "thuhuongk24@club.local", "0901000047", GenderEnum.FEMALE, LocalDate.of(2006, 3, 5), memberRole, ApprovalStatusEnum.PENDING, "Chờ ban học thuật xác nhận ngành học"),
-                new MemberSeed("24130048", "Trần Minh Đức", informationSystem, "minhduck24@club.local", "0901000048", GenderEnum.MALE, LocalDate.of(2006, 4, 22), memberRole, ApprovalStatusEnum.PENDING, "Hồ sơ đăng ký mới, chờ phỏng vấn"),
-                new MemberSeed("24130049", "Lê Phương Thảo", networking, "phuongthao@club.local", "0901000049", GenderEnum.FEMALE, LocalDate.of(2006, 5, 11), memberRole, ApprovalStatusEnum.PENDING, "Chờ kiểm tra thông tin lớp sinh hoạt"),
-                new MemberSeed("24130050", "Phạm Đức Anh", ai, "ducanhk24@club.local", "0901000050", GenderEnum.MALE, LocalDate.of(2006, 6, 30), memberRole, ApprovalStatusEnum.PENDING, "Chờ bổ sung minh chứng email trường"),
-                new MemberSeed("24130051", "Võ Ngọc Trân", software, "ngoctrank24@club.local", "0901000051", GenderEnum.FEMALE, LocalDate.of(2006, 7, 14), memberRole, ApprovalStatusEnum.PENDING, "Chờ duyệt đơn tham gia CLB lần 2"),
-                new MemberSeed("24130052", "Hoàng Bảo Long", computerScience, "baolongk24@club.local", "0901000052", GenderEnum.MALE, LocalDate.of(2006, 8, 3), memberRole, ApprovalStatusEnum.PENDING, "Chờ xác nhận từ ban chủ nhiệm"),
-                new MemberSeed("24130053", "Đỗ Thị Lan", informationSystem, "thilanck24@club.local", "0901000053", GenderEnum.FEMALE, LocalDate.of(2006, 9, 19), memberRole, ApprovalStatusEnum.PENDING, "Chờ hoàn thiện form đăng ký trực tuyến"),
-                new MemberSeed("24130054", "Ngô Tuấn Vũ", computerEngineering, "tuanvuk24@club.local", "0901000054", GenderEnum.MALE, LocalDate.of(2006, 10, 8), memberRole, ApprovalStatusEnum.PENDING, "Chờ ban kỹ thuật xem xét hồ sơ"),
-                new MemberSeed("24130055", "Trương Mỹ An", ai, "myank24@club.local", "0901000055", GenderEnum.FEMALE, LocalDate.of(2006, 11, 27), memberRole, ApprovalStatusEnum.PENDING, "Chờ phỏng vấn ngắn với trưởng ban học thuật"),
-                // ── Khoa 25 (PENDING - 5 thanh vien cu) ────────────────────────────────
-                 new MemberSeed("25130041", "Nguyễn Hải An", software, "haian@club.local", "0901000041", GenderEnum.MALE, LocalDate.of(2007, 1, 12), memberRole, ApprovalStatusEnum.PENDING, "Hồ sơ đăng ký mới, chờ ban quản lý xét duyệt"),
-                new MemberSeed("25130042", "Trần Mỹ Duyên", computerScience, "myduyen@club.local", "0901000042", GenderEnum.FEMALE, LocalDate.of(2007, 3, 8), memberRole, ApprovalStatusEnum.PENDING, "Chờ kiểm tra minh chứng sinh viên"),
-                new MemberSeed("25130043", "Lê Quốc Thịnh", informationSystem, "quocthinh@club.local", "0901000043", GenderEnum.MALE, LocalDate.of(2007, 5, 19), memberRole, ApprovalStatusEnum.PENDING, "Chờ phỏng vấn ngắn với ban học thuật"),
-                new MemberSeed("25130044", "Phạm Ngọc Bích", networking, "ngocbich@club.local", "0901000044", GenderEnum.FEMALE, LocalDate.of(2007, 7, 24), memberRole, ApprovalStatusEnum.PENDING, "Chờ duyệt đơn tham gia CLB"),
-                new MemberSeed("25130045", "Vũ Minh Quân", ai, "minhquan25@club.local", "0901000045", GenderEnum.MALE, LocalDate.of(2007, 10, 2), memberRole, ApprovalStatusEnum.PENDING, "Chờ bổ sung thông tin lớp sinh hoạt"));
-
-
+                        // ── Khóa 22 (ĐÃ DUYỆT) ──────────────────────────────────────────────────
+                        new MemberSeed("22130001", "Nguyễn Minh Anh", software, "minhanh@club.local", "0901000001", GenderEnum.FEMALE, LocalDate.of(2004, 1, 15), president),
+                        new MemberSeed("22130002", "Trần Quốc Bảo", software, "quocbao@club.local", "0901000002", GenderEnum.MALE, LocalDate.of(2004, 2, 18), vicePresident),
+                        new MemberSeed("22130003", "Lê Hoàng Nam", software, "hoangnam@club.local", "0901000003", GenderEnum.MALE, LocalDate.of(2004, 3, 12), academicHead),
+                        new MemberSeed("22130004", "Phạm Gia Hân", software, "giahan@club.local", "0901000004", GenderEnum.FEMALE, LocalDate.of(2004, 5, 9), communicationHead),
+                        new MemberSeed("22130005", "Võ Đức Tài", software, "ductai@club.local", "0901000005", GenderEnum.MALE, LocalDate.of(2004, 7, 21), memberRole),
+                        new MemberSeed("22130006", "Hoàng Trung Kiên", software, "trungkien@club.local", "0901000006", GenderEnum.MALE, LocalDate.of(2004, 8, 3), memberRole),
+                        new MemberSeed("22130007", "Đặng Minh Khôi", software, "minhkhoi@club.local", "0901000007", GenderEnum.MALE, LocalDate.of(2004, 4, 27), memberRole),
+                        new MemberSeed("22130008", "Bùi Thị Tuyết", software, "thituyet@club.local", "0901000008", GenderEnum.FEMALE, LocalDate.of(2004, 11, 11), memberRole),
+                        new MemberSeed("22130009", "Nguyễn Văn Hùng", computerScience, "vanhung@club.local", "0901000009", GenderEnum.MALE, LocalDate.of(2004, 6, 14), memberRole),
+                        new MemberSeed("22130010", "Lê Thu Thảo", computerScience, "thuthao@club.local", "0901000010", GenderEnum.FEMALE, LocalDate.of(2005, 2, 22), memberRole),
+                        new MemberSeed("22130011", "Đỗ Anh Tuấn", computerScience, "anhtuan@club.local", "0901000011", GenderEnum.MALE, LocalDate.of(2004, 9, 16), memberRole),
+                        new MemberSeed("22130012", "Nguyễn Hoài Nam", computerScience, "hoainam@club.local", "0901000012", GenderEnum.MALE, LocalDate.of(2005, 1, 5), memberRole),
+                        new MemberSeed("22130013", "Phan Văn Tài", computerScience, "phanvantai@club.local", "0901000013", GenderEnum.MALE, LocalDate.of(2004, 12, 19), memberRole),
+                        new MemberSeed("22130014", "Vũ Thị Hà", computerScience, "vuha@club.local", "0901000014", GenderEnum.FEMALE, LocalDate.of(2005, 3, 1), memberRole),
+                        new MemberSeed("22130015", "Trần Thanh Sơn", informationSystem, "thanhson@club.local", "0901000015", GenderEnum.MALE, LocalDate.of(2004, 10, 6), memberRole),
+                        new MemberSeed("22130016", "Lý Mỹ Linh", informationSystem, "mylinh@club.local", "0901000016", GenderEnum.FEMALE, LocalDate.of(2004, 1, 30), memberRole),
+                        new MemberSeed("22130017", "Phạm Đức Long", informationSystem, "duclong@club.local", "0901000017", GenderEnum.MALE, LocalDate.of(2004, 8, 28), memberRole),
+                        new MemberSeed("22130018", "Ngô Hải Đăng", informationSystem, "haidang@club.local", "0901000018", GenderEnum.MALE, LocalDate.of(2004, 4, 8), memberRole),
+                        new MemberSeed("22130019", "Mai Khánh Vy", networking, "khanhvy@club.local", "0901000019", GenderEnum.FEMALE, LocalDate.of(2005, 5, 25), memberRole),
+                        new MemberSeed("22130020", "Đinh Quốc Cường", networking, "quoccuong@club.local", "0901000020", GenderEnum.MALE, LocalDate.of(2004, 7, 7), memberRole),
+                        // ── Khóa 23 (ĐÃ DUYỆT) ──────────────────────────────────────────────────
+                        new MemberSeed("23130021", "Huỳnh Ngọc Mai", networking, "ngocmai@club.local", "0901000021", GenderEnum.FEMALE, LocalDate.of(2005, 6, 4), memberRole),
+                        new MemberSeed("23130022", "Tạ Minh Quân", networking, "minhquan@club.local", "0901000022", GenderEnum.MALE, LocalDate.of(2005, 8, 13), memberRole),
+                        new MemberSeed("23130023", "Cao Phương Nhi", ai, "phuongnhi@club.local", "0901000023", GenderEnum.FEMALE, LocalDate.of(2005, 9, 17), memberRole),
+                        new MemberSeed("23130024", "Trương Nhật Minh", ai, "nhatminh@club.local", "0901000024", GenderEnum.MALE, LocalDate.of(2005, 11, 2), memberRole),
+                        new MemberSeed("23130025", "Đoàn Bảo Châu", ai, "baochau@club.local", "0901000025", GenderEnum.FEMALE, LocalDate.of(2005, 12, 20), memberRole),
+                        new MemberSeed("23130026", "Hồ Gia Bảo", software, "giabao@club.local", "0901000026", GenderEnum.MALE, LocalDate.of(2005, 3, 18), memberRole),
+                        new MemberSeed("23130027", "Nguyễn Hà My", computerScience, "hamy@club.local", "0901000027", GenderEnum.FEMALE, LocalDate.of(2005, 4, 9), memberRole),
+                        new MemberSeed("23130028", "Lâm Tuấn Kiệt", informationSystem, "tuankiet@club.local", "0901000028", GenderEnum.MALE, LocalDate.of(2005, 7, 29), memberRole),
+                        // ── Khóa 24 (ĐÃ DUYỆT) ──────────────────────────────────────────────────
+                        new MemberSeed("24130029", "Phùng Minh Khang", networking, "minhkhang@club.local", "0901000029", GenderEnum.MALE, LocalDate.of(2006, 1, 6), memberRole),
+                        new MemberSeed("24130030", "Đỗ Khánh Linh", ai, "khanhlinh@club.local", "0901000030", GenderEnum.FEMALE, LocalDate.of(2006, 2, 14), memberRole),
+                        new MemberSeed("24130031", "Nguyễn Nhật Hà", software, "nhatha@club.local", "0901000031", GenderEnum.FEMALE, LocalDate.of(2006, 5, 23), memberRole),
+                        new MemberSeed("24130032", "Trần Duy Phúc", computerScience, "duyphuc@club.local", "0901000032", GenderEnum.MALE, LocalDate.of(2006, 8, 8), memberRole),
+                        new MemberSeed("24130033", "Lê Bảo Ngọc", informationSystem, "baongoc@club.local", "0901000033", GenderEnum.FEMALE, LocalDate.of(2006, 9, 10), memberRole),
+                        new MemberSeed("24130034", "Võ Minh Triết", networking, "minhtriet@club.local", "0901000034", GenderEnum.MALE, LocalDate.of(2006, 10, 12), memberRole),
+                        new MemberSeed("24130035", "Phạm Hoài An", ai, "hoaian@club.local", "0901000035", GenderEnum.FEMALE, LocalDate.of(2006, 11, 15), memberRole),
+                        new MemberSeed("24130036", "Bùi Quang Huy", software, "quanghuy@club.local", "0901000036", GenderEnum.MALE, LocalDate.of(2006, 12, 3), memberRole),
+                        new MemberSeed("24130037", "Ngô Thùy Dương", computerScience, "thuyduong@club.local", "0901000037", GenderEnum.FEMALE, LocalDate.of(2006, 4, 26), memberRole),
+                        new MemberSeed("24130038", "Đặng Quốc Việt", informationSystem, "quocviet@club.local", "0901000038", GenderEnum.MALE, LocalDate.of(2006, 6, 18), memberRole),
+                        new MemberSeed("24130039", "Lương Gia Huy", networking, "giahuy@club.local", "0901000039", GenderEnum.MALE, LocalDate.of(2006, 7, 21), memberRole),
+                        new MemberSeed("24130040", "Tô Minh Nguyệt", ai, "minhnguyet@club.local", "0901000040", GenderEnum.FEMALE, LocalDate.of(2006, 9, 28), memberRole),
+                        // ── Khóa 24 (ĐANG CHỜ - 10 thành viên mới) ──────────────────────────────
+                        new MemberSeed("24130046", "Đinh Thái Bình", software, "thaibinhk24@club.local", "0901000046", GenderEnum.MALE, LocalDate.of(2006, 1, 17), memberRole, ApprovalStatusEnum.PENDING, "Chờ xác minh thông tin sinh viên khóa 24"),
+                        new MemberSeed("24130047", "Nguyễn Thu Hương", computerScience, "thuhuongk24@club.local", "0901000047", GenderEnum.FEMALE, LocalDate.of(2006, 3, 5), memberRole, ApprovalStatusEnum.PENDING, "Chờ ban học thuật xác nhận ngành học"),
+                        new MemberSeed("24130048", "Trần Minh Đức", informationSystem, "minhduck24@club.local", "0901000048", GenderEnum.MALE, LocalDate.of(2006, 4, 22), memberRole, ApprovalStatusEnum.PENDING, "Hồ sơ đăng ký mới, chờ phỏng vấn"),
+                        new MemberSeed("24130049", "Lê Phương Thảo", networking, "phuongthao@club.local", "0901000049", GenderEnum.FEMALE, LocalDate.of(2006, 5, 11), memberRole, ApprovalStatusEnum.PENDING, "Chờ kiểm tra thông tin lớp sinh hoạt"),
+                        new MemberSeed("24130050", "Phạm Đức Anh", ai, "ducanhk24@club.local", "0901000050", GenderEnum.MALE, LocalDate.of(2006, 6, 30), memberRole, ApprovalStatusEnum.PENDING, "Chờ bổ sung minh chứng email trường"),
+                        new MemberSeed("24130051", "Võ Ngọc Trân", software, "ngoctrank24@club.local", "0901000051", GenderEnum.FEMALE, LocalDate.of(2006, 7, 14), memberRole, ApprovalStatusEnum.PENDING, "Chờ duyệt đơn tham gia CLB lần 2"),
+                        new MemberSeed("24130052", "Hoàng Bảo Long", computerScience, "baolongk24@club.local", "0901000052", GenderEnum.MALE, LocalDate.of(2006, 8, 3), memberRole, ApprovalStatusEnum.PENDING, "Chờ xác nhận từ ban chủ nhiệm"),
+                        new MemberSeed("24130053", "Đỗ Thị Lan", informationSystem, "thilanck24@club.local", "0901000053", GenderEnum.FEMALE, LocalDate.of(2006, 9, 19), memberRole, ApprovalStatusEnum.PENDING, "Chờ hoàn thiện form đăng ký trực tuyến"),
+                        new MemberSeed("24130054", "Ngô Tuấn Vũ", computerEngineering, "tuanvuk24@club.local", "0901000054", GenderEnum.MALE, LocalDate.of(2006, 10, 8), memberRole, ApprovalStatusEnum.PENDING, "Chờ ban kỹ thuật xem xét hồ sơ"),
+                        new MemberSeed("24130055", "Trương Mỹ An", ai, "myank24@club.local", "0901000055", GenderEnum.FEMALE, LocalDate.of(2006, 11, 27), memberRole, ApprovalStatusEnum.PENDING, "Chờ phỏng vấn ngắn với trưởng ban học thuật"),
+                        // ── Khóa 25 (ĐANG CHỜ - 5 thành viên cũ) ────────────────────────────────
+                        new MemberSeed("25130041", "Nguyễn Hải An", software, "haian@club.local", "0901000041", GenderEnum.MALE, LocalDate.of(2007, 1, 12), memberRole, ApprovalStatusEnum.PENDING, "Hồ sơ đăng ký mới, chờ ban quản lý xét duyệt"),
+                        new MemberSeed("25130042", "Trần Mỹ Duyên", computerScience, "myduyen@club.local", "0901000042", GenderEnum.FEMALE, LocalDate.of(2007, 3, 8), memberRole, ApprovalStatusEnum.PENDING, "Chờ kiểm tra minh chứng sinh viên"),
+                        new MemberSeed("25130043", "Lê Quốc Thịnh", informationSystem, "quocthinh@club.local", "0901000043", GenderEnum.MALE, LocalDate.of(2007, 5, 19), memberRole, ApprovalStatusEnum.PENDING, "Chờ phỏng vấn ngắn với ban học thuật"),
+                        new MemberSeed("25130044", "Phạm Ngọc Bích", networking, "ngocbich@club.local", "0901000044", GenderEnum.FEMALE, LocalDate.of(2007, 7, 24), memberRole, ApprovalStatusEnum.PENDING, "Chờ duyệt đơn tham gia CLB"),
+                        new MemberSeed("25130045", "Vũ Minh Quân", ai, "minhquan25@club.local", "0901000045", GenderEnum.MALE, LocalDate.of(2007, 10, 2), memberRole, ApprovalStatusEnum.PENDING, "Chờ bổ sung thông tin lớp sinh hoạt"));
+ 
         List<Member> members = new ArrayList<>();
         YearMonth currentMonth = YearMonth.now();
         for (int index = 0; index < seeds.size(); index++) {
@@ -343,11 +344,11 @@ public class SampleDataSeeder implements CommandLineRunner {
 
     private List<EventRole> seedEventRoles() {
         List<EventRole> roles = List.of(
-                EventRole.builder().roleId((short) 1).roleName("Truong ban to chuc").build(),
-                EventRole.builder().roleId((short) 2).roleName("Pho ban to chuc").build(),
-                EventRole.builder().roleId((short) 3).roleName("Hau can").build(),
-                EventRole.builder().roleId((short) 4).roleName("Truyen thong").build(),
-                EventRole.builder().roleId((short) 5).roleName("Dieu phoi vien").build());
+                EventRole.builder().roleId((short) 1).roleName("Trưởng ban tổ chức").build(),
+                EventRole.builder().roleId((short) 2).roleName("Phó ban tổ chức").build(),
+                EventRole.builder().roleId((short) 3).roleName("Hậu cần").build(),
+                EventRole.builder().roleId((short) 4).roleName("Truyền thông").build(),
+                EventRole.builder().roleId((short) 5).roleName("Điều phối viên").build());
         return eventRoleRepository.saveAll(roles);
     }
 
@@ -376,7 +377,7 @@ public class SampleDataSeeder implements CommandLineRunner {
                 new EventSeed("Training Ban tổ chức sự kiện học thuật", "Phòng C201", 6, 18, 20, 1_900_000L, 55, "Ban sự kiện", "OTHER", EventStatusEnum.NotStarted, ApprovalStatusEnum.PENDING, "Tập huấn lập kế hoạch, điều phối nhân sự và quản lý rủi ro sự kiện."),
                 new EventSeed("Seminar Data Analyst Roadmap", "Hội trường A", 12, 9, 11, 4_000_000L, 160, "Ban học thuật", "ACAD", EventStatusEnum.NotStarted, ApprovalStatusEnum.APPROVED, "Giới thiệu lộ trình học Excel, SQL, BI và Python cho data analyst."),
                 new EventSeed("Lớp ôn thi Chứng chỉ FE Developer", "Phòng lab C202", 18, 13, 16, 4_600_000L, 50, "Ban chứng chỉ", "CERT", EventStatusEnum.NotStarted, ApprovalStatusEnum.APPROVED, "Ôn tập HTML, CSS, JavaScript và React cho chứng chỉ frontend."),
-                new EventSeed("Cuộc thi Thuật toán hàng tháng", "Phòng máy A201", 24, 8, 11, 3_700_000L, 90, "Ban học thuật", "TECH", EventStatusEnum.NotStarted, ApprovalStatusEnum.APPROVED, "Thi lập trình giải thuật theo đội và công bố bảng xếp hạng nội bộ."),
+                new EventSeed("Cuộc thi Thuật toán hằng tháng", "Phòng máy A201", 24, 8, 11, 3_700_000L, 90, "Ban học thuật", "TECH", EventStatusEnum.NotStarted, ApprovalStatusEnum.APPROVED, "Thi lập trình giải thuật theo đội và công bố bảng xếp hạng nội bộ."),
                 new EventSeed("Talkshow Kỹ năng học nhóm hiệu quả", "Phòng D302", 30, 18, 20, 2_100_000L, 100, "Ban sự kiện", "SOCIAL", EventStatusEnum.NotStarted, ApprovalStatusEnum.REQUESTED_CHANGES, "Chia sẻ cách phân công, theo dõi tiến độ và phản hồi trong nhóm học tập."),
                 new EventSeed("Workshop Python cho phân tích dữ liệu", "Phòng lab C201", 36, 13, 16, 3_900_000L, 65, "Ban kỹ thuật", "TECH", EventStatusEnum.NotStarted, ApprovalStatusEnum.APPROVED, "Thực hành pandas, trực quan hóa dữ liệu và xử lý tập dữ liệu nhỏ."),
                 new EventSeed("Ngày hội tài liệu và học liệu mở", "Thư viện trường", 42, 8, 10, 2_300_000L, 120, "Ban học thuật", "OTHER", EventStatusEnum.NotStarted, ApprovalStatusEnum.APPROVED, "Giới thiệu kho tài liệu, quy trình đóng góp và chuẩn hóa học liệu."),
@@ -425,7 +426,7 @@ public class SampleDataSeeder implements CommandLineRunner {
                     .description(seed.description())
                     .evaluatedBy(hasEvaluation ? evaluator : null)
                     .evaluationDate(hasEvaluation ? eventDate.plusDays(1).atTime(17, 0) : null)
-                    .evaluationContent(hasEvaluation ? "Tong ket: " + seed.name() + " dat muc tieu chuyen mon va ghi nhan phan hoi de cai tien lan sau." : null)
+                    .evaluationContent(hasEvaluation ? "Tổng kết: " + seed.name() + " đặt mục tiêu chuyên môn và ghi nhận phản hồi để cải thiện lần sau." : null)
                     .createdAt(createdAt)
                     .updatedAt(updatedAt)
                     .build());
@@ -485,69 +486,140 @@ public class SampleDataSeeder implements CommandLineRunner {
         return eventRegistrationRepository.saveAll(registrations);
     }
 
-   private List<Document> seedDocuments(List<Member> members, List<Subject> subjects, List<DocumentType> documentTypes) {
-    List<Document> documents = new ArrayList<>();
-    List<ResourceFolderSeed> folders = resourceFolderSeeds();
-    int index = 1;
-
-    for (ResourceFolderSeed folder : folders) {
-        List<MaterialSeed> materials = materialsForFolder(folder.folderId());
-
-        for (int item = 0; item < 5; item++) {
-            MaterialSeed material = materials.get(item % materials.size());
-            Member proposer = members.get(index % members.size());
-            Member approver = members.get((index + 1) % 2);
-
-            LocalDateTime createdAt = spreadAcrossLastSixMonths(index);
-
-            documents.add(Document.builder()
-                    .documentName(material.title())
-                    .type(documentTypes.get(item % documentTypes.size()))
-                    .subject(findSubjectByName(subjects, folder.subjectName()))
-                    .status(DocumentStatus.WORKING)
-                    .reqStatus(ApprovalStatusEnum.APPROVED)
-                    .lookupFolderId(folder.folderId())
-                    .version("2." + item)
-                    .source(material.url())
-                    .note("Tai lieu thuc te tu kho UIT SoftwareEngineering Subjects, phan loai vao thu muc " + folder.label() + ".")
-                    .proposedBy(proposer)
-                    .approvedBy(approver)
-                    .approvedAt(createdAt.plusHours(4))
-                    .createdAt(createdAt)
-                    .updatedAt(createdAt.plusDays(2))
-                    .build());
-
-            index++;
+    private List<Document> seedDocuments(List<Member> members, List<Subject> subjects, List<DocumentType> documentTypes) {
+        List<Document> documents = new ArrayList<>();
+        List<String> documentFileUrls = new ArrayList<>();
+        List<ResourceFolderSeed> folders = resourceFolderSeeds();
+        int index = 1;
+        for (ResourceFolderSeed folder : folders) {
+            List<MaterialSeed> materials = materialsForFolder(folder.folderId());
+            for (int item = 0; item < 5; item++) {
+                MaterialSeed material = materials.get(item % materials.size());
+                Member proposer = members.get(index % members.size());
+                Member approver = members.get((index + 1) % 2);
+                LocalDateTime createdAt = seedDocumentTimestamp(index);
+                documents.add(Document.builder()
+                        .documentName(material.title())
+                        .type(documentTypes.get(item % documentTypes.size()))
+                        .subject(findSubjectByName(subjects, folder.subjectName()))
+                        .status(DocumentStatus.WORKING)
+                        .reqStatus(ApprovalStatusEnum.APPROVED)
+                        .lookupFolderId(folder.folderId())
+                        .version("2." + item)
+                        .source("Tự biên soạn")
+                        .note("Tài liệu thực tế từ kho UIT SoftwareEngineering Subjects, phân loại vào thư mục " + folder.label() + ".")
+                        .proposedBy(proposer)
+                        .approvedBy(approver)
+                        .approvedAt(createdAt.plusHours(4))
+                        .createdAt(createdAt)
+                        .updatedAt(createdAt.plusDays(2))
+                        .build());
+                documentFileUrls.add(seedDocumentFileUrl(folder.folderId(), index, material));
+                index++;
+            }
         }
+        seedDocumentReviewQueue(documents, subjects, documentTypes, members, index);
+        for (int item = 0; item < 25; item++) {
+            documentFileUrls.add(null);
+        }
+        List<Document> savedDocuments = documentRepository.saveAll(documents);
+        seedDocumentFiles(savedDocuments, documentFileUrls);
+        return savedDocuments;
     }
 
-    seedDocumentReviewQueue(documents, subjects, documentTypes, members, index);
-    return documentRepository.saveAll(documents);
-}
-
-    private void seedDocumentFiles(List<Document> documents) {
+    private void seedDocumentFiles(List<Document> documents, List<String> fileUrls) {
         List<DocumentFile> files = new ArrayList<>();
         for (int index = 0; index < documents.size(); index++) {
             Document document = documents.get(index);
-            String fileUrl = document.getSource() != null && document.getSource().startsWith("https://")
-                    ? document.getSource()
-                    : null;
+            String fileUrl = index < fileUrls.size() ? fileUrls.get(index) : null;
             String fileName = fileUrl != null
                     ? fileNameFromUrl(fileUrl, "tai-lieu-" + document.getDocumentId())
                     : "tai-lieu-" + document.getDocumentId() + ".pdf";
             String mimeType = mimeTypeFromFileName(fileName);
+            LocalDateTime uploadedAt = document.getCreatedAt() != null
+                    ? document.getCreatedAt().plusHours(1)
+                    : seedDocumentTimestamp(index + 1);
             files.add(DocumentFile.builder()
                     .document(document)
                     .fileUrl(fileUrl != null ? fileUrl : "/uploads/documents/seed-document-" + document.getDocumentId() + ".pdf")
                     .fileName(fileName)
                     .fileSize(650_000L + (index * 18_000L))
                     .mimeType(mimeType)
-                    .uploadedAt(document.getCreatedAt() != null
-        ? document.getCreatedAt().plusMinutes(30)
-        : LocalDateTime.now())
+                    .uploadedAt(uploadedAt)
                     .build());
         }
         documentFileRepository.saveAll(files);
+    }
+
+    private void normalizeSeedDocumentTimeline() {
+        List<Document> seededDocuments = documentRepository.findAll().stream()
+                .filter(document -> "Tự biên soạn".equalsIgnoreCase(document.getSource()))
+                .sorted((left, right) -> Long.compare(
+                        left.getDocumentId() == null ? 0L : left.getDocumentId(),
+                        right.getDocumentId() == null ? 0L : right.getDocumentId()))
+                .toList();
+
+        if (seededDocuments.isEmpty()) {
+            return;
+        }
+
+        List<DocumentFile> seededFiles = documentFileRepository.findAll().stream()
+                .filter(file -> file.getDocument() != null
+                        && file.getDocument().getDocumentId() != null
+                        && "Tự biên soạn".equalsIgnoreCase(file.getDocument().getSource()))
+                .sorted((left, right) -> Long.compare(
+                        left.getDocument().getDocumentId(),
+                        right.getDocument().getDocumentId()))
+                .toList();
+
+        Map<Long, Integer> documentIndexMap = new HashMap<>();
+        for (int index = 0; index < seededDocuments.size(); index++) {
+            Document document = seededDocuments.get(index);
+            if (document.getDocumentId() != null) {
+                documentIndexMap.put(document.getDocumentId(), index);
+            }
+        }
+
+        for (int index = 0; index < seededDocuments.size(); index++) {
+            Document document = seededDocuments.get(index);
+            LocalDateTime createdAt = seedDocumentTimestamp(index);
+            LocalDateTime updatedAt = createdAt.plusDays(2);
+            LocalDateTime approvedAt = document.getApprovedAt();
+            if (document.getReqStatus() == ApprovalStatusEnum.APPROVED) {
+                approvedAt = createdAt.plusHours(4);
+            } else if (document.getReqStatus() == ApprovalStatusEnum.REQUESTED_CHANGES) {
+                approvedAt = null;
+                updatedAt = createdAt.plusHours(6);
+            } else if (document.getReqStatus() == ApprovalStatusEnum.PENDING) {
+                approvedAt = null;
+                updatedAt = createdAt.plusHours(1);
+            }
+            if (document.getDocumentId() != null) {
+                documentRepository.updateSeedTimeline(document.getDocumentId(), createdAt, updatedAt, approvedAt);
+            }
+        }
+
+        for (int index = 0; index < seededFiles.size(); index++) {
+            DocumentFile file = seededFiles.get(index);
+            Document document = file.getDocument();
+            Integer documentIndex = document.getDocumentId() == null
+                    ? null
+                    : documentIndexMap.get(document.getDocumentId());
+            if (documentIndex == null) {
+                continue;
+            }
+            LocalDateTime uploadedAt = seedDocumentTimestamp(documentIndex).plusHours(1);
+            String fileUrl = seedDocumentFileUrl(
+                    document.getLookupFolderId() != null ? document.getLookupFolderId() : "review",
+                    documentIndex + 1,
+                    new MaterialSeed(
+                            document.getDocumentName(),
+                            file.getFileUrl()
+                    ));
+            if (file.getFileId() != null) {
+                documentFileRepository.updateSeedTimeline(file.getFileId(), uploadedAt, fileUrl);
+            }
+        }
     }
 
     private void seedDocumentReviewQueue(
@@ -559,35 +631,34 @@ public class SampleDataSeeder implements CommandLineRunner {
 
         // ── 5 tai lieu REQUESTED_CHANGES ────────────────────────────────────────
         List<DocumentReviewSeed> requestedChangesSeeds = List.of(
-                new DocumentReviewSeed("De xuat cap nhat slide Luat so huu tri tue", "Chinh tri", 1, ApprovalStatusEnum.REQUESTED_CHANGES, DocumentStatus.FIXING, "Can bo sung phan trich dan van ban phap luat moi nhat."),
-                new DocumentReviewSeed("Ban sua giao trinh Anh van 2 - Unit 5 Presentation", "Anh van", 0, ApprovalStatusEnum.REQUESTED_CHANGES, DocumentStatus.FIXING, "Can chuan hoa dinh dang bai tap nghe va dap an."),
-                new DocumentReviewSeed("Bo bai tap SQL nang cao ban chinh sua", "Co so du lieu", 4, ApprovalStatusEnum.REQUESTED_CHANGES, DocumentStatus.FIXING, "Can them du lieu mau cho phan truy van long nhau."),
-                new DocumentReviewSeed("Tai lieu thuc hanh React Hooks ban cap nhat", "Cong nghe phan mem nang cao", 2, ApprovalStatusEnum.REQUESTED_CHANGES, DocumentStatus.FIXING, "Can tach ro vi du useEffect va useMemo."),
-                new DocumentReviewSeed("Slide Kien truc microservices ban chinh sua", "Kien truc phan mem", 1, ApprovalStatusEnum.REQUESTED_CHANGES, DocumentStatus.FIXING, "Can bo sung so do trien khai Docker Compose va giai thich tung service."));
-
+                new DocumentReviewSeed("Đề xuất cập nhật slide Luật sở hữu trí tuệ", "Chính trị", 1, ApprovalStatusEnum.REQUESTED_CHANGES, DocumentStatus.FIXING, "Cần bổ sung phần trích dẫn văn bản pháp luật mới nhất."),
+                new DocumentReviewSeed("Bản sửa giáo trình Anh văn 2 - Unit 5 Presentation", "Anh văn", 0, ApprovalStatusEnum.REQUESTED_CHANGES, DocumentStatus.FIXING, "Cần chuẩn hóa định dạng bài tập nghe và đáp án."),
+                new DocumentReviewSeed("Bộ bài tập SQL nâng cao bản chỉnh sửa", "Cơ sở dữ liệu", 4, ApprovalStatusEnum.REQUESTED_CHANGES, DocumentStatus.FIXING, "Cần thêm dữ liệu mẫu cho phần truy vấn lồng nhau."),
+                new DocumentReviewSeed("Tài liệu thực hành React Hooks bản cập nhật", "Công nghệ phần mềm nâng cao", 2, ApprovalStatusEnum.REQUESTED_CHANGES, DocumentStatus.FIXING, "Cần tách rõ ví dụ useEffect và useMemo."),
+                new DocumentReviewSeed("Slide Kiến trúc Microservices bản chỉnh sửa", "Kiến trúc phần mềm", 1, ApprovalStatusEnum.REQUESTED_CHANGES, DocumentStatus.FIXING, "Cần bổ sung sơ đồ triển khai Docker Compose và giải thích từng service.")
+        );
         // ── 20 tai lieu PENDING ──────────────────────────────────────────────────
         List<DocumentReviewSeed> pendingSeeds = List.of(
-                new DocumentReviewSeed("De xuat tai lieu nhap mon Python cho thanh vien moi", "Nhap mon lap trinh", 2, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Tai lieu moi cho admin duyet them vao kho."),
-                new DocumentReviewSeed("De xuat ngan hang cau hoi Xac suat thong ke", "Xac suat thong ke", 4, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Bo cau hoi trac nghiem phuc vu on tap giua ky."),
-                new DocumentReviewSeed("De xuat slide An toan thong tin web co ban", "An toan thong tin", 1, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Slide chuyen de bao mat web cho buoi sinh hoat CLB."),
-                new DocumentReviewSeed("De xuat tai lieu IELTS Reading Foundation", "Anh van", 0, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Tai lieu ngoai ngu moi cho nhom luyen chung chi."),
-                new DocumentReviewSeed("Giao trinh Lap trinh huong doi tuong voi Java", "Lap trinh huong doi tuong", 0, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Giao trinh tu bien soan, cho duyet de them vao kho chinh thuc."),
-                new DocumentReviewSeed("Slide Phan tich va thiet ke he thong - Chuong 3", "Phan tich thiet ke he thong", 1, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Slide bo sung chuong 3 con thieu trong kho hien tai."),
-                new DocumentReviewSeed("Bai tap thuc hanh Mang may tinh - Lab 4", "Mang may tinh", 4, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Bai lab moi cho phan cau hinh VLAN va routing."),
-                new DocumentReviewSeed("Tai lieu tham khao Tri tue nhan tao - Deep Learning co ban", "Tri tue nhan tao", 2, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Tong hop ly thuyet neural network co ban cho thanh vien moi."),
-                new DocumentReviewSeed("De thi mau Cau truc roi rac - Hoc ky 1 2024", "Cau truc roi rac", 3, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "De thi tham khao tu thanh vien khoa tren, cho kiem duyet noi dung."),
-                new DocumentReviewSeed("Bao cao mau do an mon Cong nghe phan mem nang cao", "Cong nghe phan mem nang cao", 5, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Template bao cao do an theo yeu cau moi cua khoa."),
-                new DocumentReviewSeed("Slide Triet hoc Mac - Lenin - Chuong 2 bo sung", "Triet hoc Mac - Lenin", 1, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Bo sung noi dung chuong 2 con so sai trong kho cu."),
-                new DocumentReviewSeed("Tai lieu on tap cuoi ky Co so du lieu tong hop", "Co so du lieu", 2, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Tong hop ly thuyet va bai tap on tap tu nhieu nguon."),
-                new DocumentReviewSeed("Huong dan su dung Git nang cao cho nhom du an", "Kien truc phan mem", 2, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Tai lieu thuc hanh Git flow, rebase va cherry-pick cho nhom lam du an."),
-                new DocumentReviewSeed("Slide Docker va containerization cho sinh vien CNTT", "Cong nghe phan mem nang cao", 1, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Slide gioi thieu Docker, image va container, cho duyet truoc buoi workshop."),
-                new DocumentReviewSeed("Bo de thi thu TOEIC trinh do B1", "Anh van", 3, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Bo de thi thu 4 ky nang, phuc vu nhom on luyen chung chi."),
-                new DocumentReviewSeed("Tai lieu thuc hanh Wireshark - Phan tich goi tin", "Mang may tinh", 4, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Huong dan bat va phan tich goi tin HTTP, TCP bang Wireshark."),
-                new DocumentReviewSeed("Giao trinh An toan thong tin - Bao mat ung dung web", "An toan thong tin", 0, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Giao trinh moi bo sung phan OWASP Top 10 va thuc hanh phong chong."),
-                new DocumentReviewSeed("Slide Machine Learning - Hoi quy tuyen tinh va logistic", "Tri tue nhan tao", 1, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Slide chuyen de ML co ban, trinh bay tai buoi seminar thang toi."),
-                new DocumentReviewSeed("Tai lieu tham khao Xac suat thong ke ung dung trong CNTT", "Xac suat thong ke", 2, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Tong hop ung dung thuc te cua xac suat thong ke trong phan tich du lieu."),
-                new DocumentReviewSeed("Huong dan viet bao cao nghien cuu khoa hoc sinh vien", "Chinh tri", 5, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Tai lieu huong dan cau truc va trinh bay bao cao NCKH cap truong."));
-
+                new DocumentReviewSeed("Đề xuất tài liệu nhập môn Python cho thành viên mới", "Nhập môn lập trình", 2, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Tài liệu mới chờ admin duyệt thêm vào kho."),
+                new DocumentReviewSeed("Đề xuất ngân hàng câu hỏi Xác suất thống kê", "Xác suất thống kê", 4, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Bộ câu hỏi trắc nghiệm phục vụ ôn tập giữa kỳ."),
+                new DocumentReviewSeed("Đề xuất slide An toàn thông tin web cơ bản", "An toàn thông tin", 1, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Slide chuyên đề bảo mật web cho buổi sinh hoạt CLB."),
+                new DocumentReviewSeed("Đề xuất tài liệu IELTS Reading Foundation", "Anh văn", 0, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Tài liệu ngoại ngữ mới cho nhóm luyện chứng chỉ."),
+                new DocumentReviewSeed("Giáo trình Lập trình hướng đối tượng với Java", "Lập trình hướng đối tượng", 0, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Giáo trình tự biên soạn, chờ duyệt để thêm vào kho chính thức."),
+                new DocumentReviewSeed("Slide Phân tích và thiết kế hệ thống - Chương 3", "Phân tích thiết kế hệ thống", 1, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Slide bổ sung chương 3 còn thiếu trong kho hiện tại."),
+                new DocumentReviewSeed("Bài tập thực hành Mạng máy tính - Lab 4", "Mạng máy tính", 4, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Bài lab mới cho phần cấu hình VLAN và routing."),
+                new DocumentReviewSeed("Tài liệu tham khảo Trí tuệ nhân tạo - Deep Learning cơ bản", "Trí tuệ nhân tạo", 2, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Tổng hợp lý thuyết neural network cơ bản cho thành viên mới."),
+                new DocumentReviewSeed("Đề thi mẫu Cấu trúc rời rạc - Học kỳ 1 2024", "Cấu trúc rời rạc", 3, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Đề thi tham khảo từ thành viên khóa trên, chờ kiểm duyệt nội dung."),
+                new DocumentReviewSeed("Báo cáo mẫu đồ án môn Công nghệ phần mềm nâng cao", "Công nghệ phần mềm nâng cao", 5, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Template báo cáo đồ án theo yêu cầu mới của khoa."),
+                new DocumentReviewSeed("Slide Triết học Mác - Lênin - Chương 2 bổ sung", "Triết học Mác - Lênin", 1, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Bổ sung nội dung chương 2 còn sơ sài trong kho cũ."),
+                new DocumentReviewSeed("Tài liệu ôn tập cuối kỳ Cơ sở dữ liệu tổng hợp", "Cơ sở dữ liệu", 2, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Tổng hợp lý thuyết và bài tập ôn tập từ nhiều nguồn."),
+                new DocumentReviewSeed("Hướng dẫn sử dụng Git nâng cao cho nhóm dự án", "Kiến trúc phần mềm", 2, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Tài liệu thực hành Git Flow, rebase và cherry-pick cho nhóm làm dự án."),
+                new DocumentReviewSeed("Slide Docker và Containerization cho sinh viên CNTT", "Công nghệ phần mềm nâng cao", 1, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Slide giới thiệu Docker, image và container, chờ duyệt trước buổi workshop."),
+                new DocumentReviewSeed("Bộ đề thi thử TOEIC trình độ B1", "Anh văn", 3, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Bộ đề thi thử 4 kỹ năng, phục vụ nhóm ôn luyện chứng chỉ."),
+                new DocumentReviewSeed("Tài liệu thực hành Wireshark - Phân tích gói tin", "Mạng máy tính", 4, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Hướng dẫn bắt và phân tích gói tin HTTP, TCP bằng Wireshark."),
+                new DocumentReviewSeed("Giáo trình An toàn thông tin - Bảo mật ứng dụng web", "An toàn thông tin", 0, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Giáo trình mới bổ sung phần OWASP Top 10 và thực hành phòng chống."),
+                new DocumentReviewSeed("Slide Machine Learning - Hồi quy tuyến tính và Logistic", "Trí tuệ nhân tạo", 1, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Slide chuyên đề Machine Learning cơ bản, trình bày tại buổi seminar tháng tới."),
+                new DocumentReviewSeed("Tài liệu tham khảo Xác suất thống kê ứng dụng trong CNTT", "Xác suất thống kê", 2, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Tổng hợp ứng dụng thực tế của xác suất thống kê trong phân tích dữ liệu."),
+                new DocumentReviewSeed("Hướng dẫn viết báo cáo nghiên cứu khoa học sinh viên", "Chính trị", 5, ApprovalStatusEnum.PENDING, DocumentStatus.WORKING, "Tài liệu hướng dẫn cách chọn đề tài, viết đề cương và trình bày kết quả nghiên cứu khoa học sinh viên."));
 
         // Them REQUESTED_CHANGES truoc
         for (int item = 0; item < requestedChangesSeeds.size(); item++) {
@@ -595,7 +666,7 @@ public class SampleDataSeeder implements CommandLineRunner {
             int index = startIndex + item;
             Member proposer = members.get(index % members.size());
             Member reviewer = members.get((index + 1) % 2);
-            LocalDateTime createdAt = spreadAcrossLastSixMonths(index);
+            LocalDateTime createdAt = seedDocumentTimestamp(index);
             documents.add(Document.builder()
                     .documentName(seed.name())
                     .type(documentTypes.get(seed.typeIndex() % documentTypes.size()))
@@ -604,7 +675,7 @@ public class SampleDataSeeder implements CommandLineRunner {
                     .reqStatus(seed.reqStatus())
                     .lookupFolderId(null)
                     .version("1.0")
-                    .source("Tu bien soan")
+                    .source("Tự biên soạn")
                     .note(seed.note())
                     .proposedBy(proposer)
                     .approvedBy(reviewer)
@@ -620,7 +691,7 @@ public class SampleDataSeeder implements CommandLineRunner {
             DocumentReviewSeed seed = pendingSeeds.get(item);
             int index = pendingStartIndex + item;
             Member proposer = members.get(index % members.size());
-            LocalDateTime createdAt = spreadAcrossLastSixMonths(index);
+            LocalDateTime createdAt = seedDocumentTimestamp(index);
             documents.add(Document.builder()
                     .documentName(seed.name())
                     .type(documentTypes.get(seed.typeIndex() % documentTypes.size()))
@@ -629,7 +700,7 @@ public class SampleDataSeeder implements CommandLineRunner {
                     .reqStatus(seed.reqStatus())
                     .lookupFolderId(null)
                     .version("1.0")
-                    .source("Tu bien soan")
+                    .source("Tự biên soạn")
                     .note(seed.note())
                     .proposedBy(proposer)
                     .approvedBy(null)
@@ -645,8 +716,8 @@ public class SampleDataSeeder implements CommandLineRunner {
         LocalDateTime baseTime = LocalDateTime.now().minusDays(25);
         for (int index = 1; index <= 20; index++) {
             notifications.add(Notification.builder()
-                     .title("Thông báo hoạt động số " + index)
-                    .content("Nội dung thông báo mẫu cho thành viên đợt " + index)
+                    .title("Thông báo hoạt động số " + index)
+                    .content("Nội dung thông báo mẫu cho thành viên đột biến " + index)
                     .sender(members.get(index % 2))
                     .targetType(index % 2 == 0 ? "ALL_MEMBERS" : "Công nghệ phần mềm")
                     .sendMethod(index % 3 == 0 ? "EMAIL" : "SYSTEM")
@@ -734,7 +805,7 @@ public class SampleDataSeeder implements CommandLineRunner {
                         .counterpartyName(pickSponsorName(index))
                         .type(TransactionType.INCOME)
                         .amount(BigDecimal.valueOf(sponsorshipIncome))
-                        .description("Tai tro cho su kien: " + event.getEventName())
+                        .description("Tài trợ cho sự kiện: " + event.getEventName())
                         .transactionDate(sponsorIncomeAt)
                         .status(sponsorshipStatus)
                         .createdBy(creator)
@@ -752,7 +823,7 @@ public class SampleDataSeeder implements CommandLineRunner {
                     .counterpartyName(pickVendorName(index))
                     .type(TransactionType.Expense)
                     .amount(BigDecimal.valueOf(operatingExpense))
-                    .description("Chi phi to chuc " + event.getEventName())
+                    .description("Chi phí tổ chức " + event.getEventName())
                     .transactionDate(expenseAt)
                     .status(expenseStatus)
                     .createdBy(creator)
@@ -767,10 +838,10 @@ public class SampleDataSeeder implements CommandLineRunner {
                 transactions.add(Transaction.builder()
                         .transactionId(String.format("TRX-EVT-%03d-VENUE", index))
                         .event(event)
-                        .counterpartyName("Doi tac dia diem va thiet bi")
+                        .counterpartyName("Đối tác địa điểm và thiết bị")
                         .type(TransactionType.Expense)
                         .amount(BigDecimal.valueOf(venueExpense))
-                        .description("Tam ung dia diem va thiet bi: " + event.getEventName())
+                        .description("Tạm ứng địa điểm và thiết bị: " + event.getEventName())
                         .transactionDate(venueExpenseAt)
                         .status(expenseStatus)
                         .createdBy(creator)
@@ -814,7 +885,7 @@ public class SampleDataSeeder implements CommandLineRunner {
                     .counterpartyName(member.getFullName())
                     .type(TransactionType.INCOME)
                     .amount(feeAmount)
-                    .description("Phi tham gia su kien: " + event.getEventName())
+                    .description("Phí tham gia sự kiện: " + event.getEventName())
                     .transactionDate(registeredAt)
                     .status(status)
                     .createdBy(member)
@@ -842,10 +913,10 @@ public class SampleDataSeeder implements CommandLineRunner {
 
             transactions.add(Transaction.builder()
                     .transactionId(String.format("TRX-MONTH-%s-PARTNER", month.format(MONTH_ID_FORMAT)))
-                    .counterpartyName("Doi tac hoc thuat thang " + monthValue)
+                    .counterpartyName("Đối tác học thuật tháng " + monthValue)
                     .type(TransactionType.INCOME)
                     .amount(BigDecimal.valueOf(partnerIncome))
-                    .description(String.format("Dong gop doi tac hoc thuat thang %02d/%d", monthValue, month.getYear()))
+                    .description(String.format("Đóng góp đối tác học thuật tháng %02d/%d", monthValue, month.getYear()))
                     .transactionDate(incomeAt)
                     .status(TransactionStatus.COMPLETED)
                     .createdBy(creator)
@@ -857,10 +928,10 @@ public class SampleDataSeeder implements CommandLineRunner {
 
             transactions.add(Transaction.builder()
                     .transactionId(String.format("TRX-MONTH-%s-OPS", month.format(MONTH_ID_FORMAT)))
-                    .counterpartyName("Van phong pham va nen tang CLB")
+                    .counterpartyName("Văn phòng phẩm và nhu cầu CLB")
                     .type(TransactionType.Expense)
                     .amount(BigDecimal.valueOf(fixedExpense))
-                    .description(String.format("Chi van hanh CLB thang %02d/%d", monthValue, month.getYear()))
+                    .description(String.format("Chi phí vận hành CLB tháng %02d/%d", monthValue, month.getYear()))
                     .transactionDate(expenseAt)
                     .status(TransactionStatus.COMPLETED)
                     .createdBy(creator)
@@ -874,12 +945,12 @@ public class SampleDataSeeder implements CommandLineRunner {
 
     private void seedSystemSettings(List<Member> members) {
         List<SystemSetting> settings = List.of(
-                SystemSetting.builder().settingKey("club.name").settingValue("CLB Hoc thuat CNTT").description("Ten hien thi cua cau lac bo").updatedBy(members.get(0)).updatedAt(LocalDateTime.now().minusDays(5)).build(),
-                SystemSetting.builder().settingKey("member.defaultRole").settingValue("Thanh vien").description("Vai tro mac dinh khi duyet thanh vien").updatedBy(members.get(0)).updatedAt(LocalDateTime.now().minusDays(5)).build(),
-                SystemSetting.builder().settingKey("document.approvalRequired").settingValue("true").description("Tai lieu moi can qua duyet").updatedBy(members.get(0)).updatedAt(LocalDateTime.now().minusDays(4)).build(),
-                SystemSetting.builder().settingKey("event.autoArchiveDays").settingValue("30").description("So ngay tu dong luu tru su kien").updatedBy(members.get(1)).updatedAt(LocalDateTime.now().minusDays(4)).build(),
-                SystemSetting.builder().settingKey("notification.defaultMethod").settingValue("SYSTEM").description("Kenh gui mac dinh").updatedBy(members.get(1)).updatedAt(LocalDateTime.now().minusDays(3)).build(),
-                SystemSetting.builder().settingKey("finance.maxPendingDays").settingValue("14").description("So ngay toi da cho giao dich cho duyet").updatedBy(members.get(0)).updatedAt(LocalDateTime.now().minusDays(2)).build());
+                SystemSetting.builder().settingKey("club.name").settingValue("CLB Học thuật CNTT").description("Tên hiển thị của CLB").updatedBy(members.get(0)).updatedAt(LocalDateTime.now().minusDays(5)).build(),
+                SystemSetting.builder().settingKey("member.defaultRole").settingValue("Thành viên").description("Vai trò mặc định khi duyệt thành viên").updatedBy(members.get(0)).updatedAt(LocalDateTime.now().minusDays(5)).build(),
+                SystemSetting.builder().settingKey("document.approvalRequired").settingValue("true").description("Tài liệu mới cần qua duyệt").updatedBy(members.get(0)).updatedAt(LocalDateTime.now().minusDays(4)).build(),
+                SystemSetting.builder().settingKey("event.autoArchiveDays").settingValue("30").description("Số ngày tự động lưu trữ sự kiện").updatedBy(members.get(1)).updatedAt(LocalDateTime.now().minusDays(4)).build(),
+                SystemSetting.builder().settingKey("notification.defaultMethod").settingValue("SYSTEM").description("ênh gửi mặc định").updatedBy(members.get(1)).updatedAt(LocalDateTime.now().minusDays(3)).build(),
+                SystemSetting.builder().settingKey("finance.maxPendingDays").settingValue("14").description("Số ngày tối đa cho giao dịch chờ duyệt").updatedBy(members.get(0)).updatedAt(LocalDateTime.now().minusDays(2)).build());
         systemSettingRepository.saveAll(settings);
     }
 
@@ -967,13 +1038,13 @@ public class SampleDataSeeder implements CommandLineRunner {
     }
 
     private String monthlyDueDescription(YearMonth month) {
-        return String.format("Đóng quỹ tháng %02d/%d", month.getMonthValue(), month.getYear());
+        return String.format("Dong quy thang %02d/%d", month.getMonthValue(), month.getYear());
     }
 
     private String pickVendorName(int index) {
         return switch (index % 5) {
-            case 0 -> "Nhà sách Đại học";
-            case 1 -> "Cửa hàng Văn phòng phẩm Minh Tâm";
+            case 0 -> "Nhà sách Phương Nam";
+            case 1 -> "Cửa hàng văn phòng phẩm Kim Phát";
             case 2 -> "Dịch vụ in ấn Hồng Phát";
             case 3 -> "Trung tâm thiết bị sự kiện Sài Gòn";
             default -> "Quán nước Thanh Xuân";
@@ -987,6 +1058,35 @@ public class SampleDataSeeder implements CommandLineRunner {
             case 2 -> "TMA Solutions";
             default -> "Bosch Global Software Technologies";
         };
+    }
+
+    private LocalDateTime seedDocumentTimestamp(int offset) {
+        LocalDateTime latestMonthStart = LocalDateTime.of(2026, 5, 1, 9, 0);
+        int monthOffset = Math.floorMod(offset, 6);
+        int cycleIndex = offset / 6;
+        int[] daySlots = {2, 6, 10, 14, 18, 22, 26, 28};
+        int day = daySlots[Math.floorMod(cycleIndex, daySlots.length)];
+        return latestMonthStart
+                .minusMonths(monthOffset)
+                .withDayOfMonth(Math.min(day, latestMonthStart.minusMonths(monthOffset).toLocalDate().lengthOfMonth()))
+                .withHour(8 + (offset % 8))
+                .withMinute((offset * 7) % 60)
+                .withSecond(0)
+                .withNano(0);
+    }
+
+    private String seedDocumentFileUrl(String folderId, int index, MaterialSeed material) {
+        String fileName = fileNameFromUrl(material.url(), material.title());
+        int dotIndex = fileName.lastIndexOf('.');
+        String baseName = dotIndex > 0 ? fileName.substring(0, dotIndex) : fileName;
+        String extension = dotIndex > 0 ? fileName.substring(dotIndex).toLowerCase() : ".pdf";
+        String safeBaseName = baseName.toLowerCase()
+                .replaceAll("[^a-z0-9]+", "-")
+                .replaceAll("^-+|-+$", "");
+        if (safeBaseName.isBlank()) {
+            safeBaseName = "tai-lieu";
+        }
+        return "/uploads/documents/seed/" + folderId + "/" + String.format("%03d-%s%s", index, safeBaseName, extension);
     }
 
     private String fileNameFromUrl(String url, String fallbackName) {
@@ -1015,32 +1115,32 @@ public class SampleDataSeeder implements CommandLineRunner {
 
     private List<ResourceFolderSeed> resourceFolderSeeds() {
         return List.of(
-                   new ResourceFolderSeed("tu-tuong-ho-chi-minh", "Tư tưởng Hồ Chí Minh", "Chính trị"),
-                new ResourceFolderSeed("triet-hoc-mac-lenin", "Triết học Mác - Lênin", "Chính trị"),
-                new ResourceFolderSeed("kinh-te-chinh-tri", "Kinh tế Chính trị Mác - Lênin", "Chính trị"),
-                new ResourceFolderSeed("chu-nghia-xa-hoi-khoa-hoc", "Chủ nghĩa xã hội khoa học", "Chính trị"),
-                new ResourceFolderSeed("lich-su-dang", "Lịch sử Đảng Cộng sản Việt Nam", "Chính trị"),
-                new ResourceFolderSeed("phap-luat-dai-cuong", "Pháp luật đại cương", "Chính trị"),
-                new ResourceFolderSeed("giai-tich", "Giải tích", "Xác suất thống kê"),
-                new ResourceFolderSeed("dai-so-tuyen-tinh", "Đại số tuyến tính", "Xác suất thống kê"),
-                new ResourceFolderSeed("cau-truc-roi-rac", "Cấu trúc rời rạc", "Cấu trúc rời rạc"),
-                new ResourceFolderSeed("xac-suat-thong-ke", "Xác suất thống kê", "Xác suất thống kê"),
-                new ResourceFolderSeed("nhap-mon-lap-trinh", "Nhập môn lập trình", "Nhập môn lập trình"),
-                new ResourceFolderSeed("anh-van-1", "Anh văn 1", "Anh văn"),
-                new ResourceFolderSeed("anh-van-2", "Anh văn 2", "Anh văn"),
-                new ResourceFolderSeed("anh-van-3", "Anh văn 3", "Anh văn"),
-                new ResourceFolderSeed("ky-thuat-phan-mem", "Kỹ thuật phần mềm", "Kiến trúc phần mềm"),
-                new ResourceFolderSeed("truyen-thong-da-phuong-tien", "Truyền thông đa phương tiện", "Công nghệ phần mềm nâng cao"),
-                new ResourceFolderSeed("he-thong-thong-tin-chuyen-nganh", "Hệ thống thông tin", "Phân tích thiết kế hệ thống"),
-                new ResourceFolderSeed("thuong-mai-dien-tu", "Thương mại điện tử", "Cơ sở dữ liệu"),
-                new ResourceFolderSeed("khoa-hoc-may-tinh-chuyen-nganh", "Khoa học máy tính", "Trí tuệ nhân tạo"),
-                new ResourceFolderSeed("tri-tue-nhan-tao", "Trí tuệ nhân tạo", "Trí tuệ nhân tạo"),
-                new ResourceFolderSeed("cong-nghe-thong-tin", "Công nghệ thông tin", "Công nghệ phần mềm nâng cao"),
-                new ResourceFolderSeed("khoa-hoc-du-lieu", "Khoa học dữ liệu", "Trí tuệ nhân tạo"),
-                new ResourceFolderSeed("an-toan-thong-tin", "An toàn thông tin", "An toàn thông tin"),
-                new ResourceFolderSeed("mang-may-tinh-truyen-thong-du-lieu", "Mạng máy tính và truyền thông dữ liệu", "Mạng máy tính"),
-                new ResourceFolderSeed("ky-thuat-may-tinh-chuyen-nganh", "Kỹ thuật máy tính", "Mạng máy tính"),
-                new ResourceFolderSeed("thiet-ke-vi-mach", "Thiết kế vi mạch", "Kiến trúc phần mềm"));
+                new ResourceFolderSeed("tu-tuong-ho-chi-minh", "Tu tuong Ho Chi Minh", "Chinh tri"),
+                new ResourceFolderSeed("triet-hoc-mac-lenin", "Triet hoc Mac - Lenin", "Chinh tri"),
+                new ResourceFolderSeed("kinh-te-chinh-tri", "Kinh te Chinh tri Mac - Lenin", "Chinh tri"),
+                new ResourceFolderSeed("chu-nghia-xa-hoi-khoa-hoc", "Chu nghia xa hoi khoa hoc", "Chinh tri"),
+                new ResourceFolderSeed("lich-su-dang", "Lich su Dang Cong san Viet Nam", "Chinh tri"),
+                new ResourceFolderSeed("phap-luat-dai-cuong", "Phap luat dai cuong", "Chinh tri"),
+                new ResourceFolderSeed("giai-tich", "Giai tich", "Xac suat thong ke"),
+                new ResourceFolderSeed("dai-so-tuyen-tinh", "Dai so tuyen tinh", "Xac suat thong ke"),
+                new ResourceFolderSeed("cau-truc-roi-rac", "Cau truc roi rac", "Cau truc roi rac"),
+                new ResourceFolderSeed("xac-suat-thong-ke", "Xac suat thong ke", "Xac suat thong ke"),
+                new ResourceFolderSeed("nhap-mon-lap-trinh", "Nhap mon lap trinh", "Nhap mon lap trinh"),
+                new ResourceFolderSeed("anh-van-1", "Anh van 1", "Anh van"),
+                new ResourceFolderSeed("anh-van-2", "Anh van 2", "Anh van"),
+                new ResourceFolderSeed("anh-van-3", "Anh van 3", "Anh van"),
+                new ResourceFolderSeed("ky-thuat-phan-mem", "Ky thuat phan mem", "Kien truc phan mem"),
+                new ResourceFolderSeed("truyen-thong-da-phuong-tien", "Truyen thong da phuong tien", "Cong nghe phan mem nang cao"),
+                new ResourceFolderSeed("he-thong-thong-tin-chuyen-nganh", "He thong thong tin", "Phan tich thiet ke he thong"),
+                new ResourceFolderSeed("thuong-mai-dien-tu", "Thuong mai dien tu", "Co so du lieu"),
+                new ResourceFolderSeed("khoa-hoc-may-tinh-chuyen-nganh", "Khoa hoc may tinh", "Tri tue nhan tao"),
+                new ResourceFolderSeed("tri-tue-nhan-tao", "Tri tue nhan tao", "Tri tue nhan tao"),
+                new ResourceFolderSeed("cong-nghe-thong-tin", "Cong nghe thong tin", "Cong nghe phan mem nang cao"),
+                new ResourceFolderSeed("khoa-hoc-du-lieu", "Khoa hoc du lieu", "Tri tue nhan tao"),
+                new ResourceFolderSeed("an-toan-thong-tin", "An toan thong tin", "An toan thong tin"),
+                new ResourceFolderSeed("mang-may-tinh-truyen-thong-du-lieu", "Mang may tinh va truyen thong du lieu", "Mang may tinh"),
+                new ResourceFolderSeed("ky-thuat-may-tinh-chuyen-nganh", "Ky thuat may tinh", "Mang may tinh"),
+                new ResourceFolderSeed("thiet-ke-vi-mach", "Thiet ke vi mach", "Kien truc phan mem"));
     }
 
     private List<MaterialSeed> materialsForFolder(String folderId) {
@@ -1181,29 +1281,5 @@ public class SampleDataSeeder implements CommandLineRunner {
             ApprovalStatusEnum reqStatus,
             DocumentStatus documentStatus,
             String note) {
-    }
-
-    private LocalDateTime spreadAcrossLastSixMonths(int index) {
-        YearMonth currentMonth = YearMonth.now();
-
-        // Chia đều vào 6 tháng gần nhất
-        YearMonth targetMonth = currentMonth.minusMonths(5L - (index % 6));
-
-        int day = Math.min(
-                targetMonth.lengthOfMonth(),
-                2 + ((index * 3) % 24)
-        );
-
-        return targetMonth.atDay(day)
-                .atTime(8 + (index % 8), (index * 7) % 60);
-    }
-
-    static LocalDateTime seedDocumentTimestamp(int index, LocalDateTime upperBound) {
-        LocalDateTime candidate = upperBound.plusDays(index);
-        return capToNotAfter(candidate, upperBound);
-    }
-
-    static LocalDateTime capToNotAfter(LocalDateTime candidate, LocalDateTime upperBound) {
-        return candidate.isAfter(upperBound) ? upperBound : candidate;
     }
 }
