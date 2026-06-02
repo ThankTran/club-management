@@ -13,11 +13,13 @@ import com.example.demo.domain.repository.notification.NotificationRepository;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.time.format.TextStyle;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
-import java.util.stream.IntStream;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -41,10 +43,16 @@ public class DashboardServiceImpl implements DashboardService {
 
     @Override
     public Map<String, Object> getOverview() {
+        return getOverview(null, null);
+    }
+
+    @Override
+    public Map<String, Object> getOverview(LocalDate fromDate, LocalDate toDate) {
+        DateRange range = resolveDateRange(fromDate, toDate);
         return Map.of(
                 "stats", getStats(),
                 "activities", getNotifications(),
-                "chartData", getChartData());
+                "chartData", getChartData(range.startDate(), range.endDate()));
     }
 
     @Override
@@ -88,23 +96,53 @@ public class DashboardServiceImpl implements DashboardService {
                 .toList();
     }
 
-    private List<Map<String, Object>> getChartData() {
+    private List<Map<String, Object>> getChartData(LocalDate startDate, LocalDate endDate) {
         List<Member> members = memberRepository.findAll();
         List<Event> events = eventRepository.findAll();
         List<Document> documents = documentRepository.findAll();
-        YearMonth currentMonth = YearMonth.now();
+        List<YearMonth> months = buildMonthRange(startDate, endDate);
 
-        return IntStream.rangeClosed(0, 5)
-                .mapToObj(offset -> currentMonth.minusMonths(5L - offset))
+        return months.stream()
                 .map(month -> {
                     Map<String, Object> item = new LinkedHashMap<>();
-                    item.put("month", "T" + month.getMonthValue());
-                    item.put("events", countEventsInMonth(events, month));
-                    item.put("docs", countDocumentsInMonth(documents, month));
-                    item.put("members", countMembersInMonth(members, month));
+                    item.put("month", month.getMonth().getDisplayName(TextStyle.SHORT, new Locale("vi", "VN")));
+                    item.put("events", countEventsInMonth(events, month, startDate, endDate));
+                    item.put("docs", countDocumentsInMonth(documents, month, startDate, endDate));
+                    item.put("members", countMembersInMonth(members, month, startDate, endDate));
                     return item;
                 })
                 .toList();
+    }
+
+    private DateRange resolveDateRange(LocalDate fromDate, LocalDate toDate) {
+        YearMonth currentMonth = YearMonth.now();
+        LocalDate defaultStart = currentMonth.minusMonths(5).atDay(1);
+        LocalDate defaultEnd = LocalDate.now();
+
+        LocalDate start = fromDate != null ? fromDate : defaultStart;
+        LocalDate end = toDate != null ? toDate : defaultEnd;
+
+        if (start.isAfter(end)) {
+            LocalDate temp = start;
+            start = end;
+            end = temp;
+        }
+
+        return new DateRange(start, end);
+    }
+
+    private List<YearMonth> buildMonthRange(LocalDate startDate, LocalDate endDate) {
+        YearMonth startMonth = YearMonth.from(startDate);
+        YearMonth endMonth = YearMonth.from(endDate);
+        List<YearMonth> months = new ArrayList<>();
+        YearMonth cursor = startMonth;
+
+        while (!cursor.isAfter(endMonth)) {
+            months.add(cursor);
+            cursor = cursor.plusMonths(1);
+        }
+
+        return months;
     }
 
     private Map<String, Object> stat(String label,
@@ -150,26 +188,40 @@ public class DashboardServiceImpl implements DashboardService {
         };
     }
 
-    private long countMembersInMonth(List<Member> members, YearMonth month) {
+    private long countMembersInMonth(List<Member> members, YearMonth month, LocalDate startDate, LocalDate endDate) {
         return members.stream()
                 .filter(member -> isSameMonth(member.getCreatedAt(), month))
+                .filter(member -> isInRange(member.getCreatedAt(), startDate, endDate))
                 .count();
     }
 
-    private long countEventsInMonth(List<Event> events, YearMonth month) {
+    private long countEventsInMonth(List<Event> events, YearMonth month, LocalDate startDate, LocalDate endDate) {
         return events.stream()
                 .filter(event -> event.getEventDate() != null)
                 .filter(event -> YearMonth.from(event.getEventDate()).equals(month))
+                .filter(event -> isInRange(event.getEventDate(), startDate, endDate))
                 .count();
     }
 
-    private long countDocumentsInMonth(List<Document> documents, YearMonth month) {
+    private long countDocumentsInMonth(List<Document> documents, YearMonth month, LocalDate startDate, LocalDate endDate) {
         return documents.stream()
                 .filter(document -> isSameMonth(document.getCreatedAt(), month))
+                .filter(document -> isInRange(document.getCreatedAt(), startDate, endDate))
                 .count();
     }
 
     private boolean isSameMonth(LocalDateTime dateTime, YearMonth month) {
         return dateTime != null && YearMonth.from(dateTime).equals(month);
+    }
+
+    private boolean isInRange(LocalDateTime dateTime, LocalDate startDate, LocalDate endDate) {
+        return dateTime != null && isInRange(dateTime.toLocalDate(), startDate, endDate);
+    }
+
+    private boolean isInRange(LocalDate date, LocalDate startDate, LocalDate endDate) {
+        return date != null && !date.isBefore(startDate) && !date.isAfter(endDate);
+    }
+
+    private record DateRange(LocalDate startDate, LocalDate endDate) {
     }
 }

@@ -61,6 +61,22 @@ const mergeActivityReadState = (activities = [], recipients = []) => {
   });
 };
 
+const toDateInputValue = (date) => {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
+
+const getDefaultDateRange = () => {
+  const now = new Date();
+  const start = new Date(now.getFullYear(), now.getMonth() - 5, 1);
+  return {
+    fromDate: toDateInputValue(start),
+    toDate: toDateInputValue(now),
+  };
+};
+
 // ── Main ──────────────────────────────────────────────────────
 const DashboardPage = () => {
   const currentUser = useAuthStore((state) => state.user);
@@ -68,6 +84,7 @@ const DashboardPage = () => {
   const [overview, setOverview] = useState(DEFAULT_OVERVIEW);
   const [error, setError] = useState("");
   const [showWelcomeBadge, setShowWelcomeBadge] = useState(true);
+  const [dateRange, setDateRange] = useState(getDefaultDateRange);
 
   useEffect(() => {
     const timer = window.setTimeout(() => setShowWelcomeBadge(false), 4000);
@@ -80,7 +97,7 @@ const DashboardPage = () => {
     const loadOverview = async () => {
       try {
         const [overviewData, recipientData] = await Promise.all([
-          getDashboardOverviewAPI(),
+          getDashboardOverviewAPI(dateRange),
           currentMemberId ? getNotificationsByMemberAPI(currentMemberId) : Promise.resolve([]),
         ]);
 
@@ -106,7 +123,28 @@ const DashboardPage = () => {
     return () => {
       ignore = true;
     };
-  }, [currentMemberId]);
+  }, [currentMemberId, dateRange.fromDate, dateRange.toDate]);
+
+  const handleDateChange = (field, value) => {
+    setDateRange((prev) => {
+      const next = { ...prev, [field]: value };
+      if (!next.fromDate || !next.toDate) return next;
+
+      if (new Date(next.fromDate) > new Date(next.toDate)) {
+        if (field === "fromDate") {
+          next.toDate = value;
+        } else {
+          next.fromDate = value;
+        }
+      }
+
+      return next;
+    });
+  };
+
+  const handleResetDateRange = () => {
+    setDateRange(getDefaultDateRange());
+  };
 
   const handleActivityRead = async (activity, index) => {
     setOverview((prev) => ({
@@ -174,9 +212,38 @@ const DashboardPage = () => {
       <div className={styles.bodyGrid}>
         <section className={styles.panel}>
           <div className={styles.panelHeader}>
-            <h2>Thống kê 6 tháng gần nhất</h2>
-            <span className={styles.panelLabel}>Sự kiện · Tài liệu · Thành viên</span>
+            <h2>Thống kê theo mốc thời gian</h2>
+            <div className={styles.chartFilterWrap}>
+              <label className={styles.dateLabel}>
+                Từ
+                <input
+                  type="date"
+                  className={styles.dateInput}
+                  value={dateRange.fromDate}
+                  onChange={(event) => handleDateChange("fromDate", event.target.value)}
+                  max={dateRange.toDate}
+                />
+              </label>
+              <label className={styles.dateLabel}>
+                Đến
+                <input
+                  type="date"
+                  className={styles.dateInput}
+                  value={dateRange.toDate}
+                  onChange={(event) => handleDateChange("toDate", event.target.value)}
+                  min={dateRange.fromDate}
+                />
+              </label>
+              <button
+                type="button"
+                className={styles.resetRangeBtn}
+                onClick={handleResetDateRange}
+              >
+                6 tháng gần nhất
+              </button>
+            </div>
           </div>
+          <span className={styles.panelLabel}>Sự kiện · Tài liệu · Thành viên</span>
           <ComboChart data={overview.chartData} />
         </section>
 
