@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from 'react';
 import { galleryData } from '../../../../data/Public/content';
 import styles from './Gallery.module.css';
+import { useNavigate } from 'react-router-dom';
 
 export default function Gallery() {
   const { title, description, images, cta } = galleryData;
   const looped = [...images, ...images]
+  const navigate = useNavigate();
 
   const CARD_WIDTH = 280
   const GAP = 20
@@ -116,7 +118,9 @@ export default function Gallery() {
 
       {/* CTA */}
       <div className={`${styles.ctaWrap} ${inView ? styles.ctaVisible : ''}`}>
-        <button className={styles.registerBtn}>{cta}</button>
+        <button className={styles.registerBtn} onClick={() => navigate('/signin')}>
+          {cta}
+        </button>
       </div>
 
       {/* Lightbox */}
