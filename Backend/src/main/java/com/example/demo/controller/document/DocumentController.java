@@ -1,6 +1,7 @@
 package com.example.demo.controller.document;
 
 import com.example.demo.application.dto.request.document.DocumentApprovalRequest;
+import com.example.demo.application.dto.request.document.DocumentMoveFolderRequest;
 import com.example.demo.application.dto.request.document.DocumentRequest;
 import com.example.demo.application.dto.response.document.DocumentResponse;
 import com.example.demo.application.exception.BusinessException;
@@ -65,6 +66,20 @@ public class DocumentController {
     public ResponseEntity<?> approve(@Valid @RequestBody DocumentApprovalRequest request) {
         try {
             return ResponseEntity.ok(documentService.approve(request));
+        } catch (BusinessException | IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(e.getMessage());
+        }
+    }
+
+    @PatchMapping("/{id}/lookup-folder")
+    public ResponseEntity<?> moveLookupFolder(
+            @PathVariable Long id,
+            @Valid @RequestBody DocumentMoveFolderRequest request) {
+        try {
+            if (request.getDocumentId() != null && !request.getDocumentId().equals(id)) {
+                return ResponseEntity.badRequest().body("Document id does not match request body");
+            }
+            return ResponseEntity.ok(documentService.moveLookupFolder(id, request.getLookupFolderId()));
         } catch (BusinessException | IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(e.getMessage());
         }

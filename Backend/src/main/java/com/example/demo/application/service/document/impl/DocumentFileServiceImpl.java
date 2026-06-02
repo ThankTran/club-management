@@ -119,12 +119,19 @@ public class DocumentFileServiceImpl implements DocumentFileService {
 
     private String resolveUrl(DocumentFileRequest request) {
         MultipartFile file = request.getFile();
-        if (file != null && !file.isEmpty()) {
+        String fileUrl = normalizeBlank(request.getFileUrl());
+        boolean hasUploadedFile = file != null && !file.isEmpty();
+        boolean hasProvidedLink = fileUrl != null;
+
+        if (hasUploadedFile && hasProvidedLink) {
+            throw new IllegalArgumentException("Chỉ được chọn 1 trong 2: upload file hoặc dán link.");
+        }
+
+        if (hasUploadedFile) {
             return save(file);
         }
 
-        String fileUrl = normalizeBlank(request.getFileUrl());
-        if (fileUrl == null) {
+        if (!hasProvidedLink) {
             throw new IllegalArgumentException("File or file URL is required");
         }
         String lowerUrl = fileUrl.toLowerCase(Locale.ROOT);

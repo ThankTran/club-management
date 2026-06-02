@@ -11,6 +11,7 @@ import ResourceDeleteConfirmModal from '../../components/sections/Resource/Resou
 import ResourceHistoryModal from '../../components/sections/Resource/ResourceHistoryModal';
 import ResourceApproveModal from '../../components/sections/Resource/ResourceApproveModal';
 import ResourceRejectModal from '../../components/sections/Resource/ResourceRejectModal';
+import ResourceMoveModal from '../../components/sections/Resource/ResourceMoveModal';
 import ActionToast from '../../components/common/ActionToast/ActionToast';
 import {
   RESOURCE_RULES,
@@ -23,8 +24,12 @@ import {
   getResourceTypesAPI,
   getResourcesAPI,
   hydrateResourcesWithFiles,
+  fileNameFromUrl,
   normalizeResourceFromApi,
   normalizeUploadedResourceFile,
+  mimeTypeFromFileName,
+  moveResourceFolderAPI,
+  resolveResourceLink,
   softDeleteResourceAPI,
   toResourcePayload,
 } from '../../services/resource-service';
@@ -59,10 +64,52 @@ export default function ResourceAdminPage() {
   const [deleteTarget, setDeleteTarget] = useState(null);
   const [approveTarget, setApproveTarget] = useState(null);
   const [rejectTarget, setRejectTarget] = useState(null);
+  const [moveTarget, setMoveTarget] = useState(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [approveLoading, setApproveLoading] = useState(false);
   const [rejectLoading, setRejectLoading] = useState(false);
+  const [moveLoading, setMoveLoading] = useState(false);
   const { toast, showPending, showSuccess, showError } = useActionToast();
+
+  const buildEditedResourcePatch = (resource, data) => {
+    const {
+      file,
+      fileUrl,
+      ...rest
+    } = data;
+
+    const nextResource = {
+      ...resource,
+      ...rest,
+      status: resource.status,
+    };
+
+    if (file) {
+      const previewUrl = URL.createObjectURL(file);
+      const previewFileName = file.name || 'document';
+      return {
+        ...nextResource,
+        link: previewUrl,
+        fileName: previewFileName,
+        fileSize: file.size || 0,
+        mimeType: file.type || mimeTypeFromFileName(previewFileName),
+      };
+    }
+
+    const normalizedLink = String(fileUrl || '').trim();
+    if (normalizedLink) {
+      const derivedFileName = fileNameFromUrl(normalizedLink);
+      return {
+        ...nextResource,
+        link: resolveResourceLink(normalizedLink),
+        fileName: derivedFileName,
+        fileSize: 0,
+        mimeType: mimeTypeFromFileName(derivedFileName),
+      };
+    }
+
+    return nextResource;
+  };
 
     const loadResources = () =>
         Promise.all([getResourcesAPI(), getMembersAPI()])
@@ -280,18 +327,41 @@ export default function ResourceAdminPage() {
     }
   };
 
+  const handleMove = async (id, lookupFolderId) => {
+    if (!currentUser?.memberId) {
+      setApiError('Không xác định được tài khoản admin đang đăng nhập.');
+      return;
+    }
+
+    try {
+      setMoveLoading(true);
+      const updated = await moveResourceFolderAPI(id, lookupFolderId);
+      const normalized = normalizeResourceFromApi(updated);
+      setResources((prev) => prev.map((resource) => (resource.id === id ? normalized : resource)));
+      setApiError('');
+      setSelected(null);
+      setMoveTarget(null);
+    } catch (error) {
+      setApiError(error?.message || error || 'Không di chuyển được tài liệu.');
+    } finally {
+      setMoveLoading(false);
+    }
+  };
+
   const handleSubmit = async (data) => {
     const normalizedTitle = data.title.trim().toLowerCase();
-    const normalizedSource = (data.source || '').trim().toLowerCase();
+    const normalizedTypeId = String(data.typeId || data.type || '').trim();
+    const normalizedSubjectId = String(data.subjectId || data.subject || '').trim();
 
     const duplicate = resources.some((resource) =>
       resource.id !== editing?.id &&
       resource.title.trim().toLowerCase() === normalizedTitle &&
-      (resource.source || '').trim().toLowerCase() === normalizedSource
+      String(resource.typeId || resource.type || '').trim() === normalizedTypeId &&
+      String(resource.subjectId || resource.subject || '').trim() === normalizedSubjectId
     );
 
     if (duplicate) {
-      alert(RESOURCE_RULES.uniqueTitleAndLink);
+      alert(RESOURCE_RULES.uniqueTitleAndSubject);
       return;
     }
 
@@ -299,7 +369,7 @@ export default function ResourceAdminPage() {
       setResources((prev) =>
         prev.map((resource) =>
           resource.id === editing.id
-            ? { ...resource, ...data, status: resource.status }
+            ? buildEditedResourcePatch(resource, data)
             : resource,
         ),
       );
@@ -321,7 +391,7 @@ export default function ResourceAdminPage() {
       }));
 
       let uploadedFile = null;
-      if (data.file || data.fileUrl?.trim()) {
+      if (data.file || String(data.fileUrl || '').trim()) {
         try {
           const filePayload = buildResourceFilePayload(created.documentId, data);
           uploadedFile = await createResourceFileAPI(filePayload);
@@ -465,6 +535,7 @@ export default function ResourceAdminPage() {
           resources={resources}
           search={search}
           onView={setSelected}
+          onMove={setMoveTarget}
           onEdit={(resource) => {
             setEditing(resource);
             setFormOpen(true);
@@ -517,6 +588,13 @@ export default function ResourceAdminPage() {
         onCancel={() => { if (!rejectLoading) setRejectTarget(null); }}
         onConfirm={handleReject}
         loading={rejectLoading}
+      />
+
+      <ResourceMoveModal
+        resource={moveTarget}
+        onCancel={() => { if (!moveLoading) setMoveTarget(null); }}
+        onConfirm={handleMove}
+        loading={moveLoading}
       />
 
       <ResourceHistoryModal

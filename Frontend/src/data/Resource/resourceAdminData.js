@@ -22,7 +22,7 @@ export const RESOURCE_SOURCES = [
 export const RESOURCE_RULES = {
   titleRequired: 'Tên tài liệu không được để trống',
   subjectRequired: 'Mỗi tài liệu phải thuộc một chủ đề/môn học xác định',
-  uniqueTitleAndLink: 'Không cho phép tồn tại hai tài liệu có cùng tên và cùng tệp đính kèm',
+  uniqueTitleAndSubject: 'Không cho phép tồn tại hai tài liệu có cùng tên, loại và môn học',
   memberOnly: 'Chỉ thành viên trong câu lạc bộ mới được lập phiếu thêm tài liệu',
   reviewDateAfterCreatedDate: 'Ngày duyệt phải lớn hơn hoặc bằng ngày lập phiếu',
   approvedOnly: 'Kết quả tra cứu chỉ hiển thị các tài liệu ở trạng thái đã duyệt',

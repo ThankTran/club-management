@@ -36,10 +36,10 @@ public class DocumentDomainServiceImpl implements DocumentDomainService {
     }
 
     @Override
-    public void validateDocumentUniqueness(String documentName, String source, boolean exists) {
-        if (source != null && !source.isBlank() && exists) {
+    public void validateDocumentUniqueness(String documentName, Integer typeId, Integer subjectId, boolean exists) {
+        if (exists) {
             throw new IllegalArgumentException(
-                    "Document with the same name and source already exists: " + documentName);
+                    "Document with the same name, type and subject already exists: " + documentName);
         }
     }
 
