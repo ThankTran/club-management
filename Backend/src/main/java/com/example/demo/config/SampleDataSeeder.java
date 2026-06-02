@@ -1038,7 +1038,7 @@ public class SampleDataSeeder implements CommandLineRunner {
     }
 
     private String monthlyDueDescription(YearMonth month) {
-        return String.format("Dong quy thang %02d/%d", month.getMonthValue(), month.getYear());
+        return String.format("Đóng quỹ tháng %02d/%d", month.getMonthValue(), month.getYear());
     }
 
     private String pickVendorName(int index) {
