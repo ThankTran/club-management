@@ -16,6 +16,7 @@ export const MANAGER_ROUTES = [
   "/resourcesadmin",
   "/eventadmin",
   "/finance",
+  "/memberdues",
   "/account",
   "/settings",
 ];

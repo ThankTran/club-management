@@ -29,7 +29,14 @@ import org.hibernate.annotations.SQLRestriction;
 
 
 @Entity
-@Table(name = "transactions")
+@Table(
+        name = "transactions",
+        indexes = {
+                @jakarta.persistence.Index(name = "idx_transactions_type_deleted", columnList = "type, deleted_at"),
+                @jakarta.persistence.Index(name = "idx_transactions_member_type_deleted", columnList = "member_id, type, deleted_at"),
+                @jakarta.persistence.Index(name = "idx_transactions_event_type_deleted", columnList = "event_id, type, deleted_at"),
+                @jakarta.persistence.Index(name = "idx_transactions_dates_deleted", columnList = "transaction_date, created_at, deleted_at")
+        })
 @Getter
 @Setter
 @NoArgsConstructor(access = AccessLevel.PROTECTED)

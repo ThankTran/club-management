@@ -59,6 +59,66 @@ const NotificationPopover = ({
     markNotificationRecipientAsReadAPI(id, memberId).catch(() => {});
   };
 
+  const normalizeText = (value = "") =>
+    String(value)
+      .toLowerCase()
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .trim();
+
+  const isDueNotification = (noti) => {
+    const targetType = normalizeText(noti?.targetType);
+    const title = normalizeText(noti?.actorName);
+    const content = normalizeText(noti?.content);
+    const text = `${title} ${content}`.trim();
+
+    if (targetType === "finance") {
+      return (
+        text.includes("dong quy") ||
+        text.includes("can dong quy") ||
+        text.includes("khoan quy") ||
+        text.includes("quy thang") ||
+        text.includes("thanh toan dang cho xac nhan")
+      );
+    }
+
+    return (
+      text.includes("dong quy") ||
+      text.includes("can dong quy") ||
+      text.includes("khoan quy") ||
+      text.includes("quy thang") ||
+      text.includes("da dong quy") ||
+      text.includes("dong tien thanh cong")
+    );
+  };
+
+  const resolveNotificationPath = (noti) => {
+    const targetType = normalizeText(noti?.targetType);
+    const isManagerRoute = isAdmin;
+
+    switch (targetType) {
+      case "member":
+      case "members":
+        return isManagerRoute ? "/memberadmin" : "/memberuser";
+      case "event":
+      case "events":
+        return isManagerRoute ? "/eventadmin" : "/eventuser";
+      case "document":
+      case "documents":
+      case "resource":
+      case "resources":
+        return isManagerRoute ? "/resourcesadmin" : "/resourcesuser";
+      case "finance":
+      case "transaction":
+      case "transactions":
+        return isDueNotification(noti)
+          ? "/memberdues"
+          : (isManagerRoute ? "/finance" : "/memberdues");
+      default:
+        return isManagerRoute ? "/dashboard" : "/home";
+    }
+  };
+
   const handleMarkAsRead = (id) => {
     setNotifications((prev) =>
       prev.map((n) => (n.id === id ? { ...n, isUnread: false } : n))
@@ -72,23 +132,7 @@ const NotificationPopover = ({
       handleMarkAsRead(noti.id);
     }
 
-    let path = "/home";
-    switch (noti.type) {
-      case "document":
-        path = isAdmin ? "/resourcesadmin" : "/resourcesuser";
-        break;
-      case "new_member":
-        path = isAdmin ? "/memberadmin" : "/memberuser";
-        break;
-      case "new_event":
-      case "upcoming_event":
-        path = isAdmin ? "/eventadmin" : "/eventuser";
-        break;
-      default:
-        path = "/home";
-    }
-
-    navigate(path);
+    navigate(resolveNotificationPath(noti));
     onClose();
   };
 

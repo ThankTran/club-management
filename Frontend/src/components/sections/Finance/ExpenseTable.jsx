@@ -18,19 +18,35 @@ export default function ExpenseTable({
   setSortChi,
   filters,
   setFilters,
+  page = 1,
+  totalPages = 1,
+  total = 0,
+  pageSize = 10,
+  onPageChange,
+  loading = false,
 }) {
   const [filterOpen, setFilterOpen] = useState(false);
+  const start = total === 0 ? 0 : (page - 1) * pageSize + 1;
+  const end = Math.min(page * pageSize, total);
 
   return (
     <div className={styles.tableSection}>
       <div className={styles.tableHeader}>
         <h3 className={styles.tableTitle}>
-          Danh sách phiếu chi <span className={styles.tableBadgeChi}>{chiList.length} phiếu</span>
+          Danh sach phieu chi <span className={styles.tableBadgeChi}>{chiList.length} phieu</span>
         </h3>
         <div className={styles.tableActions}>
           <div className={styles.searchWrap}>
-            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><circle cx="11" cy="11" r="8"/><path d="M21 21l-4.35-4.35"/></svg>
-            <input className={styles.searchInput} placeholder="Tìm phiếu chi..." value={searchChi} onChange={e => setSearchChi(e.target.value)} />
+            <svg width="13" height="13" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
+              <circle cx="11" cy="11" r="8" />
+              <path d="M21 21l-4.35-4.35" />
+            </svg>
+            <input
+              className={styles.searchInput}
+              placeholder="Tim phieu chi..."
+              value={searchChi}
+              onChange={(e) => setSearchChi(e.target.value)}
+            />
           </div>
           <FinanceFilter
             open={filterOpen}
@@ -39,28 +55,29 @@ export default function ExpenseTable({
             filters={filters}
             setFilters={setFilters}
           />
-          <button className={styles.btnChi} onClick={onOpenChi}>+ Lập phiếu chi</button>
+          <button className={styles.btnChi} onClick={onOpenChi}>+ Lap phieu chi</button>
         </div>
       </div>
+
       <div className={styles.tableWrap}>
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>Mã phiếu</th>
-              <th>Người nhận</th>
-              <th>Nội dung chi</th>
-              <th>Mã sự kiện</th>
+              <th>MA PHIEU</th>
+              <th>NGUOI NHAN</th>
+              <th>NOI DUNG CHI</th>
+              <th>MA SU KIEN</th>
               <th>
                 <button
                   className={styles.sortBtn}
                   onClick={() => setSortChi(sortChi === 'asc' ? 'desc' : 'asc')}
                 >
-                  Ngày lập {sortChi === 'asc' ? '↑' : '↓'}
+                  NGAY LAP {sortChi === 'asc' ? '↑' : '↓'}
                 </button>
               </th>
-              <th>Số tiền</th>
-              <th>Trạng thái</th>
-              <th>Thao tác</th>
+              <th>SO TIEN</th>
+              <th>TRANG THAI</th>
+              <th>THAO TAC</th>
             </tr>
           </thead>
           <tbody>
@@ -77,22 +94,12 @@ export default function ExpenseTable({
                   <div className={styles.rowActions}>
                     {isPending(r.status) && canApproveExpense && (
                       <>
-                        <button
-                          className={styles.approveBtn}
-                          onClick={() => onApproveChi(r)}
-                          title="Duyệt phiếu chi"
-                          aria-label="Duyệt phiếu chi"
-                        >
+                        <button className={styles.approveBtn} onClick={() => onApproveChi(r)} title="Duyet" aria-label="Duyet">
                           <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
                             <path d="M20 6 9 17l-5-5" />
                           </svg>
                         </button>
-                        <button
-                          className={styles.rejectBtn}
-                          onClick={() => onRejectChi(r)}
-                          title="Từ chối phiếu chi"
-                          aria-label="Từ chối phiếu chi"
-                        >
+                        <button className={styles.rejectBtn} onClick={() => onRejectChi(r)} title="Tu choi" aria-label="Tu choi">
                           <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2.2">
                             <path d="M18 6 6 18" />
                             <path d="M6 6l12 12" />
@@ -100,23 +107,13 @@ export default function ExpenseTable({
                         </button>
                       </>
                     )}
-                    <button
-                      className={styles.editBtn}
-                      onClick={() => onEditChi(r)}
-                      title="Sửa phiếu chi"
-                      aria-label="Sửa phiếu chi"
-                    >
+                    <button className={styles.editBtn} onClick={() => onEditChi(r)} title="Sua" aria-label="Sua">
                       <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                         <path d="M12 20h9" />
                         <path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4 12.5-12.5Z" />
                       </svg>
                     </button>
-                    <button
-                      className={styles.deleteBtn}
-                      onClick={() => setDeleteTarget(r)}
-                      title="Xóa phiếu chi"
-                      aria-label="Xóa phiếu chi"
-                    >
+                    <button className={styles.deleteBtn} onClick={() => setDeleteTarget(r)} title="Xoa" aria-label="Xoa">
                       <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                         <path d="M4 7h16" />
                         <path d="M10 11v6" />
@@ -131,11 +128,17 @@ export default function ExpenseTable({
             ))}
           </tbody>
         </table>
-        {filteredChi.length === 0 && <div className={styles.empty}>Không tìm thấy phiếu chi nào</div>}
+        {!loading && filteredChi.length === 0 && <div className={styles.empty}>Khong tim thay phieu chi nao</div>}
+        {loading && <div className={styles.empty}>Dang tai phieu chi...</div>}
+      </div>
+
+      <div className={styles.tableFoot}>
+        <span>Hien thi {start}-{end} trong tong {total} phieu</span>
       </div>
       <div className={styles.tableFoot}>
-        <span>Tổng {filteredChi.length} phiếu</span>
-        <span className={styles.totalChi}>Tổng chi đã duyệt: {fmtMoney(filteredChi.filter(isSettledTransaction).reduce((s, r) => s + r.soTien, 0))}</span>
+        <button className={styles.sortBtn} onClick={() => onPageChange?.(page - 1)} disabled={page <= 1}>Trang truoc</button>
+        <span>Trang {page}/{Math.max(totalPages, 1)}</span>
+        <button className={styles.sortBtn} onClick={() => onPageChange?.(page + 1)} disabled={page >= totalPages}>Trang sau</button>
       </div>
     </div>
   );
@@ -145,13 +148,9 @@ function isPending(status) {
   return String(status || '').toUpperCase() === 'PENDING';
 }
 
-function isSettledTransaction(item) {
-  return ['COMPLETED', 'APPROVED'].includes(String(item?.status || item?.raw?.status || '').toUpperCase());
-}
-
 function formatExpenseStatus(status) {
   const value = String(status || '').toUpperCase();
-  if (value === 'COMPLETED' || value === 'APPROVED') return 'Đã duyệt';
-  if (value === 'REJECTED') return 'Từ chối';
-  return 'Chờ duyệt';
+  if (value === 'COMPLETED' || value === 'APPROVED') return 'Da duyet';
+  if (value === 'REJECTED') return 'Tu choi';
+  return 'Cho duyet';
 }
