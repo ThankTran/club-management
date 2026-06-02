@@ -16,6 +16,8 @@ public interface DocumentService {
 
     DocumentResponse approve(DocumentApprovalRequest request);
 
+    DocumentResponse moveLookupFolder(Long documentId, String lookupFolderId);
+
     List<DocumentResponse> searchByName(String documentName);
 
     List<DocumentResponse> getBySubject(Integer subjectId);

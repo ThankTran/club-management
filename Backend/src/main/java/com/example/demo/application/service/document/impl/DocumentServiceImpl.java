@@ -100,12 +100,12 @@ public class DocumentServiceImpl implements DocumentService {
         documentDomainService.validateCreateRequest(request);
         documentDomainService.validateDocumentUniqueness(
                 request.getDocumentName(),
-                request.getSource(),
-                request.getSource() != null
-                        && !request.getSource().isBlank()
-                        && documentRepository.existsByDocumentNameIgnoreCaseAndSourceIgnoreCase(
-                                request.getDocumentName(),
-                                request.getSource()));
+                request.getTypeId(),
+                request.getSubjectId(),
+                documentRepository.existsByDocumentNameIgnoreCaseAndTypeTypeIdAndSubjectSubjectId(
+                        request.getDocumentName(),
+                        request.getTypeId(),
+                        request.getSubjectId()));
 
         DocumentType type = documentTypeRepository.findById(request.getTypeId())
                 .orElseThrow(() -> new BusinessException("Không tìm thấy loại tài liệu: " + request.getTypeId()));
@@ -193,6 +193,25 @@ public class DocumentServiceImpl implements DocumentService {
         }
 
         return toResponseWithPrimaryFile(savedDocument);
+    }
+
+    @Override
+    @CacheEvict(allEntries = true)
+    public DocumentResponse moveLookupFolder(Long documentId, String lookupFolderId) {
+        if (documentId == null) {
+            throw new BusinessException("Document id is required");
+        }
+
+        String normalizedFolderId = normalizeBlank(lookupFolderId);
+        if (normalizedFolderId == null || !LOOKUP_FOLDER_IDS.contains(normalizedFolderId)) {
+            throw new BusinessException("Thư mục tra cứu không hợp lệ. Vui lòng chọn một trong các thư mục hợp lệ.");
+        }
+
+        Document document = documentRepository.findById(documentId)
+                .orElseThrow(() -> new BusinessException("Không tìm thấy tài liệu: " + documentId));
+
+        document.setLookupFolderId(normalizedFolderId);
+        return toResponseWithPrimaryFile(documentRepository.save(document));
     }
 
     @Override
