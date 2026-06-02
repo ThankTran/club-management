@@ -42,9 +42,7 @@ public class NotificationDispatchServiceImpl implements NotificationDispatchServ
     @Override
     @CacheEvict(cacheNames = {"notifications", "notificationRecipients"}, allEntries = true)
     public void toManagers(String title, String content, String targetType, Member sender) {
-        dispatch(memberRepository.findAll().stream()
-                .filter(this::isManager)
-                .toList(), title, content, targetType, sender);
+        dispatch(memberRepository.findManagers(MANAGER_PRIORITY_MAX), title, content, targetType, sender);
     }
 
     @Override
@@ -65,9 +63,7 @@ public class NotificationDispatchServiceImpl implements NotificationDispatchServ
     @CacheEvict(cacheNames = {"notifications", "notificationRecipients"}, allEntries = true)
     public void toManagersAndMembers(Collection<Member> members, String title, String content, String targetType, Member sender) {
         List<Member> recipients = new ArrayList<>(members == null ? List.of() : members);
-        recipients.addAll(memberRepository.findAll().stream()
-                .filter(this::isManager)
-                .toList());
+        recipients.addAll(memberRepository.findManagers(MANAGER_PRIORITY_MAX));
         dispatch(recipients, title, content, targetType, sender);
     }
 
@@ -106,13 +102,6 @@ public class NotificationDispatchServiceImpl implements NotificationDispatchServ
                 .filter(member -> member != null && member.getMemberId() != null)
                 .forEach(member -> uniqueRecipients.putIfAbsent(member.getMemberId(), member));
         return uniqueRecipients;
-    }
-
-    private boolean isManager(Member member) {
-        return member != null
-                && member.getRole() != null
-                && member.getRole().getPriority() != null
-                && member.getRole().getPriority() <= MANAGER_PRIORITY_MAX;
     }
 
     private boolean isActiveMember(Member member) {

@@ -37,6 +37,17 @@ public interface MemberRepository extends JpaRepository<Member, Long> {
     @EntityGraph(attributePaths = {"department", "role", "approver"})
     List<Member> findByGraduatedStatus(GraduatedStatusEnum graduatedStatus);
 
+    @EntityGraph(attributePaths = {"department", "role", "approver"})
+    @Query("""
+            SELECT m
+            FROM Member m
+            LEFT JOIN m.role r
+            WHERE m.deletedAt IS NULL
+              AND r.priority IS NOT NULL
+              AND r.priority <= :maxPriority
+            """)
+    List<Member> findManagers(@Param("maxPriority") Integer maxPriority);
+
     @EntityGraph(attributePaths = {"department", "role"})
     List<Member> findAllByOrderByFullNameAsc();
 

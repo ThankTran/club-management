@@ -25,6 +25,8 @@ import java.util.concurrent.CompletableFuture;
 import org.springframework.cache.annotation.CacheConfig;
 import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -139,6 +141,13 @@ public class TransactionServiceImpl implements com.example.demo.application.serv
                 .toList();
     }
 
+    @Transactional(readOnly = true)
+    public Page<TransactionResponse> getPage(String type, LocalDateTime from, LocalDateTime to, Pageable pageable) {
+        TransactionType parsedType = type == null || type.isBlank() ? null : parseTransactionType(type);
+        return transactionRepository.findActivePage(parsedType, from, to, pageable)
+                .map(transactionMapper::toResponse);
+    }
+
     @Cacheable(key = "'type:' + #type")
     public List<TransactionResponse> getByType(String type) {
         return transactionRepository.findActiveByType(parseTransactionType(type)).stream()
@@ -153,7 +162,6 @@ public class TransactionServiceImpl implements com.example.demo.application.serv
                 .toList();
     }
 
-    @CacheEvict(cacheNames = {"transactions", "finance"}, allEntries = true)
     public List<TransactionResponse> getByMemberDues(Long memberId) {
         if (memberId == null) {
             throw new IllegalArgumentException("Member ID must not be empty");
@@ -169,13 +177,13 @@ public class TransactionServiceImpl implements com.example.demo.application.serv
                 .toList();
     }
 
-    @CacheEvict(cacheNames = {"transactions", "finance"}, allEntries = true)
+    @Cacheable(key = "'pending-monthly-dues:' + T(java.time.YearMonth).now()")
+    @Transactional(readOnly = true)
     public List<MemberDueResponse> getPendingMonthlyDues() {
         YearMonth currentMonth = YearMonth.now();
         String description = monthlyDueDescription(currentMonth);
         Map<Long, Transaction> latestMonthlyTransactionByMember = new HashMap<>();
-        transactionRepository.findActiveByType(TransactionType.INCOME).stream()
-                .filter(transaction -> description.equals(transaction.getDescription()))
+        transactionRepository.findActiveByTypeAndDescription(TransactionType.INCOME, description).stream()
                 .forEach(transaction -> {
                     if (transaction.getMember() != null) {
                         latestMonthlyTransactionByMember.putIfAbsent(

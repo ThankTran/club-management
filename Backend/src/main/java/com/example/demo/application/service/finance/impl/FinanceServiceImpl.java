@@ -1,8 +1,6 @@
 package com.example.demo.application.service.finance.impl;
 
-import com.example.demo.domain.enums.TransactionStatus;
 import com.example.demo.domain.enums.TransactionType;
-import com.example.demo.domain.model.finance.Transaction;
 import com.example.demo.domain.repository.finance.TransactionRepository;
 import com.example.demo.domain.service.finance.FinanceDomainService;
 import java.math.BigDecimal;
@@ -33,39 +31,25 @@ public class FinanceServiceImpl implements com.example.demo.application.service.
     @Cacheable(key = "'income:' + #from + '|' + #to")
     public BigDecimal getTotalIncome(LocalDateTime from, LocalDateTime to) {
         financeDomainService.validateTimeRange(from, to);
-        return transactionRepository.findActiveByTypeAndCreatedAtBetween(INCOME_TYPE, from, to)
-                .stream()
-                .filter(this::isCompleted)
-                .map(item -> item.getAmount() == null ? BigDecimal.ZERO : item.getAmount())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return transactionRepository.sumCompletedAmountByTypeAndDateBetween(INCOME_TYPE, from, to);
     }
 
     @Cacheable(key = "'expense:' + #from + '|' + #to")
     public BigDecimal getTotalExpense(LocalDateTime from, LocalDateTime to) {
         financeDomainService.validateTimeRange(from, to);
-        return transactionRepository.findActiveByTypeAndCreatedAtBetween(EXPENSE_TYPE, from, to)
-                .stream()
-                .filter(this::isCompleted)
-                .map(item -> item.getAmount() == null ? BigDecimal.ZERO : item.getAmount())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return transactionRepository.sumCompletedAmountByTypeAndDateBetween(EXPENSE_TYPE, from, to);
     }
 
     @Cacheable(key = "'income:event:' + #eventId")
     public BigDecimal getTotalIncomeByEvent(String eventId) {
         financeDomainService.validateEventId(eventId);
-        return transactionRepository.findActiveByTypeAndEventId(INCOME_TYPE, eventId).stream()
-                .filter(this::isCompleted)
-                .map(item -> item.getAmount() == null ? BigDecimal.ZERO : item.getAmount())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return transactionRepository.sumCompletedAmountByTypeAndEventId(INCOME_TYPE, eventId);
     }
 
     @Cacheable(key = "'expense:event:' + #eventId")
     public BigDecimal getTotalExpenseByEvent(String eventId) {
         financeDomainService.validateEventId(eventId);
-        return transactionRepository.findActiveByTypeAndEventId(EXPENSE_TYPE, eventId).stream()
-                .filter(this::isCompleted)
-                .map(item -> item.getAmount() == null ? BigDecimal.ZERO : item.getAmount())
-                .reduce(BigDecimal.ZERO, BigDecimal::add);
+        return transactionRepository.sumCompletedAmountByTypeAndEventId(EXPENSE_TYPE, eventId);
     }
 
     @Cacheable(key = "'revenue:' + #from + '|' + #to")
@@ -83,8 +67,4 @@ public class FinanceServiceImpl implements com.example.demo.application.service.
         return CompletableFuture.completedFuture(getRevenue(from, to));
     }
 
-    private boolean isCompleted(Transaction transaction) {
-        return transaction.getStatus() == TransactionStatus.COMPLETED
-                || transaction.getStatus() == TransactionStatus.APPROVED;
-    }
 }

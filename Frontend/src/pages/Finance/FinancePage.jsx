@@ -1,8 +1,6 @@
 import { useCallback, useEffect, useState, useMemo } from 'react';
 import styles from './FinancePage.module.css';
 
-import { getThang } from '../../utils/Finance/financeUtils';
-
 import FinanceHeader from '../../components/sections/Finance/FinanceHeader';
 import FinanceStats from '../../components/sections/Finance/FinanceStats';
 import FinanceTabs from '../../components/sections/Finance/FinanceTabs';
@@ -20,7 +18,9 @@ import {
   createTransactionAPI,
   deleteTransactionAPI,
   getPendingMonthlyDuesAPI,
-  getTransactionsAPI,
+  getTotalExpenseAPI,
+  getTotalIncomeAPI,
+  getTransactionsPageAPI,
   normalizeMemberDueFromApi,
   normalizeTransactionFromApi,
   rejectTransactionPaymentAPI,
@@ -35,15 +35,31 @@ import { isManager } from '../../utils/access-control';
 import useActionToast from '../../hooks/useActionToast';
 
 export default function FinancePage() {
+  const TABLE_PAGE_SIZE = 10;
+  const ANALYTICS_PAGE_SIZE = 100;
   const currentUser = useAuthStore((state) => state.user);
   const [thuList, setThuList] = useState([]);
   const [chiList, setChiList] = useState([]);
+  const [analyticsThuList, setAnalyticsThuList] = useState([]);
+  const [analyticsChiList, setAnalyticsChiList] = useState([]);
   const [transferDues, setTransferDues] = useState([]);
   const [memberOptions, setMemberOptions] = useState([]);
   const [eventOptions, setEventOptions] = useState([]);
   const [pendingDues, setPendingDues] = useState([]);
   const [pendingDuesLoading, setPendingDuesLoading] = useState(false);
   const [apiError, setApiError] = useState('');
+  const [optionsLoading, setOptionsLoading] = useState(false);
+  const [tableLoading, setTableLoading] = useState(false);
+  const [thuPage, setThuPage] = useState(1);
+  const [chiPage, setChiPage] = useState(1);
+  const [thuTotal, setThuTotal] = useState(0);
+  const [chiTotal, setChiTotal] = useState(0);
+  const [thuTotalPages, setThuTotalPages] = useState(1);
+  const [chiTotalPages, setChiTotalPages] = useState(1);
+  const [tongThu, setTongThu] = useState(0);
+  const [tongChi, setTongChi] = useState(0);
+  const [bcThu, setBcThu] = useState([]);
+  const [bcChi, setBcChi] = useState([]);
 
   const [thuFilters, setThuFilters] = useState({
     lyDo: '',
@@ -82,76 +98,179 @@ export default function FinancePage() {
   const [sortThu, setSortThu] = useState('desc');
   const [sortChi, setSortChi] = useState('desc');
 
-  const loadFinanceData = useCallback((ignoreRef = { current: false }) => {
+  const setBaocaoData = useCallback((income = [], expense = []) => {
+    setBcThu(income);
+    setBcChi(expense);
+  }, []);
+
+  const loadOverviewData = useCallback((ignoreRef = { current: false }) => {
     setPendingDuesLoading(true);
+    const currentYear = new Date().getFullYear();
+    const selectedMonthRange = buildMonthRange(currentYear, baocaoThang);
 
-    return Promise.allSettled([getTransactionsAPI(), getPendingMonthlyDuesAPI(), getMembersAPI(), getEventsAPI()])
-      .then(([transactionsResult, dueResult, membersResult, eventsResult]) => {
+    return Promise.allSettled([
+      getPendingMonthlyDuesAPI(),
+      getTotalIncomeAPI('2000-01-01', '2100-12-31'),
+      getTotalExpenseAPI('2000-01-01', '2100-12-31'),
+      getTransactionsPageAPI({ type: 'INCOME', page: 0, size: ANALYTICS_PAGE_SIZE }),
+      getTransactionsPageAPI({ type: 'EXPENSE', page: 0, size: ANALYTICS_PAGE_SIZE }),
+      getTransactionsPageAPI({ type: 'INCOME', page: 0, size: ANALYTICS_PAGE_SIZE, ...selectedMonthRange }),
+      getTransactionsPageAPI({ type: 'EXPENSE', page: 0, size: ANALYTICS_PAGE_SIZE, ...selectedMonthRange }),
+    ])
+      .then(([
+        dueResult,
+        totalIncomeResult,
+        totalExpenseResult,
+        analyticsIncomeResult,
+        analyticsExpenseResult,
+        monthIncomeResult,
+        monthExpenseResult,
+      ]) => {
         if (ignoreRef.current) return;
-        const data = transactionsResult.status === 'fulfilled' ? transactionsResult.value : [];
-        const dueData = dueResult.status === 'fulfilled' ? dueResult.value : [];
-        const memberData = membersResult.status === 'fulfilled' ? membersResult.value : [];
-        const eventData = eventsResult.status === 'fulfilled' ? eventsResult.value : [];
-        const transactions = Array.isArray(data) ? data.map(normalizeTransactionFromApi) : [];
-        const income = transactions.filter((item) => item.raw?.type === 'INCOME');
-        const expense = transactions.filter((item) => item.raw?.type !== 'INCOME');
 
-        setThuList(income);
-        setChiList(expense);
-        setTransferDues(income.filter(isAwaitingConfirmationTransaction).map(toTransferDueRow));
+        const dueData = dueResult.status === 'fulfilled' ? dueResult.value : [];
+        const analyticsIncome = analyticsIncomeResult.status === 'fulfilled'
+          ? normalizePageContent(analyticsIncomeResult.value)
+          : [];
+        const analyticsExpense = analyticsExpenseResult.status === 'fulfilled'
+          ? normalizePageContent(analyticsExpenseResult.value)
+          : [];
+        const monthIncome = monthIncomeResult.status === 'fulfilled'
+          ? normalizePageContent(monthIncomeResult.value)
+          : [];
+        const monthExpense = monthExpenseResult.status === 'fulfilled'
+          ? normalizePageContent(monthExpenseResult.value)
+          : [];
+
         setPendingDues(Array.isArray(dueData) ? dueData.map(normalizeMemberDueFromApi) : []);
-        setMemberOptions(Array.isArray(memberData) ? memberData.map(normalizeMemberFromApi) : []);
-        setEventOptions(Array.isArray(eventData) ? eventData.map(normalizeEventFromApi) : []);
+        setAnalyticsThuList(analyticsIncome);
+        setAnalyticsChiList(analyticsExpense);
+        setThuTotal(Number(analyticsIncomeResult.status === 'fulfilled' ? analyticsIncomeResult.value?.totalElements || 0 : 0));
+        setChiTotal(Number(analyticsExpenseResult.status === 'fulfilled' ? analyticsExpenseResult.value?.totalElements || 0 : 0));
+        setTransferDues(analyticsIncome.filter(isAwaitingConfirmationTransaction).map(toTransferDueRow));
+        setTongThu(totalIncomeResult.status === 'fulfilled' ? Number(totalIncomeResult.value || 0) : 0);
+        setTongChi(totalExpenseResult.status === 'fulfilled' ? Number(totalExpenseResult.value || 0) : 0);
+        setBaocaoData(monthIncome, monthExpense);
         setApiError('');
       })
       .catch((error) => {
         if (ignoreRef.current) return;
-        setThuList([]);
-        setChiList([]);
-        setTransferDues([]);
         setPendingDues([]);
-        setMemberOptions([]);
-        setEventOptions([]);
+        setAnalyticsThuList([]);
+        setAnalyticsChiList([]);
+        setTransferDues([]);
+        setTongThu(0);
+        setTongChi(0);
+        setBaocaoData([], []);
         setApiError(error?.message || 'Không tải được dữ liệu thu chi từ API.');
       })
       .finally(() => {
-        if (!ignoreRef.current) setPendingDuesLoading(false);
+        if (!ignoreRef.current) {
+          setPendingDuesLoading(false);
+        }
       });
-  }, []);
+  }, [ANALYTICS_PAGE_SIZE, baocaoThang, setBaocaoData]);
+
+  const loadTablePage = useCallback(async (type, page, ignoreRef = { current: false }) => {
+    setTableLoading(true);
+    try {
+      const data = await getTransactionsPageAPI({ type, page: page - 1, size: TABLE_PAGE_SIZE });
+      if (ignoreRef.current) return;
+
+      const normalized = normalizePageContent(data);
+      if (type === 'INCOME') {
+        setThuList(normalized);
+        setThuTotal(Number(data?.totalElements || 0));
+        setThuTotalPages(Math.max(Number(data?.totalPages || 1), 1));
+      } else {
+        setChiList(normalized);
+        setChiTotal(Number(data?.totalElements || 0));
+        setChiTotalPages(Math.max(Number(data?.totalPages || 1), 1));
+      }
+      setApiError('');
+    } catch (error) {
+      if (ignoreRef.current) return;
+      if (type === 'INCOME') {
+        setThuList([]);
+        setThuTotal(0);
+        setThuTotalPages(1);
+      } else {
+        setChiList([]);
+        setChiTotal(0);
+        setChiTotalPages(1);
+      }
+      setApiError(error?.message || 'Không tải được danh sách giao dịch.');
+    } finally {
+      if (!ignoreRef.current) setTableLoading(false);
+    }
+  }, [TABLE_PAGE_SIZE]);
+
+  const loadModalOptions = useCallback(async (ignoreRef = { current: false }) => {
+    if (memberOptions.length > 0 && eventOptions.length > 0) return;
+    setOptionsLoading(true);
+    try {
+      const [membersResult, eventsResult] = await Promise.allSettled([getMembersAPI(), getEventsAPI()]);
+      if (ignoreRef.current) return;
+
+      const memberData = membersResult.status === 'fulfilled' ? membersResult.value : [];
+      const eventData = eventsResult.status === 'fulfilled' ? eventsResult.value : [];
+      setMemberOptions(Array.isArray(memberData) ? memberData.map(normalizeMemberFromApi) : []);
+      setEventOptions(Array.isArray(eventData) ? eventData.map(normalizeEventFromApi) : []);
+    } finally {
+      if (!ignoreRef.current) setOptionsLoading(false);
+    }
+  }, [eventOptions.length, memberOptions.length]);
 
   useEffect(() => {
     const ignoreRef = { current: false };
-    loadFinanceData(ignoreRef);
+    loadOverviewData(ignoreRef);
 
     return () => {
       ignoreRef.current = true;
     };
-  }, [loadFinanceData]);
+  }, [loadOverviewData]);
 
   useEffect(() => {
     const refreshFinanceData = () => {
-      loadFinanceData();
+      loadOverviewData();
+      if (tab === 'thu') loadTablePage('INCOME', thuPage);
+      if (tab === 'chi') loadTablePage('EXPENSE', chiPage);
     };
 
     window.addEventListener('finance:transactions-updated', refreshFinanceData);
-    window.addEventListener('focus', refreshFinanceData);
 
     return () => {
       window.removeEventListener('finance:transactions-updated', refreshFinanceData);
-      window.removeEventListener('focus', refreshFinanceData);
     };
-  }, [loadFinanceData]);
+  }, [chiPage, loadOverviewData, loadTablePage, tab, thuPage]);
 
-  const completedThuList = useMemo(() => thuList.filter(isSettledTransaction), [thuList]);
-  const completedChiList = useMemo(() => chiList.filter(isSettledTransaction), [chiList]);
+  useEffect(() => {
+    const ignoreRef = { current: false };
+    if (tab === 'thu') {
+      loadTablePage('INCOME', thuPage, ignoreRef);
+    }
+    if (tab === 'chi') {
+      loadTablePage('EXPENSE', chiPage, ignoreRef);
+    }
+    return () => {
+      ignoreRef.current = true;
+    };
+  }, [chiPage, loadTablePage, tab, thuPage]);
+
+  useEffect(() => {
+    if (!thuOpen && !chiOpen) return;
+
+    const ignoreRef = { current: false };
+    loadModalOptions(ignoreRef);
+
+    return () => {
+      ignoreRef.current = true;
+    };
+  }, [chiOpen, loadModalOptions, thuOpen]);
+
   const canApproveExpense = isManager(currentUser);
 
-  const tongThu = completedThuList.reduce((s, r) => s + r.soTien, 0);
-  const tongChi = completedChiList.reduce((s, r) => s + r.soTien, 0);
   const soDu    = tongThu - tongChi;
-
-  const bcThu = useMemo(() => completedThuList.filter(r => getThang(r.ngayThu) === baocaoThang), [completedThuList, baocaoThang]);
-  const bcChi = useMemo(() => completedChiList.filter(r => getThang(r.ngayLap) === baocaoThang), [completedChiList, baocaoThang]);
   const bcTongThu = bcThu.reduce((s, r) => s + r.soTien, 0);
   const bcTongChi = bcChi.reduce((s, r) => s + r.soTien, 0);
   const bcSoDu    = bcTongThu - bcTongChi;
@@ -250,15 +369,21 @@ export default function FinancePage() {
   const openEditThuModal = (r) => { setEditThu(r); setThuOpen(true); };
   const openEditChiModal = (r) => { setEditChi(r); setChiOpen(true); };
 
+  const refreshFinanceView = useCallback(async () => {
+    await loadOverviewData();
+    if (tab === 'thu') await loadTablePage('INCOME', thuPage);
+    if (tab === 'chi') await loadTablePage('EXPENSE', chiPage);
+  }, [chiPage, loadOverviewData, loadTablePage, tab, thuPage]);
+
   const refreshTransferDuesAndReceipts = () => {
-    loadFinanceData();
+    refreshFinanceView();
   };
 
   const handleConfirmTransferPaid = async (id) => {
     try {
       showPending('Đang xác nhận chuyển khoản...');
       await completeTransactionAPI(id);
-      await loadFinanceData();
+      await refreshFinanceView();
       setApiError('');
       showSuccess('Đã xác nhận chuyển khoản.');
     } catch (error) {
@@ -271,7 +396,7 @@ export default function FinancePage() {
     try {
       showPending('Đang từ chối chuyển khoản...');
       await rejectTransactionPaymentAPI(id);
-      await loadFinanceData();
+      await refreshFinanceView();
       setApiError('');
       showSuccess('Đã từ chối chuyển khoản.');
     } catch (error) {
@@ -295,7 +420,7 @@ export default function FinancePage() {
           return createTransactionAPI(toIncomePayload(localRecord));
         }));
       }
-      await loadFinanceData();
+      await refreshFinanceView();
       setThuOpen(false);
       setEditThu(null);
       setApiError('');
@@ -315,7 +440,7 @@ export default function FinancePage() {
         const localRecord = { ...data, id: data.id || `CHI${String(chiList.length + 1).padStart(3, '0')}` };
         await createTransactionAPI(toExpensePayload(localRecord));
       }
-      await loadFinanceData();
+      await refreshFinanceView();
       setChiOpen(false);
       setEditChi(null);
       setApiError('');
@@ -329,8 +454,8 @@ export default function FinancePage() {
   const handleApproveExpense = async (item) => {
     try {
       showPending('Đang duyệt phiếu chi...');
-      const updated = await completeTransactionAPI(item.id);
-      setChiList((prev) => prev.map((row) => row.id === item.id ? normalizeTransactionFromApi(updated) : row));
+      await completeTransactionAPI(item.id);
+      await refreshFinanceView();
       setApiError('');
       showSuccess('Đã duyệt phiếu chi.');
     } catch (error) {
@@ -343,11 +468,11 @@ export default function FinancePage() {
   const handleRejectExpense = async (item) => {
     try {
       showPending('Đang từ chối phiếu chi...');
-      const updated = await updateTransactionAPI(
+      await updateTransactionAPI(
         item.id,
         toExpensePayload({ ...item, status: 'REJECTED' }),
       );
-      setChiList((prev) => prev.map((row) => row.id === item.id ? normalizeTransactionFromApi(updated) : row));
+      await refreshFinanceView();
       setApiError('');
       showSuccess('Đã từ chối phiếu chi.');
     } catch (error) {
@@ -363,8 +488,7 @@ export default function FinancePage() {
       setDeleteLoading(true);
       showPending('Đang xóa phiếu...');
       await deleteTransactionAPI(deleteTarget.id);
-      setThuList(p => p.filter(r => r.id !== deleteTarget.id));
-      setChiList(p => p.filter(r => r.id !== deleteTarget.id));
+      await refreshFinanceView();
       setDeleteTarget(null);
       setApiError('');
       setDeleteLoading(false);
@@ -385,8 +509,8 @@ export default function FinancePage() {
       <FinanceHeader
         onOpenThu={openThuModal}
         onOpenChi={openChiModal}
-        thuList={thuList}
-        chiList={chiList}
+        thuList={analyticsThuList}
+        chiList={analyticsChiList}
         bcThu={bcThu}
         bcChi={bcChi}
       />
@@ -394,8 +518,8 @@ export default function FinancePage() {
         tongThu={tongThu}
         tongChi={tongChi}
         soDu={soDu}
-        thuCount={thuList.length}
-        chiCount={chiList.length}
+        thuCount={thuTotal}
+        chiCount={chiTotal}
         bcThu={bcThu}
         baocaoThang={baocaoThang}
       />
@@ -404,8 +528,8 @@ export default function FinancePage() {
 
       {tab === 'overview' && (
         <FinanceOverview
-          thuList={thuList}
-          chiList={chiList}
+          thuList={analyticsThuList}
+          chiList={analyticsChiList}
           pendingDues={pendingDues}
           pendingDuesLoading={pendingDuesLoading}
           setTab={setTab}
@@ -425,6 +549,12 @@ export default function FinancePage() {
           setSortThu={setSortThu}
           filters={thuFilters}
           setFilters={setThuFilters}
+          page={thuPage}
+          totalPages={thuTotalPages}
+          total={thuTotal}
+          pageSize={TABLE_PAGE_SIZE}
+          onPageChange={setThuPage}
+          loading={tableLoading}
         />
       )}
 
@@ -444,6 +574,12 @@ export default function FinancePage() {
           setSortChi={setSortChi}
           filters={chiFilters}
           setFilters={setChiFilters}
+          page={chiPage}
+          totalPages={chiTotalPages}
+          total={chiTotal}
+          pageSize={TABLE_PAGE_SIZE}
+          onPageChange={setChiPage}
+          loading={tableLoading}
         />
       )}
 
@@ -473,7 +609,7 @@ export default function FinancePage() {
         onClose={() => { setThuOpen(false); setEditThu(null); }}
         onSubmit={handleThuSubmit}
         initial={editThu}
-        loading={formLoading}
+        loading={formLoading || optionsLoading}
         memberOptions={memberOptions}
       />
 
@@ -482,7 +618,7 @@ export default function FinancePage() {
         onClose={() => { setChiOpen(false); setEditChi(null); }}
         onSubmit={handleChiSubmit}
         initial={editChi}
-        loading={formLoading}
+        loading={formLoading || optionsLoading}
         eventOptions={eventOptions}
       />
       <ConfirmModal
@@ -495,10 +631,6 @@ export default function FinancePage() {
 
     
   );
-}
-
-function isSettledTransaction(item) {
-  return ['COMPLETED', 'APPROVED'].includes(String(item?.status || item?.raw?.status || '').toUpperCase());
 }
 
 function isAwaitingConfirmationTransaction(item) {
@@ -522,4 +654,16 @@ function toTransferDueRow(item) {
     paidAt: item.raw?.approvedAt || item.raw?.updatedAt || item.raw?.transactionDate || item.ngayThu,
     raw: item.raw,
   };
+}
+
+function normalizePageContent(pageData) {
+  const content = Array.isArray(pageData?.content) ? pageData.content : [];
+  return content.map(normalizeTransactionFromApi);
+}
+
+function buildMonthRange(year, month) {
+  const start = `${year}-${String(month).padStart(2, '0')}-01`;
+  const endDate = new Date(year, month, 0);
+  const end = `${year}-${String(month).padStart(2, '0')}-${String(endDate.getDate()).padStart(2, '0')}`;
+  return { from: start, to: end };
 }

@@ -112,6 +112,23 @@ export const getRevenueByEventAPI = (eventId) =>
 export const getTransactionsAPI = () =>
   api.get('transactions')
 
+export const getTransactionsPageAPI = ({
+  type,
+  from,
+  to,
+  page = 0,
+  size = 20,
+} = {}) =>
+  api.get('transactions', {
+    params: {
+      type: type || undefined,
+      from: toDateTimeParam(from, '00:00:00'),
+      to: toDateTimeParam(to, '23:59:59'),
+      page,
+      size,
+    },
+  })
+
 export const getTransactionByIdAPI = (id) =>
   api.get(`transactions/${id}`)
 

@@ -5,6 +5,9 @@ import com.example.demo.application.dto.response.finance.MemberDueResponse;
 import com.example.demo.application.dto.response.finance.TransactionResponse;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.time.LocalDateTime;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface TransactionService {
     TransactionResponse create(TransactionRequest request);
@@ -12,6 +15,8 @@ public interface TransactionService {
     TransactionResponse update(String id, TransactionRequest request);
 
     List<TransactionResponse> getAll();
+
+    Page<TransactionResponse> getPage(String type, LocalDateTime from, LocalDateTime to, Pageable pageable);
 
     List<TransactionResponse> getByType(String type);
 

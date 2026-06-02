@@ -10,6 +10,8 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 public interface TransactionRepository extends JpaRepository<Transaction, String> {
     @EntityGraph(attributePaths = {"event", "member", "createdBy", "approvedBy"})
@@ -23,6 +25,30 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
             ORDER BY COALESCE(t.transactionDate, t.createdAt) DESC
             """)
     List<Transaction> findActive();
+
+    @EntityGraph(attributePaths = {"event", "member", "createdBy", "approvedBy"})
+    @Query(value = """
+            SELECT t
+            FROM Transaction t
+            WHERE t.deletedAt IS NULL
+              AND (:type IS NULL OR t.type = :type)
+              AND (:from IS NULL OR COALESCE(t.transactionDate, t.createdAt) >= :from)
+              AND (:to IS NULL OR COALESCE(t.transactionDate, t.createdAt) <= :to)
+            ORDER BY COALESCE(t.transactionDate, t.createdAt) DESC
+            """,
+            countQuery = """
+            SELECT COUNT(t)
+            FROM Transaction t
+            WHERE t.deletedAt IS NULL
+              AND (:type IS NULL OR t.type = :type)
+              AND (:from IS NULL OR COALESCE(t.transactionDate, t.createdAt) >= :from)
+              AND (:to IS NULL OR COALESCE(t.transactionDate, t.createdAt) <= :to)
+            """)
+    Page<Transaction> findActivePage(
+            @Param("type") TransactionType type,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to,
+            Pageable pageable);
 
     @EntityGraph(attributePaths = {"event", "member", "createdBy", "approvedBy"})
     @Query("""
@@ -109,6 +135,44 @@ public interface TransactionRepository extends JpaRepository<Transaction, String
             @Param("type") TransactionType type,
             @Param("from") LocalDateTime from,
             @Param("to") LocalDateTime to);
+
+    @Query("""
+            SELECT COALESCE(SUM(t.amount), 0)
+            FROM Transaction t
+            WHERE t.deletedAt IS NULL
+              AND t.type = :type
+              AND t.status IN (com.example.demo.domain.enums.TransactionStatus.COMPLETED, com.example.demo.domain.enums.TransactionStatus.APPROVED)
+              AND COALESCE(t.transactionDate, t.createdAt) BETWEEN :from AND :to
+            """)
+    java.math.BigDecimal sumCompletedAmountByTypeAndDateBetween(
+            @Param("type") TransactionType type,
+            @Param("from") LocalDateTime from,
+            @Param("to") LocalDateTime to);
+
+    @Query("""
+            SELECT COALESCE(SUM(t.amount), 0)
+            FROM Transaction t
+            WHERE t.deletedAt IS NULL
+              AND t.type = :type
+              AND t.status IN (com.example.demo.domain.enums.TransactionStatus.COMPLETED, com.example.demo.domain.enums.TransactionStatus.APPROVED)
+              AND t.event.eventId = :eventId
+            """)
+    java.math.BigDecimal sumCompletedAmountByTypeAndEventId(
+            @Param("type") TransactionType type,
+            @Param("eventId") String eventId);
+
+    @EntityGraph(attributePaths = {"member", "member.role"})
+    @Query("""
+            SELECT t
+            FROM Transaction t
+            WHERE t.deletedAt IS NULL
+              AND t.type = :type
+              AND t.description = :description
+            ORDER BY COALESCE(t.transactionDate, t.createdAt) DESC
+            """)
+    List<Transaction> findActiveByTypeAndDescription(
+            @Param("type") TransactionType type,
+            @Param("description") String description);
 
     boolean existsByEventEventId(String eventId);
 

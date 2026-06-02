@@ -5,6 +5,12 @@ import com.example.demo.application.dto.response.finance.TransactionResponse;
 import com.example.demo.application.service.finance.interfaces.TransactionService;
 import com.example.demo.config.AccessControlInterceptor;
 import java.util.List;
+import java.time.LocalDateTime;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -29,8 +35,14 @@ public class TransactionController {
     }
 
     @GetMapping
-    public ResponseEntity<List<TransactionResponse>> getAll() {
-        return ResponseEntity.ok(transactionService.getAll());
+    public ResponseEntity<Page<TransactionResponse>> getAll(
+            @RequestParam(required = false) String type,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime from,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime to,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "transactionDate", "createdAt"));
+        return ResponseEntity.ok(transactionService.getPage(type, from, to, pageable));
     }
 
     @GetMapping("/{id}")
