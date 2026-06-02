@@ -838,7 +838,7 @@ public class SampleDataSeeder implements CommandLineRunner {
                 transactions.add(Transaction.builder()
                         .transactionId(String.format("TRX-EVT-%03d-VENUE", index))
                         .event(event)
-                        .counterpartyName("Doi tac dia diem va thiet bi")
+                        .counterpartyName("Đối tác địa điểm và thiết bị")
                         .type(TransactionType.Expense)
                         .amount(BigDecimal.valueOf(venueExpense))
                         .description("Tạm ứng địa điểm và thiết bị: " + event.getEventName())

@@ -30,7 +30,7 @@ export default function IncomeTable({
     <div className={styles.tableSection}>
       <div className={styles.tableHeader}>
         <h3 className={styles.tableTitle}>
-          Danh sach phieu thu <span className={styles.tableBadgeThu}>{thuList.length} phieu</span>
+          Danh sách phiếu thu <span className={styles.tableBadgeThu}>{thuList.length} phiếu</span>
         </h3>
         <div className={styles.tableActions}>
           <div className={styles.searchWrap}>
@@ -40,7 +40,7 @@ export default function IncomeTable({
             </svg>
             <input
               className={styles.searchInput}
-              placeholder="Tim phieu thu..."
+              placeholder="Tìm phiếu thu..."
               value={searchThu}
               onChange={(e) => setSearchThu(e.target.value)}
             />
@@ -60,21 +60,21 @@ export default function IncomeTable({
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>MA PHIEU</th>
-              <th>NGUOI NOP</th>
-              <th>LY DO</th>
-              <th>TRANG THAI</th>
+              <th>MÃ PHIẾU</th>
+              <th>NGƯỜI NỘP</th>
+              <th>LÝ DO</th>
+              <th>TRẠNG THÁI</th>
               <th>
                 <button
                   className={styles.sortBtn}
                   onClick={() => setSortThu(sortThu === 'asc' ? 'desc' : 'asc')}
                 >
-                  NGAY THU {sortThu === 'asc' ? '↑' : '↓'}
+                  NGÀY THU {sortThu === 'asc' ? '↑' : '↓'}
                 </button>
               </th>
-              <th>SO TIEN</th>
-              <th>MA SU KIEN</th>
-              <th>THAO TAC</th>
+              <th>SỐ TIỀN</th>
+              <th>MÃ SỰ KIỆN</th>
+              <th>THAO TÁC</th>
             </tr>
           </thead>
           <tbody>
@@ -92,8 +92,8 @@ export default function IncomeTable({
                     <button
                       className={styles.editBtn}
                       onClick={() => onEditThu(r)}
-                      title="Sua phieu thu"
-                      aria-label="Sua phieu thu"
+                      title="Sửa phiếu thu"
+                      aria-label="Sửa phiếu thu"
                     >
                       <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                         <path d="M12 20h9" />
@@ -103,8 +103,8 @@ export default function IncomeTable({
                     <button
                       className={styles.deleteBtn}
                       onClick={() => setDeleteTarget(r)}
-                      title="Xoa phieu thu"
-                      aria-label="Xoa phieu thu"
+                      title="Xóa phiếu thu"
+                      aria-label="Xóa phiếu thu"
                     >
                       <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2">
                         <path d="M4 7h16" />
@@ -140,8 +140,8 @@ function formatIncomeStatus(row) {
   const value = String(row?.status || '').toUpperCase();
   const awaitingConfirmation = value === 'PROCESSING'
     || (value === 'PENDING' && Boolean(row?.raw?.approvedAt) && !row?.raw?.approvedById);
-  if (value === 'COMPLETED' || value === 'APPROVED') return 'Da thu';
-  if (awaitingConfirmation) return 'Cho xac nhan';
-  if (value === 'FAILED') return 'Khong thanh cong';
-  return 'Cho dong';
+  if (value === 'COMPLETED' || value === 'APPROVED') return 'Đã thu';
+  if (awaitingConfirmation) return 'Chờ xác nhận';
+  if (value === 'FAILED') return 'Không thành công';
+  return 'Chờ đóng';
 }

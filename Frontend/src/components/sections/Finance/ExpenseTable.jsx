@@ -33,7 +33,7 @@ export default function ExpenseTable({
     <div className={styles.tableSection}>
       <div className={styles.tableHeader}>
         <h3 className={styles.tableTitle}>
-          Danh sach phieu chi <span className={styles.tableBadgeChi}>{chiList.length} phieu</span>
+          Danh sách phiếu chi <span className={styles.tableBadgeChi}>{chiList.length} phiếu</span>
         </h3>
         <div className={styles.tableActions}>
           <div className={styles.searchWrap}>
@@ -43,7 +43,7 @@ export default function ExpenseTable({
             </svg>
             <input
               className={styles.searchInput}
-              placeholder="Tim phieu chi..."
+              placeholder="Tìm phiếu chi..."
               value={searchChi}
               onChange={(e) => setSearchChi(e.target.value)}
             />
@@ -55,7 +55,7 @@ export default function ExpenseTable({
             filters={filters}
             setFilters={setFilters}
           />
-          <button className={styles.btnChi} onClick={onOpenChi}>+ Lap phieu chi</button>
+          <button className={styles.btnChi} onClick={onOpenChi}>+ Lập phiếu chi</button>
         </div>
       </div>
 
@@ -63,21 +63,21 @@ export default function ExpenseTable({
         <table className={styles.table}>
           <thead>
             <tr>
-              <th>MA PHIEU</th>
-              <th>NGUOI NHAN</th>
-              <th>NOI DUNG CHI</th>
-              <th>MA SU KIEN</th>
+              <th>MÃ PHIẾU</th>
+              <th>NGƯỜI NHẬN</th>
+              <th>NỘI DUNG CHI</th>
+              <th>MÃ SỰ KIỆN</th>
               <th>
                 <button
                   className={styles.sortBtn}
                   onClick={() => setSortChi(sortChi === 'asc' ? 'desc' : 'asc')}
                 >
-                  NGAY LAP {sortChi === 'asc' ? '↑' : '↓'}
+                  NGÀY LẬP {sortChi === 'asc' ? '↑' : '↓'}
                 </button>
               </th>
-              <th>SO TIEN</th>
-              <th>TRANG THAI</th>
-              <th>THAO TAC</th>
+              <th>SỐ TIỀN</th>
+              <th>TRẠNG THÁI</th>
+              <th>THAO TÁC</th>
             </tr>
           </thead>
           <tbody>
@@ -129,7 +129,7 @@ export default function ExpenseTable({
           </tbody>
         </table>
         {!loading && filteredChi.length === 0 && <div className={styles.empty}>Khong tim thay phieu chi nao</div>}
-        {loading && <div className={styles.empty}>Dang tai phieu chi...</div>}
+        {loading && <div className={styles.empty}>Đang tải phiếu chi...</div>}
       </div>
 
       <div className={styles.tableFoot}>
@@ -150,7 +150,7 @@ function isPending(status) {
 
 function formatExpenseStatus(status) {
   const value = String(status || '').toUpperCase();
-  if (value === 'COMPLETED' || value === 'APPROVED') return 'Da duyet';
-  if (value === 'REJECTED') return 'Tu choi';
-  return 'Cho duyet';
+  if (value === 'COMPLETED' || value === 'APPROVED') return 'Đã duyệt';
+  if (value === 'REJECTED') return 'Từ chối';
+  return 'Chờ duyệt';
 }
