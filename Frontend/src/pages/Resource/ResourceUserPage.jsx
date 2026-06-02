@@ -197,13 +197,15 @@ export default function ResourceUserPage() {
       }));
 
       let uploadedFile = null;
-      try {
-        const filePayload = buildResourceFilePayload(created.documentId, formData);
-        uploadedFile = await createResourceFileAPI(filePayload);
-      } catch (uploadError) {
-        await loadResources();
-        setApiError(uploadError?.message || 'Đã tạo phiếu nhưng tải tệp thất bại.');
-        return;
+      if (formData.file || String(formData.fileUrl || '').trim()) {
+        try {
+          const filePayload = buildResourceFilePayload(created.documentId, formData);
+          uploadedFile = await createResourceFileAPI(filePayload);
+        } catch (uploadError) {
+          await loadResources();
+          setApiError(uploadError?.message || 'Đã tạo phiếu nhưng tải tệp thất bại.');
+          return;
+        }
       }
 
       await loadResources();

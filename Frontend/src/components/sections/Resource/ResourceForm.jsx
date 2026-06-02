@@ -33,13 +33,18 @@ export default function ResourceForm({
 
   useEffect(() => {
     if (open) {
-      const initialLink = initial?.fileUrl || initial?.link || '';
+      const initialFileUrl = initial?.raw?.primaryFileUrl
+        || initial?.raw?.fileUrl
+        || initial?.raw?.files?.[0]?.fileUrl
+        || initial?.link
+        || '';
+      const isLinkAttachment = /^https?:\/\//i.test(initialFileUrl) && !initialFileUrl.includes('/uploads/');
       setForm(initial
         ? {
           ...EMPTY_FORM,
           ...initial,
-          attachmentMode: initialLink ? 'link' : 'file',
-          fileUrl: initialLink,
+          attachmentMode: isLinkAttachment ? 'link' : 'file',
+          fileUrl: isLinkAttachment ? initialFileUrl : '',
           file: null,
         }
         : EMPTY_FORM);
@@ -83,7 +88,11 @@ export default function ResourceForm({
   };
 
   const handleFileChange = (e) => {
-    setForm((prev) => ({ ...prev, file: e.target.files?.[0] || null, fileUrl: '' }));
+    setForm((prev) => ({
+      ...prev,
+      file: e.target.files?.[0] || null,
+      fileUrl: '',
+    }));
     setErrors((prev) => ({ ...prev, file: '' }));
   };
 
@@ -104,12 +113,29 @@ export default function ResourceForm({
     if (!form.subjectId) errs.subjectId = 'Vui lòng chọn môn học / chủ đề';
     const hasFile = !!form.file;
     const hasLink = !!form.fileUrl.trim();
+    const hasExistingAttachment = Boolean(
+      initial?.raw?.primaryFileUrl
+      || initial?.raw?.fileUrl
+      || initial?.raw?.files?.[0]?.fileUrl
+      || initial?.link
+    );
+
     if (!isEdit && !hasFile && !hasLink) {
       if (form.attachmentMode === 'link') errs.fileUrl = 'Vui lòng nhập link tài liệu';
       else errs.file = 'Vui lòng chọn tệp tài liệu';
     }
+
+    if (hasFile && hasLink) {
+      errs.file = 'Chỉ được chọn 1 trong 2: upload file hoặc dán link';
+      errs.fileUrl = 'Chỉ được chọn 1 trong 2: upload file hoặc dán link';
+    }
+
     if (hasLink && !/^https?:\/\//i.test(form.fileUrl.trim())) {
       errs.fileUrl = 'Link tài liệu phải bắt đầu bằng http:// hoặc https://';
+    }
+
+    if (isEdit && !hasFile && !hasLink && !hasExistingAttachment) {
+      errs.file = 'Vui lòng chọn tệp tài liệu hoặc dán link tài liệu';
     }
     return errs;
   };
@@ -229,7 +255,7 @@ export default function ResourceForm({
 
           <p className={styles.sectionLabel}>II. Tệp đính kèm</p>
 
-          <Field label={isEdit ? 'Nguồn tệp tài liệu' : 'Nguồn tệp tài liệu *'}>
+          <Field label="Chọn kiểu đính kèm">
             <div className={styles.segmented}>
               <button
                 type="button"
@@ -256,17 +282,21 @@ export default function ResourceForm({
                 onChange={handleFileChange}
               />
               {form.file && <p className={styles.helperText}>{form.file.name}</p>}
+              {isEdit && !form.file && initial?.fileName && (
+                <p className={styles.helperText}>Tệp hiện tại: {initial.fileName}</p>
+              )}
+              <p className={styles.helperText}>Tải tệp trực tiếp lên hệ thống. Tài liệu sẽ được mở từ file đính kèm.</p>
             </Field>
           ) : (
             <Field label={isEdit ? 'Link tài liệu' : 'Link tài liệu *'} error={errors.fileUrl}>
               <input
                 className={`${styles.input} ${errors.fileUrl ? styles.inputError : ''}`}
                 type="url"
-                placeholder="https://github.com/.../document.pdf"
+                placeholder="https://example.com/document.pdf"
                 value={form.fileUrl}
                 onChange={handleChange('fileUrl')}
               />
-              <p className={styles.helperText}>Hỗ trợ link Google Drive, GitHub, PDF/PPT/DOCX công khai.</p>
+              <p className={styles.helperText}>Dán link công khai. Hệ thống sẽ mở tài liệu theo đường dẫn này.</p>
             </Field>
           )}
 

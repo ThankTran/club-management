@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { Pencil, Trash2 } from 'lucide-react';
+import { Pencil, Trash2, MoveRight } from 'lucide-react';
 import { FORMAT_CONFIG, RESOURCE_LOOKUP_MAX_DISPLAY } from '../../../data/Resource/resourceAdminData';
 import {
   DEFAULT_RESOURCE_FOLDER_ID,
@@ -24,6 +24,7 @@ export default function ResourceLookupTable({
   search,
   onView,
   onEdit,
+  onMove,
   onDelete,
   typeFilter = 'all',
   formatFilter = 'all',
@@ -171,6 +172,9 @@ export default function ResourceLookupTable({
                       </td>
                       <td onClick={(event) => event.stopPropagation()}>
                         <div className={styles.rowActions}>
+                          <button type="button" className={styles.actionBtn} onClick={() => onMove?.(resource)} title="Di chuyển tài liệu" aria-label="Di chuyển tài liệu">
+                            <MoveRight size={15} strokeWidth={2.2} />
+                          </button>
                           <button type="button" className={styles.actionBtn} onClick={() => onEdit?.(resource)} title="Sửa tài liệu" aria-label="Sửa tài liệu">
                             <Pencil size={15} strokeWidth={2.2} />
                           </button>
