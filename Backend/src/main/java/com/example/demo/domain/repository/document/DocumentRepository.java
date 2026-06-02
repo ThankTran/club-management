@@ -2,6 +2,7 @@ package com.example.demo.domain.repository.document;
 
 import com.example.demo.domain.model.document.Document;
 import com.example.demo.domain.enums.ApprovalStatusEnum;
+import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -68,7 +69,21 @@ public interface DocumentRepository extends JpaRepository<Document, Long> {
     @Query("update Document d set d.deletedAt = current_timestamp where d.documentId = :id")
     void softDeleteById(@Param("id") Long id);
 
-    boolean existsByDocumentNameIgnoreCaseAndSourceIgnoreCase(String documentName, String source);
+    @Modifying(clearAutomatically = true, flushAutomatically = true)
+    @Query("""
+            update Document d
+            set d.createdAt = :createdAt,
+                d.updatedAt = :updatedAt,
+                d.approvedAt = :approvedAt
+            where d.documentId = :id
+            """)
+    void updateSeedTimeline(
+            @Param("id") Long id,
+            @Param("createdAt") LocalDateTime createdAt,
+            @Param("updatedAt") LocalDateTime updatedAt,
+            @Param("approvedAt") LocalDateTime approvedAt);
+
+    boolean existsByDocumentNameIgnoreCaseAndTypeTypeIdAndSubjectSubjectId(String documentName, Integer typeId, Integer subjectId);
 
     boolean existsBySubjectSubjectId(Integer subjectId);
 

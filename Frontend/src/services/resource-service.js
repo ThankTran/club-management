@@ -2,7 +2,7 @@ import api, { API_BASE_URL } from '../utils/api'
 
 const API_ORIGIN = new URL(API_BASE_URL).origin
 
-const resolveResourceLink = (link = '') => {
+export const resolveResourceLink = (link = '') => {
   if (!link) return ''
   if (link.startsWith('/uploads/')) return `${API_ORIGIN}${link}`
   if (/^https?:\/\//i.test(link)) return link
@@ -16,7 +16,7 @@ export const normalizeUploadedResourceFile = (file = {}) => ({
   mimeType: file.mimeType || '',
 })
 
-const fileNameFromUrl = (url = '') => {
+export const fileNameFromUrl = (url = '') => {
   try {
     const { pathname } = new URL(url)
     const fileName = decodeURIComponent(pathname.split('/').filter(Boolean).pop() || '')
@@ -26,7 +26,7 @@ const fileNameFromUrl = (url = '') => {
   }
 }
 
-const mimeTypeFromFileName = (fileName = '') => {
+export const mimeTypeFromFileName = (fileName = '') => {
   const extension = fileName.split('.').pop()?.toLowerCase()
   const types = {
     pdf: 'application/pdf',
@@ -51,21 +51,27 @@ export const buildResourceFilePayload = (documentId, attachment = {}) => {
   const payload = new FormData()
   payload.append('documentId', documentId)
 
-  if (attachment.file) {
+  const hasFile = Boolean(attachment.file)
+  const fileUrl = String(attachment.fileUrl || '').trim()
+  if (hasFile && fileUrl) {
+    throw new Error('Chỉ được chọn 1 trong 2: upload file hoặc dán link.')
+  }
+
+  if (hasFile) {
     payload.append('file', attachment.file)
     return payload
   }
 
-  const fileUrl = String(attachment.fileUrl || '').trim()
   if (fileUrl) {
     const fileName = fileNameFromUrl(fileUrl)
     payload.append('fileUrl', fileUrl)
     payload.append('fileName', fileName)
     payload.append('fileSize', '0')
     payload.append('mimeType', mimeTypeFromFileName(fileName))
+    return payload
   }
 
-  return payload
+  throw new Error('Vui lòng chọn upload file hoặc dán link tài liệu.')
 }
 
 export const hydrateResourcesWithFiles = async (resources = []) =>
@@ -171,6 +177,12 @@ export const createResourceAPI = (payload) =>
 
 export const approveResourceAPI = (payload) =>
   api.post('documents/approve', payload)
+
+export const moveResourceFolderAPI = (documentId, lookupFolderId) =>
+  api.patch(`documents/${documentId}/lookup-folder`, {
+    documentId,
+    lookupFolderId,
+  })
 
 export const softDeleteResourceAPI = (id) =>
   api.delete(`documents/${id}`)
