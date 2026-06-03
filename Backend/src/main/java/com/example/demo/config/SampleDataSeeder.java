@@ -310,7 +310,7 @@ public class SampleDataSeeder implements CommandLineRunner {
                     .role(seed.role())
                     .graduatedStatus(GraduatedStatusEnum.ACTIVE)
                     .reqStatus(requestStatus)
-                    .approvalNote(seed.approvalNote() != null ? seed.approvalNote() : index < 2 ? "Tai khoan ban chu nhiem" : "Da duyet ho so thanh vien")
+                    .approvalNote(seed.approvalNote() != null ? seed.approvalNote() : index < 2 ? "Tài khoản ban chủ nhiệm" : "Đã duyệt hồ sơ thành viên")
                     .approver(approver)
                     .approvalDate(requestStatus == ApprovalStatusEnum.APPROVED ? createdAt.plusHours(4) : null)
                     .createdAt(createdAt)
