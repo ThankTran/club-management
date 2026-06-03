@@ -15,11 +15,11 @@
 
 - [Overview](#-overview)
 - [System Architecture](#-system-architecture)
-- [Công nghệ sử dụng](#công-nghệ-sử-dụng)
-- [Yêu cầu môi trường](#yêu-cầu-môi-trường)
-- [Cấu trúc thư mục](#cấu-trúc-thư-mục)
-- [Cài đặt và chạy project](#cài-đặt-và-chạy-project)
-- [Tài khoản mẫu](#tài-khoản-mẫu)
+- [Tech Stack](#tech-stack)
+- [Environment Requirements](#environment-requirements)
+- [Project Structure](#project-structure)
+- [Installation and Setup](#installation-and-setup)
+- [Sample Accounts](#sample-accounts)
 - [Contributors](#-contributors)
 - [License](#license)
 
@@ -50,7 +50,7 @@ flowchart LR
     Repo --> DB["SQL Server"]
 ```
 
-## Công nghệ sử dụng
+## Tech Stack
 
 ### Backend
 
@@ -69,17 +69,17 @@ flowchart LR
 - TanStack Query
 - Axios
 
-## Yêu cầu môi trường
+## Environment Requirements
 
-Cài đặt trước khi chạy project:
+Install the following tools before running the project:
 
 - Java Development Kit 17+
 - Node.js 20+
 - npm 10+
-- SQL Server hoặc SQL Server Express
+- SQL Server or SQL Server Express
 - Git
 
-Kiểm tra phiên bản:
+Verify the installed versions:
 
 ```bash
 java -version
@@ -88,7 +88,7 @@ npm -v
 git --version
 ```
 
-## Cấu trúc thư mục
+## Project Structure
 
 ```text
 SE104.Q21-club_management_system/
@@ -108,7 +108,7 @@ SE104.Q21-club_management_system/
 └── README.md
 ```
 
-## Cài đặt và chạy project
+## Installation and Setup
 
 ### 1. Clone project
 
@@ -117,23 +117,23 @@ git clone https://github.com/ThankTran/club-management.git
 cd club-management
 ```
 
-Nếu đã có source code trên máy thì mở terminal tại thư mục gốc của project.
+If the source code is already available on your machine, open a terminal at the project root directory.
 
-### 2. Tạo database
+### 2. Create the database
 
-Mở SQL Server Management Studio hoặc công cụ SQL Server đang dùng, kết nối tới SQL Server local rồi chạy lệnh:
+Open SQL Server Management Studio or your preferred SQL Server client, connect to your local SQL Server instance, then run:
 
 ```sql
 CREATE DATABASE clubmanage;
 ```
 
-Backend đang cấu hình kết nối database trong:
+The backend database connection is configured in:
 
 ```text
 Backend/src/main/resources/application.properties
 ```
 
-Cấu hình mặc định:
+Default configuration:
 
 ```properties
 spring.datasource.url=jdbc:sqlserver://localhost:1433;databaseName=clubmanage;integratedSecurity=true;encrypt=true;trustServerCertificate=true;sendStringParametersAsUnicode=true
@@ -142,52 +142,52 @@ spring.jpa.hibernate.ddl-auto=update
 server.port=8081
 ```
 
-Project dùng Windows Authentication với SQL Server. Nếu máy dùng tài khoản SQL Server riêng, cần sửa lại `spring.datasource.url`, `spring.datasource.username` và `spring.datasource.password` cho phù hợp.
+The project uses Windows Authentication for SQL Server by default. If your machine uses a SQL Server account, update `spring.datasource.url`, `spring.datasource.username`, and `spring.datasource.password` accordingly.
 
-### 3. Cài dependencies frontend
+### 3. Install frontend dependencies
 
 ```bash
 cd Frontend
 npm install
 ```
 
-### 4. Chạy backend
+### 4. Run the backend
 
-Mở terminal tại thư mục gốc project, sau đó chạy:
+Open a terminal at the project root directory, then run:
 
 ```powershell
 cd Backend
 .\mvnw.cmd spring-boot:run
 ```
 
-Backend chạy tại:
+Backend URL:
 
 ```text
 http://localhost:8081
 ```
 
-Khi database trống, backend sẽ tự tạo bảng theo entity và thêm dữ liệu mẫu thông qua `SampleDataSeeder`.
+When the database is empty, the backend creates tables from the entities and inserts sample data through `SampleDataSeeder`.
 
-### 5. Chạy frontend
+### 5. Run the frontend
 
-Mở terminal khác tại thư mục gốc project, sau đó chạy:
+Open another terminal at the project root directory, then run:
 
 ```bash
 cd Frontend
 npm run dev
 ```
 
-Frontend chạy tại:
+Frontend URL:
 
 ```text
 http://localhost:5173
 ```
 
-## Tài khoản mẫu
+## Sample Accounts
 
-Khi database trống, `SampleDataSeeder` tạo các tài khoản mẫu. Dùng `studentId` làm username đăng nhập.
+When the database is empty, `SampleDataSeeder` creates sample accounts. Use `studentId` as the login username.
 
-| Vai trò | Tên | Username / Student ID | Password |
+| Role | Name | Username / Student ID | Password |
 | --- | --- | --- | --- |
 | Chủ nhiệm | Nguyễn Minh Anh | `22130001` | `President@123` |
 | Phó chủ nhiệm | Trần Quốc Bảo | `22130002` | `VicePresident@123` |
@@ -196,7 +196,7 @@ Khi database trống, `SampleDataSeeder` tạo các tài khoản mẫu. Dùng `s
 | Thành viên | Võ Đức Tài | `22130005` | `Member03@123` |
 | Thành viên | Hoàng Trung Kiên | `22130006` | `Member04@123` |
 
-Nếu database đã được seed trước đó, mật khẩu mới có thể không được cập nhật tự động vì seeder bỏ qua khi dữ liệu đã tồn tại. Khi cần seed lại, tạo database mới hoặc xóa dữ liệu cũ trước khi chạy backend.
+If the database was seeded before, new passwords may not be applied automatically because the seeder skips existing data. To reseed, create a new database or clear the old data before running the backend.
 
 # 🤝 Contributors
 
@@ -211,4 +211,4 @@ This project was developed by the following team members:
 
 ## License
 
-Project sử dụng MIT License. Xem chi tiết trong file [LICENSE](LICENSE).
+This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
