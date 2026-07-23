@@ -139,9 +139,11 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  margin-bottom: 18px;
+  gap: 12px;
+  margin-bottom: 8px;
   border-bottom: 1px solid #f0f4f8;
   padding-bottom: 12px;
+  flex-wrap: wrap;
 }
 
 .panelHeader h2 {
@@ -152,11 +154,66 @@
 }
 
 .panelLabel {
+  display: inline-block;
   font-size: 11px;
   color: var(--gray-500);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.chartFilterWrap {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.dateLabel {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--gray-600);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.dateInput {
+  height: 32px;
+  border-radius: 8px;
+  border: 1px solid #d8e0ea;
+  padding: 0 8px;
+  color: var(--gray-800);
+  font-family: var(--font-family);
+  font-size: 12px;
+  background: #fff;
+}
+
+.dateInput:focus {
+  border-color: var(--primary-500);
+  outline: none;
+  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.15);
+}
+
+.resetRangeBtn {
+  height: 32px;
+  border: 1px solid #d8e0ea;
+  border-radius: 8px;
+  background: #f8fafc;
+  color: var(--gray-700);
+  padding: 0 12px;
+  font-size: 12px;
+  font-weight: 600;
+  font-family: var(--font-family);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.resetRangeBtn:hover {
+  background: #eef2ff;
+  border-color: #bfdbfe;
+  color: #1d4ed8;
 }
 
 /* ── Error ── */
@@ -179,6 +236,8 @@
   .statCard   { padding: 14px 16px; }
   .statValue  { font-size: 28px; }
   .panel      { padding: 16px; }
+  .panelHeader { align-items: flex-start; }
+  .chartFilterWrap { width: 100%; }
 }
 
 @media (max-width: 480px) {

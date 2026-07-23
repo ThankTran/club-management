@@ -1,0 +1,63 @@
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e5]:
+      - img "THMN club logo" [ref=e6]
+      - generic [ref=e7]:
+        - heading "THMN" [level=1] [ref=e8]
+        - heading "Academic Club" [level=2] [ref=e9]
+        - heading "KNOWLEDGE - LEADERSHIP - IMPACT" [level=3] [ref=e10]
+    - generic [ref=e11]:
+      - button "Chế độ Sáng/Tối" [ref=e12] [cursor=pointer]:
+        - generic:
+          - img
+      - button "Notifications" [ref=e14] [cursor=pointer]:
+        - img "Notifications" [ref=e15]
+      - button "VT" [ref=e17] [cursor=pointer]:
+        - generic [ref=e19]: VT
+  - generic [ref=e20]:
+    - generic [ref=e21]:
+      - navigation [ref=e22]:
+        - button "Trang chủ Trang chủ" [ref=e23] [cursor=pointer]:
+          - img "Trang chủ" [ref=e24]
+          - generic [ref=e25]: Trang chủ
+        - button "Thành viên Thành viên" [ref=e26] [cursor=pointer]:
+          - img "Thành viên" [ref=e27]
+          - generic [ref=e28]: Thành viên
+        - button "Tài liệu Tài liệu" [ref=e29] [cursor=pointer]:
+          - img "Tài liệu" [ref=e30]
+          - generic [ref=e31]: Tài liệu
+        - button "Sự kiện Sự kiện" [ref=e32] [cursor=pointer]:
+          - img "Sự kiện" [ref=e33]
+          - generic [ref=e34]: Sự kiện
+        - button "Đóng quỹ Đóng quỹ" [ref=e35] [cursor=pointer]:
+          - img "Đóng quỹ" [ref=e36]
+          - generic [ref=e37]: Đóng quỹ
+      - button "Trợ giúp Trợ giúp" [ref=e39] [cursor=pointer]:
+        - img "Trợ giúp" [ref=e40]
+        - generic [ref=e41]: Trợ giúp
+    - main [ref=e42]:
+      - generic [ref=e44]:
+        - generic [ref=e45]:
+          - generic [ref=e46]:
+            - heading "Danh sách các khoản cần thanh toán" [level=1] [ref=e47]
+            - paragraph [ref=e48]: Thành viên xem phí sự kiện đã đăng ký và quỹ tháng hiện tại từ dữ liệu tài chính của hệ thống.
+          - generic [ref=e49]:
+            - generic [ref=e50]: Đang đăng nhập
+            - strong [ref=e51]: Võ Đức Tài
+            - generic [ref=e52]: "22130005"
+        - generic [ref=e53]:
+          - generic [ref=e54]:
+            - heading "Khoản cần đóng" [level=2] [ref=e55]
+            - button "Đang tải" [disabled] [ref=e56]:
+              - img [ref=e57]
+          - generic [ref=e62]: Không có khoản nào đang chờ đóng.
+        - generic [ref=e63]:
+          - generic [ref=e64]:
+            - heading "Chờ xác nhận" [level=2] [ref=e65]
+            - generic [ref=e66]: 0 khoản
+          - generic [ref=e67]: Không có khoản nào đang chờ xác nhận.
+        - generic [ref=e68]:
+          - generic [ref=e69]:
+            - heading "Lịch sử đã đóng" [level=2] [ref=e70]
+            - generic [ref=e71]: 0 khoản
+          - generic [ref=e72]: Chưa có giao dịch nào được ghi nhận.

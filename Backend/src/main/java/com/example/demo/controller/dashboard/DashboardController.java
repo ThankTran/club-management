@@ -1,10 +1,13 @@
 package com.example.demo.controller.dashboard;
 
 import com.example.demo.application.service.dashboard.interfaces.DashboardService;
+import java.time.LocalDate;
 import java.util.List;
 import java.util.Map;
 import org.springframework.http.ResponseEntity;
+import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -23,8 +26,10 @@ public class DashboardController {
     }
 
     @GetMapping("/overview")
-    public ResponseEntity<Map<String, Object>> getOverview() {
-        return ResponseEntity.ok(dashboardService.getOverview());
+    public ResponseEntity<Map<String, Object>> getOverview(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate fromDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate toDate) {
+        return ResponseEntity.ok(dashboardService.getOverview(fromDate, toDate));
     }
 
     @GetMapping("/stats")

@@ -1,0 +1,14 @@
+- generic [ref=e321]:
+  - generic [ref=e322]:
+    - heading "Câu lạc bộ học thuật THMN" [level=1] [ref=e323]
+    - heading [level=1]
+  - generic [ref=e325]:
+    - textbox "Tên đăng nhập" [ref=e326]
+    - generic [ref=e327]:
+      - textbox "Mật khẩu" [ref=e328]
+      - button "Hiện mật khẩu" [ref=e329] [cursor=pointer]:
+        - img [ref=e330]
+    - generic [ref=e334]:
+      - checkbox "Remember me" [ref=e335] [cursor=pointer]
+      - generic [ref=e336] [cursor=pointer]: Remember me
+    - button "Đăng nhập" [ref=e337] [cursor=pointer]

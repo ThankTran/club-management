@@ -6,8 +6,13 @@ export const getDashboardAPI = () =>
 export const getDashboardStatsAPI = () =>
   api.get('dashboard/stats')
 
-export const getDashboardOverviewAPI = () =>
-  api.get('dashboard/overview')
+export const getDashboardOverviewAPI = ({ fromDate, toDate } = {}) =>
+  api.get('dashboard/overview', {
+    params: {
+      ...(fromDate ? { fromDate } : {}),
+      ...(toDate ? { toDate } : {}),
+    },
+  })
 
 export const getDashboardNotificationsAPI = () =>
   api.get('dashboard/notifications')
