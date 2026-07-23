@@ -43,3 +43,6 @@ Backend/uploads/
 ### OS junk ###
 .DS_Store
 Thumbs.db
+.agents/
+.playwright-cli/
+.env
