@@ -310,7 +310,7 @@ public class SampleDataSeeder implements CommandLineRunner {
                     .role(seed.role())
                     .graduatedStatus(GraduatedStatusEnum.ACTIVE)
                     .reqStatus(requestStatus)
-                    .approvalNote(seed.approvalNote() != null ? seed.approvalNote() : index < 2 ? "Tai khoan ban chu nhiem" : "Da duyet ho so thanh vien")
+                    .approvalNote(seed.approvalNote() != null ? seed.approvalNote() : index < 2 ? "Tài khoản ban chủ nhiệm" : "Đã duyệt hồ sơ thành viên")
                     .approver(approver)
                     .approvalDate(requestStatus == ApprovalStatusEnum.APPROVED ? createdAt.plusHours(4) : null)
                     .createdAt(createdAt)
@@ -1038,7 +1038,7 @@ public class SampleDataSeeder implements CommandLineRunner {
     }
 
     private String monthlyDueDescription(YearMonth month) {
-        return String.format("Dong quy thang %02d/%d", month.getMonthValue(), month.getYear());
+        return String.format("Đóng quỹ tháng %02d/%d", month.getMonthValue(), month.getYear());
     }
 
     private String pickVendorName(int index) {

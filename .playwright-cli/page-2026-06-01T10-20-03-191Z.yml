@@ -1,0 +1,138 @@
+- generic [ref=e3]:
+  - navigation [ref=e4]:
+    - generic [ref=e5]:
+      - img "THMN club logo" [ref=e6]
+      - generic [ref=e7]:
+        - heading "THMN" [level=1] [ref=e8]
+        - heading "Academic Club" [level=2] [ref=e9]
+        - heading "KNOWLEDGE - LEADERSHIP - IMPACT" [level=3] [ref=e10]
+    - generic [ref=e11]:
+      - button "Chế độ Sáng/Tối" [ref=e12] [cursor=pointer]:
+        - generic:
+          - img
+      - button "Settings" [ref=e13] [cursor=pointer]:
+        - img "Settings" [ref=e14]
+      - button "Notifications 15" [ref=e237] [cursor=pointer]:
+        - img "Notifications" [ref=e17]
+        - generic [ref=e238]: "15"
+      - button "NA" [ref=e19] [cursor=pointer]:
+        - generic [ref=e21]: NA
+  - generic [ref=e22]:
+    - generic [ref=e23]:
+      - navigation [ref=e24]:
+        - button "Trang chủ Trang chủ" [ref=e25] [cursor=pointer]:
+          - img "Trang chủ" [ref=e26]
+          - generic [ref=e27]: Trang chủ
+        - button "Thống kê Thống kê" [ref=e28] [cursor=pointer]:
+          - img "Thống kê" [ref=e29]
+          - generic [ref=e30]: Thống kê
+        - button "Thành viên Thành viên" [ref=e31] [cursor=pointer]:
+          - img "Thành viên" [ref=e32]
+          - generic [ref=e33]: Thành viên
+        - button "Quản lý thành viên Quản lý thành viên" [ref=e34] [cursor=pointer]:
+          - img "Quản lý thành viên" [ref=e35]
+          - generic [ref=e36]: Quản lý thành viên
+        - button "Tài liệu Tài liệu" [ref=e37] [cursor=pointer]:
+          - img "Tài liệu" [ref=e38]
+          - generic [ref=e39]: Tài liệu
+        - button "Quản lý tài liệu Quản lý tài liệu" [ref=e40] [cursor=pointer]:
+          - img "Quản lý tài liệu" [ref=e41]
+          - generic [ref=e42]: Quản lý tài liệu
+        - button "Sự kiện Sự kiện" [ref=e43] [cursor=pointer]:
+          - img "Sự kiện" [ref=e44]
+          - generic [ref=e45]: Sự kiện
+        - button "Quản lý sự kiện Quản lý sự kiện" [ref=e46] [cursor=pointer]:
+          - img "Quản lý sự kiện" [ref=e47]
+          - generic [ref=e48]: Quản lý sự kiện
+        - button "Tài chính Tài chính" [ref=e49] [cursor=pointer]:
+          - img "Tài chính" [ref=e50]
+          - generic [ref=e51]: Tài chính
+        - button "Đóng quỹ Đóng quỹ" [ref=e52] [cursor=pointer]:
+          - img "Đóng quỹ" [ref=e53]
+          - generic [ref=e54]: Đóng quỹ
+        - button "Tài khoản Tài khoản" [ref=e55] [cursor=pointer]:
+          - img "Tài khoản" [ref=e56]
+          - generic [ref=e57]: Tài khoản
+      - button "Trợ giúp Trợ giúp" [ref=e59] [cursor=pointer]:
+        - img "Trợ giúp" [ref=e60]
+        - generic [ref=e61]: Trợ giúp
+    - main [ref=e62]:
+      - generic [ref=e64]:
+        - generic [ref=e65]:
+          - generic [ref=e66]:
+            - heading "Quản lý Thu Chi Quỹ" [level=1] [ref=e67]
+            - paragraph [ref=e68]: Hệ thống tài chính câu lạc bộ THMN
+          - generic [ref=e69]:
+            - button "Xuất dữ liệu" [ref=e70] [cursor=pointer]:
+              - img [ref=e71]
+              - text: Xuất dữ liệu
+            - button "+ Lập phiếu thu" [ref=e73] [cursor=pointer]:
+              - generic [ref=e74]: +
+              - text: Lập phiếu thu
+            - button "+ Lập phiếu chi" [ref=e75] [cursor=pointer]:
+              - generic [ref=e76]: +
+              - text: Lập phiếu chi
+        - generic [ref=e77]:
+          - generic [ref=e78]:
+            - generic [ref=e79]: 💰
+            - generic [ref=e80]:
+              - paragraph [ref=e81]: TỔNG THU
+              - paragraph [ref=e82]: 30.565.000 ₫
+              - paragraph [ref=e83]: 260 phiếu thu
+          - generic [ref=e84]:
+            - generic [ref=e85]: 💸
+            - generic [ref=e86]:
+              - paragraph [ref=e87]: TỔNG CHI
+              - paragraph [ref=e88]: 25.650.000 ₫
+              - paragraph [ref=e89]: 20 phiếu chi
+          - generic [ref=e90]:
+            - generic [ref=e91]: 🏦
+            - generic [ref=e92]:
+              - paragraph [ref=e93]: SỐ DƯ QUỸ
+              - paragraph [ref=e94]: 4.915.000 ₫
+              - paragraph [ref=e95]: Dương — tốt
+          - generic [ref=e96]:
+            - generic [ref=e97]: 📅
+            - generic [ref=e98]:
+              - paragraph [ref=e99]: QUỸ THÁNG NÀY
+              - paragraph [ref=e100]: 75.000 ₫
+              - paragraph [ref=e101]: "Tháng 6 · Mức đóng quỹ chuẩn: 75k/người"
+        - generic [ref=e102]:
+          - button "📊 Tổng quan" [ref=e103] [cursor=pointer]:
+            - generic [ref=e104]: 📊
+            - text: Tổng quan
+          - button "💰 Phiếu Thu" [ref=e105] [cursor=pointer]:
+            - generic [ref=e106]: 💰
+            - text: Phiếu Thu
+          - button "💸 Phiếu Chi" [ref=e107] [cursor=pointer]:
+            - generic [ref=e108]: 💸
+            - text: Phiếu Chi
+          - button "🏦 Chờ xác nhận thu" [active] [ref=e109] [cursor=pointer]:
+            - generic [ref=e110]: 🏦
+            - text: Chờ xác nhận thu
+          - button "📋 Báo cáo Quỹ" [ref=e111] [cursor=pointer]:
+            - generic [ref=e112]: 📋
+            - text: Báo cáo Quỹ
+        - generic [ref=e636]:
+          - generic [ref=e637]:
+            - generic [ref=e638]:
+              - heading "Danh sách chờ xác nhận thu" [level=3] [ref=e639]
+              - paragraph [ref=e640]: Các khoản này do thành viên báo đã thanh toán trên trang Đóng quỹ. Admin kiểm tra tiền thực tế rồi tick để xác nhận hoặc bấm X nếu chưa nhận được tiền.
+            - button "Làm mới danh sách" [ref=e641] [cursor=pointer]:
+              - img [ref=e642]
+          - generic [ref=e646]: 0 chờ xác nhận
+          - table [ref=e648]:
+            - rowgroup [ref=e649]:
+              - row "Mã khoản Lý do Mã sự kiện Người cần đóng Số tiền Trạng thái Người báo đóng Thời gian Thao tác" [ref=e650]:
+                - columnheader "Mã khoản" [ref=e651]
+                - columnheader "Lý do" [ref=e652]
+                - columnheader "Mã sự kiện" [ref=e653]
+                - columnheader "Người cần đóng" [ref=e654]
+                - columnheader "Số tiền" [ref=e655]
+                - columnheader "Trạng thái" [ref=e656]
+                - columnheader "Người báo đóng" [ref=e657]
+                - columnheader "Thời gian" [ref=e658]
+                - columnheader "Thao tác" [ref=e659]
+            - rowgroup [ref=e660]:
+              - row "Chưa có khoản nào chờ xác nhận thu." [ref=e661]:
+                - cell "Chưa có khoản nào chờ xác nhận thu." [ref=e662]
