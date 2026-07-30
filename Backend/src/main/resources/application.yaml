@@ -1,0 +1,32 @@
+spring:
+  application:
+    name: clubmanage
+
+  config:
+    import: optional:file:.env[.properties]
+
+  datasource:
+    url: jdbc:sqlserver://localhost:1433;databaseName=clubmanage;integratedSecurity=true;encrypt=true;trustServerCertificate=true;sendStringParametersAsUnicode=true
+    driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
+
+  jpa:
+    hibernate:
+      ddl-auto: update
+    show-sql: true
+    defer-datasource-initialization: true
+    properties:
+      hibernate:
+        format_sql: true
+        use_nationalized_character_data: true
+
+  sql:
+    init:
+      mode: always
+
+server:
+  port: 8081
+
+groq:
+  api-key: ${GROQ_API_KEY:}
+  model: ${GROQ_MODEL:llama-3.3-70b-versatile}
+  base-url: ${GROQ_BASE_URL:https://api.groq.com/openai/v1}
