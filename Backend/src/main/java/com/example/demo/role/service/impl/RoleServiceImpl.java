@@ -3,9 +3,9 @@ package com.example.demo.role.service.impl;
 import com.example.demo.role.dto.request.RoleRequest;
 import com.example.demo.role.dto.response.RoleResponse;
 import com.example.demo.role.mapper.RoleMapper;
-import com.example.demo.member.repository.interfaces.MemberRepository;
-import com.example.demo.role.repository.interfaces.RoleRepository;
-import com.example.demo.role.domain.service.interfaces.RoleDomainService;
+import com.example.demo.member.repository.MemberRepository;
+import com.example.demo.role.repository.RoleRepository;
+
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.springframework.cache.annotation.CacheConfig;
@@ -22,25 +22,20 @@ public class RoleServiceImpl implements com.example.demo.role.service.interfaces
     private final RoleRepository roleRepository;
     private final MemberRepository memberRepository;
     private final RoleMapper roleMapper;
-    private final RoleDomainService roleDomainService;
-
     public RoleServiceImpl(
             RoleRepository roleRepository,
             MemberRepository memberRepository,
-            RoleMapper roleMapper,
-            RoleDomainService roleDomainService) {
+            RoleMapper roleMapper) {
         this.roleRepository = roleRepository;
         this.memberRepository = memberRepository;
         this.roleMapper = roleMapper;
-        this.roleDomainService = roleDomainService;
     }
 
     @CacheEvict(allEntries = true)
     public RoleResponse create(RoleRequest request) {
-        roleDomainService.validateCreateRequest(request);
-        roleDomainService.validateRoleUniqueness(
-                request.getRoleName(),
-                roleRepository.existsByRoleNameIgnoreCase(request.getRoleName()));
+        if (roleRepository.existsByRoleNameIgnoreCase(request.getRoleName())) {
+            throw new IllegalArgumentException("Role already exists: " + request.getRoleName());
+        }
         return roleMapper.toResponse(roleRepository.save(roleMapper.toEntity(request)));
     }
 
@@ -63,10 +58,12 @@ public class RoleServiceImpl implements com.example.demo.role.service.interfaces
 
     @CacheEvict(allEntries = true)
     public void delete(Long id) {
-        roleDomainService.validateDelete(
-                id,
-                roleRepository.existsById(id),
-                memberRepository.existsByRoleRoleId(id));
+        if (!roleRepository.existsById(id)) {
+            throw new IllegalArgumentException("Role not found: " + id);
+        }
+        if (memberRepository.existsByRoleRoleId(id)) {
+            throw new IllegalArgumentException("Cannot delete role because members still use it.");
+        }
         roleRepository.deleteById(id);
     }
 

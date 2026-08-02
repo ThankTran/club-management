@@ -4,9 +4,9 @@ import com.example.demo.system.dto.request.SystemSettingRequest;
 import com.example.demo.system.dto.response.SystemSettingResponse;
 import com.example.demo.system.mapper.SystemSettingMapper;
 import com.example.demo.member.entity.Member;
-import com.example.demo.member.repository.interfaces.MemberRepository;
-import com.example.demo.system.repository.interfaces.SystemSettingRepository;
-import com.example.demo.system.domain.service.interfaces.SystemSettingDomainService;
+import com.example.demo.member.repository.MemberRepository;
+import com.example.demo.system.repository.SystemSettingRepository;
+
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.springframework.cache.annotation.CacheConfig;
@@ -23,27 +23,28 @@ public class SystemSettingServiceImpl implements com.example.demo.system.service
     private final SystemSettingRepository systemSettingRepository;
     private final MemberRepository memberRepository;
     private final SystemSettingMapper systemSettingMapper;
-    private final SystemSettingDomainService systemSettingDomainService;
 
     public SystemSettingServiceImpl(
             SystemSettingRepository systemSettingRepository,
             MemberRepository memberRepository,
-            SystemSettingMapper systemSettingMapper,
-            SystemSettingDomainService systemSettingDomainService) {
+            SystemSettingMapper systemSettingMapper) {
         this.systemSettingRepository = systemSettingRepository;
         this.memberRepository = memberRepository;
         this.systemSettingMapper = systemSettingMapper;
-        this.systemSettingDomainService = systemSettingDomainService;
     }
 
     @CacheEvict(allEntries = true)
     public SystemSettingResponse createOrUpdate(SystemSettingRequest request) {
-        systemSettingDomainService.validateCreateOrUpdateRequest(request);
+        if (request == null) {
+            throw new IllegalArgumentException("System setting request must not be empty");
+        }
         Member updatedBy = null;
         if (request.getUpdatedById() != null) {
             updatedBy = memberRepository.findById(request.getUpdatedById())
                     .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy thành viên cập nhật: " + request.getUpdatedById()));
-            systemSettingDomainService.validateUpdatedBy(updatedBy);
+            if (updatedBy == null) {
+                throw new IllegalArgumentException("Updated by member must exist");
+            }
         }
         return systemSettingMapper.toResponse(
                 systemSettingRepository.save(systemSettingMapper.toEntity(request, updatedBy)));
@@ -80,7 +81,9 @@ public class SystemSettingServiceImpl implements com.example.demo.system.service
 
     @CacheEvict(allEntries = true)
     public void delete(String key) {
-        systemSettingDomainService.validateDelete(key);
+        if (key == null || key.isBlank()) {
+            throw new IllegalArgumentException("Setting key must not be empty");
+        }
         systemSettingRepository.deleteById(key);
     }
 

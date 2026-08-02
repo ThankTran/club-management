@@ -4,11 +4,11 @@ import com.example.demo.event.dto.request.EventOrganizerRequest;
 import com.example.demo.event.dto.response.EventOrganizerResponse;
 import com.example.demo.event.mapper.EventOrganizerMapper;
 import com.example.demo.event.entity.EventOrganizerId;
-import com.example.demo.event.repository.interfaces.EventOrganizerRepository;
-import com.example.demo.event.repository.interfaces.EventRepository;
-import com.example.demo.event.repository.interfaces.EventRoleRepository;
-import com.example.demo.member.repository.interfaces.MemberRepository;
-import com.example.demo.event.domain.service.interfaces.EventOrganizerDomainService;
+import com.example.demo.event.repository.EventOrganizerRepository;
+import com.example.demo.event.repository.EventRepository;
+import com.example.demo.event.repository.EventRoleRepository;
+import com.example.demo.member.repository.MemberRepository;
+
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.springframework.cache.annotation.CacheConfig;
@@ -27,30 +27,30 @@ public class EventOrganizerServiceImpl implements com.example.demo.event.service
     private final MemberRepository memberRepository;
     private final EventRoleRepository eventRoleRepository;
     private final EventOrganizerMapper eventOrganizerMapper;
-    private final EventOrganizerDomainService eventOrganizerDomainService;
 
     public EventOrganizerServiceImpl(
             EventOrganizerRepository eventOrganizerRepository,
             EventRepository eventRepository,
             MemberRepository memberRepository,
             EventRoleRepository eventRoleRepository,
-            EventOrganizerMapper eventOrganizerMapper,
-            EventOrganizerDomainService eventOrganizerDomainService) {
+            EventOrganizerMapper eventOrganizerMapper) {
         this.eventOrganizerRepository = eventOrganizerRepository;
         this.eventRepository = eventRepository;
         this.memberRepository = memberRepository;
         this.eventRoleRepository = eventRoleRepository;
         this.eventOrganizerMapper = eventOrganizerMapper;
-        this.eventOrganizerDomainService = eventOrganizerDomainService;
     }
 
     @CacheEvict(allEntries = true)
     public EventOrganizerResponse create(EventOrganizerRequest request) {
-        eventOrganizerDomainService.validateCreateRequest(request);
-        eventOrganizerDomainService.validateAssignmentUniqueness(
-                request.getEventId(),
-                request.getMemberId(),
-                eventOrganizerRepository.existsById(new EventOrganizerId(request.getEventId(), request.getMemberId())));
+        if (request == null) {
+            throw new IllegalArgumentException("Event organizer request must not be empty");
+        }
+        boolean exists = eventOrganizerRepository.existsById(new EventOrganizerId(request.getEventId(), request.getMemberId()));
+        if (exists) {
+            throw new IllegalArgumentException(
+                    "Member " + request.getMemberId() + " is already assigned to event " + request.getEventId());
+        }
 
         var event = eventRepository.findById(request.getEventId())
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sự kiện: " + request.getEventId()));
@@ -78,7 +78,12 @@ public class EventOrganizerServiceImpl implements com.example.demo.event.service
 
     @CacheEvict(allEntries = true)
     public void delete(String eventId, Long memberId) {
-        eventOrganizerDomainService.validateDelete(eventId, memberId);
+        if (eventId == null || eventId.isBlank()) {
+            throw new IllegalArgumentException("Event ID must not be empty");
+        }
+        if (memberId == null) {
+            throw new IllegalArgumentException("Member ID must not be empty");
+        }
         EventOrganizerId id = new EventOrganizerId(eventId, memberId);
         if (!eventOrganizerRepository.existsById(id)) {
             throw new IllegalArgumentException(

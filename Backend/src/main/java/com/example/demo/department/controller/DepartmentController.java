@@ -8,6 +8,7 @@ import com.example.demo.department.service.interfaces.DepartmentService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/departments")
@@ -20,7 +21,7 @@ public class DepartmentController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody DepartmentRequest request) {
+    public ResponseEntity<?> create(@Valid @RequestBody DepartmentRequest request) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(departmentService.create(request));
         } catch (IllegalArgumentException e) {

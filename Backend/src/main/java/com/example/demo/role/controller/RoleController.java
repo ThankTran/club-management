@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/roles")
@@ -19,7 +20,7 @@ public class RoleController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody RoleRequest request) {
+    public ResponseEntity<?> create(@Valid @RequestBody RoleRequest request) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(roleService.create(request));
         } catch (IllegalArgumentException e) {

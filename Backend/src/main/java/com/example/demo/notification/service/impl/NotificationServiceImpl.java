@@ -4,10 +4,10 @@ import com.example.demo.notification.dto.request.NotificationRequest;
 import com.example.demo.notification.dto.response.NotificationResponse;
 import com.example.demo.notification.mapper.NotificationMapper;
 import com.example.demo.member.entity.Member;
-import com.example.demo.member.repository.interfaces.MemberRepository;
-import com.example.demo.notification.repository.interfaces.NotificationRecipientRepository;
-import com.example.demo.notification.repository.interfaces.NotificationRepository;
-import com.example.demo.notification.domain.service.interfaces.NotificationDomainService;
+import com.example.demo.member.repository.MemberRepository;
+import com.example.demo.notification.repository.NotificationRecipientRepository;
+import com.example.demo.notification.repository.NotificationRepository;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -26,31 +26,32 @@ public class NotificationServiceImpl implements com.example.demo.notification.se
     private final NotificationRecipientRepository notificationRecipientRepository;
     private final MemberRepository memberRepository;
     private final NotificationMapper notificationMapper;
-    private final NotificationDomainService notificationDomainService;
 
     public NotificationServiceImpl(
             NotificationRepository notificationRepository,
             NotificationRecipientRepository notificationRecipientRepository,
             MemberRepository memberRepository,
-            NotificationMapper notificationMapper,
-            NotificationDomainService notificationDomainService) {
+            NotificationMapper notificationMapper) {
         this.notificationRepository = notificationRepository;
         this.notificationRecipientRepository = notificationRecipientRepository;
         this.memberRepository = memberRepository;
         this.notificationMapper = notificationMapper;
-        this.notificationDomainService = notificationDomainService;
     }
 
     @CacheEvict(allEntries = true)
     public NotificationResponse create(NotificationRequest request) {
-        notificationDomainService.validateCreateRequest(request);
+        if (request == null) {
+            throw new IllegalArgumentException("Notification request must not be empty");
+        }
 
         Member sender = null;
         if (request.getSenderId() != null) {
             sender = memberRepository.findById(request.getSenderId())
                     .orElseThrow(() -> new IllegalArgumentException(
                             "Không tìm thấy người gửi: " + request.getSenderId()));
-            notificationDomainService.validateSender(sender);
+            if (sender.getRole() == null) {
+                throw new IllegalArgumentException("Sender role is missing");
+            }
         }
 
         var entity = notificationMapper.toEntity(request, sender);

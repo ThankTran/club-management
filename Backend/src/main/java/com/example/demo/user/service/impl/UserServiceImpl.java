@@ -9,10 +9,10 @@ import com.example.demo.user.mapper.UserMapper;
 import com.example.demo.notification.service.interfaces.NotificationDispatchService;
 import com.example.demo.member.entity.Member;
 import com.example.demo.user.entity.User;
-import com.example.demo.member.repository.interfaces.MemberRepository;
-import com.example.demo.user.repository.interfaces.UserRepository;
-import com.example.demo.user.domain.service.interfaces.PasswordHasher;
-import com.example.demo.user.domain.service.interfaces.UserDomainService;
+import com.example.demo.member.repository.MemberRepository;
+import com.example.demo.user.repository.UserRepository;
+import com.example.demo.user.service.interfaces.PasswordHasher;
+
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.springframework.dao.DataIntegrityViolationException;
@@ -30,20 +30,17 @@ public class UserServiceImpl implements com.example.demo.user.service.interfaces
     private final UserRepository userRepository;
     private final MemberRepository memberRepository;
     private final UserMapper userMapper;
-    private final UserDomainService userDomainService;
     private final PasswordHasher passwordHasher;
     private final NotificationDispatchService notificationDispatchService;
 
     public UserServiceImpl(UserRepository userRepository,
                            MemberRepository memberRepository,
                            UserMapper userMapper,
-                           UserDomainService userDomainService,
                            PasswordHasher passwordHasher,
                            NotificationDispatchService notificationDispatchService) {
         this.userRepository = userRepository;
         this.memberRepository = memberRepository;
         this.userMapper = userMapper;
-        this.userDomainService = userDomainService;
         this.passwordHasher = passwordHasher;
         this.notificationDispatchService = notificationDispatchService;
     }
@@ -54,7 +51,6 @@ public class UserServiceImpl implements com.example.demo.user.service.interfaces
         if (request == null) {
             throw new IllegalArgumentException("Thông tin tạo tài khoản không được để trống");
         }
-        userDomainService.validateCreateRequest(request.getMemberId(), request.getPassword());
 
         if (userRepository.existsByMemberMemberId(request.getMemberId())) {
             throw new IllegalArgumentException("Thành viên đã có tài khoản");
@@ -73,14 +69,18 @@ public class UserServiceImpl implements com.example.demo.user.service.interfaces
         if (request == null) {
             throw new IllegalArgumentException("Thông tin đăng nhập không được để trống");
         }
-        userDomainService.validateLoginRequest(
-                request.getUserId(),
-                request.getMemberId(),
-                request.getUsername(),
-                request.getPassword());
+        if (request.getUserId() == null && request.getMemberId() == null && (request.getUsername() == null || request.getUsername().isBlank())) {
+            throw new IllegalArgumentException("Cần cung cấp username, userId hoặc memberId để đăng nhập");
+        }
 
         User user = resolveUser(request.getUserId(), request.getMemberId(), request.getUsername());
-        userDomainService.verifyLogin(user, request.getPassword());
+        
+        if (user == null) {
+            throw new IllegalArgumentException("Tài khoản không tồn tại");
+        }
+        if (!passwordHasher.matches(request.getPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Thông tin đăng nhập không chính xác");
+        }
         return userMapper.toResponse(user);
     }
 
@@ -111,11 +111,16 @@ public class UserServiceImpl implements com.example.demo.user.service.interfaces
             throw new IllegalArgumentException("Thông tin đổi mật khẩu không được để trống");
         }
         User user = findUserById(userId);
-        userDomainService.validateChangePasswordRequest(
-                request.getCurrentPassword(),
-                request.getNewPassword());
-        userDomainService.verifyLogin(user, request.getCurrentPassword());
-        userDomainService.changePassword(user, request.getNewPassword());
+        
+        if (request.getCurrentPassword().equals(request.getNewPassword())) {
+            throw new IllegalArgumentException("Mật khẩu mới phải khác mật khẩu hiện tại");
+        }
+        
+        if (!passwordHasher.matches(request.getCurrentPassword(), user.getPasswordHash())) {
+            throw new IllegalArgumentException("Thông tin đăng nhập không chính xác");
+        }
+        
+        user.changePassword(passwordHasher.hash(request.getNewPassword()));
         return userMapper.toResponse(userRepository.save(user));
     }
 
@@ -125,7 +130,7 @@ public class UserServiceImpl implements com.example.demo.user.service.interfaces
         validateNewPassword(newPassword);
 
         User user = findUserById(userId);
-        userDomainService.changePassword(user, newPassword);
+        user.changePassword(passwordHasher.hash(newPassword));
         return userMapper.toResponse(userRepository.save(user));
     }
 

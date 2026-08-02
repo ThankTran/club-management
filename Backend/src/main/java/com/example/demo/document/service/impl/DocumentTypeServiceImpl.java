@@ -4,7 +4,7 @@ import com.example.demo.document.dto.request.DocumentTypeRequest;
 import com.example.demo.document.dto.response.DocumentTypeResponse;
 import com.example.demo.document.mapper.DocumentTypeMapper;
 import com.example.demo.document.service.interfaces.DocumentTypeService;
-import com.example.demo.document.repository.interfaces.DocumentTypeRepository;
+import com.example.demo.document.repository.DocumentTypeRepository;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.springframework.cache.annotation.CacheConfig;

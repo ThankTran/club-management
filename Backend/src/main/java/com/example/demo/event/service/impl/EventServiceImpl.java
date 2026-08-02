@@ -12,12 +12,12 @@ import com.example.demo.shared.enums.ApprovalStatusEnum;
 import com.example.demo.shared.enums.EventStatusEnum;
 import com.example.demo.event.entity.Event;
 import com.example.demo.member.entity.Member;
-import com.example.demo.event.repository.interfaces.EventOrganizerRepository;
-import com.example.demo.event.repository.interfaces.EventRegistrationRepository;
-import com.example.demo.event.repository.interfaces.EventRepository;
-import com.example.demo.finance.repository.interfaces.TransactionRepository;
-import com.example.demo.member.repository.interfaces.MemberRepository;
-import com.example.demo.event.domain.service.interfaces.EventDomainService;
+import com.example.demo.event.repository.EventOrganizerRepository;
+import com.example.demo.event.repository.EventRegistrationRepository;
+import com.example.demo.event.repository.EventRepository;
+import com.example.demo.finance.repository.TransactionRepository;
+import com.example.demo.member.repository.MemberRepository;
+
 
 import java.time.*;
 import java.time.format.DateTimeFormatter;
@@ -47,7 +47,6 @@ public class EventServiceImpl implements com.example.demo.event.service.interfac
     private final TransactionRepository transactionRepository;
     private final MemberRepository memberRepository;
     private final EventMapper eventMapper;
-    private final EventDomainService eventDomainService;
     private final NotificationDispatchService notificationDispatchService;
 
     public EventServiceImpl(
@@ -57,7 +56,6 @@ public class EventServiceImpl implements com.example.demo.event.service.interfac
             TransactionRepository transactionRepository,
             MemberRepository memberRepository,
             EventMapper eventMapper,
-            EventDomainService eventDomainService,
             NotificationDispatchService notificationDispatchService) {
         this.eventRepository = eventRepository;
         this.eventOrganizerRepository = eventOrganizerRepository;
@@ -65,19 +63,27 @@ public class EventServiceImpl implements com.example.demo.event.service.interfac
         this.transactionRepository = transactionRepository;
         this.memberRepository = memberRepository;
         this.eventMapper = eventMapper;
-        this.eventDomainService = eventDomainService;
         this.notificationDispatchService = notificationDispatchService;
     }
 
     @CacheEvict(allEntries = true)
     public EventResponse create(EventRequest request) {
-        eventDomainService.validateCreateRequest(request);
+        if (request == null) {
+            throw new IllegalArgumentException("Event request must not be empty");
+        }
+        if (!request.getEndTime().isAfter(request.getStartTime())) {
+            throw new IllegalArgumentException("End time must be after start time");
+        }
+        if (request.getEvaluationDate() != null && !request.getEvaluationDate().isAfter(request.getEndTime())) {
+            throw new IllegalArgumentException("Evaluation date must be after event end time");
+        }
+        
         if (eventRepository.existsById(request.getEventId())) {
             throw new IllegalArgumentException("Event ID already exists: " + request.getEventId());
         }
-        eventDomainService.validateEventNameUniqueness(
-                request.getEventName(),
-                eventRepository.existsByEventNameIgnoreCase(request.getEventName()));
+        if (eventRepository.existsByEventNameIgnoreCase(request.getEventName())) {
+            throw new IllegalArgumentException("Event name already exists: " + request.getEventName());
+        }
 
         Member evaluatedBy = null;
         if (request.getEvaluatedById() != null) {
@@ -96,7 +102,19 @@ public class EventServiceImpl implements com.example.demo.event.service.interfac
 
     @CacheEvict(allEntries = true)
     public EventResponse update(String id, EventRequest request) {
-        eventDomainService.validateUpdateRequest(id, request);
+        if (id == null || id.isBlank()) {
+            throw new IllegalArgumentException("Event ID must not be empty");
+        }
+        if (request == null) {
+            throw new IllegalArgumentException("Event request must not be empty");
+        }
+        if (request.getEventId() != null && !request.getEventId().isBlank()
+                && !id.equals(request.getEventId())) {
+            throw new IllegalArgumentException("Event ID in path and body must match");
+        }
+        if (!request.getEndTime().isAfter(request.getStartTime())) {
+            throw new IllegalArgumentException("End time must be after start time");
+        }
 
         Event event = eventRepository.findById(id)
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy sự kiện: " + id));
@@ -160,7 +178,12 @@ public class EventServiceImpl implements com.example.demo.event.service.interfac
 
     @Cacheable(key = "'range:' + #from + '|' + #to")
     public List<EventResponse> getByDateRange(LocalDate from, LocalDate to) {
-        eventDomainService.validateDateRange(from, to);
+        if (from == null || to == null) {
+            throw new IllegalArgumentException("Date range must not be empty");
+        }
+        if (to.isBefore(from)) {
+            throw new IllegalArgumentException("End date must be on or after start date");
+        }
         return eventRepository.findByEventDateRange(from, to).stream()
                 .map(this::toResponse)
                 .toList();

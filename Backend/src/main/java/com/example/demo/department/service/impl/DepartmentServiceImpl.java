@@ -4,9 +4,9 @@ import com.example.demo.department.dto.request.DepartmentRequest;
 import com.example.demo.department.dto.response.DepartmentResponse;
 import com.example.demo.department.mapper.DepartmentMapper;
 import com.example.demo.department.service.interfaces.DepartmentService;
-import com.example.demo.department.repository.interfaces.DepartmentRepository;
-import com.example.demo.member.repository.interfaces.MemberRepository;
-import com.example.demo.department.domain.service.interfaces.DepartmentDomainService;
+import com.example.demo.department.repository.DepartmentRepository;
+import com.example.demo.member.repository.MemberRepository;
+
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.springframework.cache.annotation.CacheConfig;
@@ -23,25 +23,20 @@ public class DepartmentServiceImpl implements DepartmentService {
     private final DepartmentRepository departmentRepository;
     private final MemberRepository memberRepository;
     private final DepartmentMapper departmentMapper;
-    private final DepartmentDomainService departmentDomainService;
-
     public DepartmentServiceImpl(
             DepartmentRepository departmentRepository,
             MemberRepository memberRepository,
-            DepartmentMapper departmentMapper,
-            DepartmentDomainService departmentDomainService) {
+            DepartmentMapper departmentMapper) {
         this.departmentRepository = departmentRepository;
         this.memberRepository = memberRepository;
         this.departmentMapper = departmentMapper;
-        this.departmentDomainService = departmentDomainService;
     }
 
     @CacheEvict(allEntries = true)
     public DepartmentResponse create(DepartmentRequest request) {
-        departmentDomainService.validateCreateRequest(request);
-        departmentDomainService.validateDepartmentUniqueness(
-                request.getDepartmentName(),
-                departmentRepository.existsByDepartmentNameIgnoreCase(request.getDepartmentName()));
+        if (departmentRepository.existsByDepartmentNameIgnoreCase(request.getDepartmentName())) {
+            throw new IllegalArgumentException("Department already exists: " + request.getDepartmentName());
+        }
         return departmentMapper.toResponse(departmentRepository.save(departmentMapper.toEntity(request)));
     }
 
@@ -64,10 +59,12 @@ public class DepartmentServiceImpl implements DepartmentService {
 
     @CacheEvict(allEntries = true)
     public void delete(Long id) {
-        departmentDomainService.validateDelete(
-                id,
-                departmentRepository.existsById(id),
-                memberRepository.existsByDepartmentDepartmentId(id));
+        if (!departmentRepository.existsById(id)) {
+            throw new IllegalArgumentException("Department not found: " + id);
+        }
+        if (memberRepository.existsByDepartmentDepartmentId(id)) {
+            throw new IllegalArgumentException("Cannot delete department because members still belong to it.");
+        }
         departmentRepository.deleteById(id);
     }
 

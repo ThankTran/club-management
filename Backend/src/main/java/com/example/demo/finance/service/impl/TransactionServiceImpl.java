@@ -10,10 +10,10 @@ import com.example.demo.shared.enums.TransactionStatus;
 import com.example.demo.shared.enums.TransactionType;
 import com.example.demo.finance.entity.Transaction;
 import com.example.demo.member.entity.Member;
-import com.example.demo.event.repository.interfaces.EventRepository;
-import com.example.demo.finance.repository.interfaces.TransactionRepository;
-import com.example.demo.member.repository.interfaces.MemberRepository;
-import com.example.demo.finance.domain.service.interfaces.TransactionDomainService;
+import com.example.demo.event.repository.EventRepository;
+import com.example.demo.finance.repository.TransactionRepository;
+import com.example.demo.member.repository.MemberRepository;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
@@ -43,7 +43,6 @@ public class TransactionServiceImpl implements com.example.demo.finance.service.
     private final EventRepository eventRepository;
     private final MemberRepository memberRepository;
     private final TransactionMapper transactionMapper;
-    private final TransactionDomainService transactionDomainService;
     private final NotificationDispatchService notificationDispatchService;
 
     public TransactionServiceImpl(
@@ -51,20 +50,24 @@ public class TransactionServiceImpl implements com.example.demo.finance.service.
             EventRepository eventRepository,
             MemberRepository memberRepository,
             TransactionMapper transactionMapper,
-            TransactionDomainService transactionDomainService,
             NotificationDispatchService notificationDispatchService) {
         this.transactionRepository = transactionRepository;
         this.eventRepository = eventRepository;
         this.memberRepository = memberRepository;
         this.transactionMapper = transactionMapper;
-        this.transactionDomainService = transactionDomainService;
         this.notificationDispatchService = notificationDispatchService;
     }
 
     @CacheEvict(cacheNames = {"transactions", "finance"}, allEntries = true)
     public TransactionResponse create(TransactionRequest request) {
         TransactionType type = parseTransactionType(request == null ? null : request.getType());
-        transactionDomainService.validateCreateRequest(request, type);
+        if (request == null) {
+            throw new IllegalArgumentException("Transaction request must not be empty");
+        }
+        if (request.getMemberId() == null
+                && (request.getCounterpartyName() == null || request.getCounterpartyName().isBlank())) {
+            throw new IllegalArgumentException("Transaction member or counterparty name is required");
+        }
         if (transactionRepository.existsById(request.getTransactionId())) {
             throw new IllegalArgumentException("Transaction ID already exists: " + request.getTransactionId());
         }
@@ -96,7 +99,13 @@ public class TransactionServiceImpl implements com.example.demo.finance.service.
     @CacheEvict(cacheNames = {"transactions", "finance"}, allEntries = true)
     public TransactionResponse update(String id, TransactionRequest request) {
         TransactionType type = parseTransactionType(request == null ? null : request.getType());
-        transactionDomainService.validateCreateRequest(request, type);
+        if (request == null) {
+            throw new IllegalArgumentException("Transaction request must not be empty");
+        }
+        if (request.getMemberId() == null
+                && (request.getCounterpartyName() == null || request.getCounterpartyName().isBlank())) {
+            throw new IllegalArgumentException("Transaction member or counterparty name is required");
+        }
         if (request.getTransactionId() != null && !request.getTransactionId().isBlank()
                 && !id.equals(request.getTransactionId())) {
             throw new IllegalArgumentException("Transaction ID in path and body must match");

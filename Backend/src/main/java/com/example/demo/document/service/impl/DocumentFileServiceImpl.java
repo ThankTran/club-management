@@ -5,8 +5,8 @@ import com.example.demo.document.dto.response.DocumentFileResponse;
 import com.example.demo.document.mapper.DocumentFileMapper;
 import com.example.demo.document.service.interfaces.DocumentFileService;
 import com.example.demo.document.entity.Document;
-import com.example.demo.document.repository.interfaces.DocumentFileRepository;
-import com.example.demo.document.repository.interfaces.DocumentRepository;
+import com.example.demo.document.repository.DocumentFileRepository;
+import com.example.demo.document.repository.DocumentRepository;
 
 import java.io.IOException;
 import java.nio.file.Files;
