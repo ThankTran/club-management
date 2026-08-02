@@ -4,10 +4,10 @@ import com.example.demo.notification.dto.request.NotificationRecipientRequest;
 import com.example.demo.notification.dto.response.NotificationRecipientResponse;
 import com.example.demo.notification.mapper.NotificationRecipientMapper;
 import com.example.demo.notification.entity.NotificationRecipientId;
-import com.example.demo.member.repository.interfaces.MemberRepository;
-import com.example.demo.notification.repository.interfaces.NotificationRecipientRepository;
-import com.example.demo.notification.repository.interfaces.NotificationRepository;
-import com.example.demo.notification.domain.service.interfaces.NotificationRecipientDomainService;
+import com.example.demo.member.repository.MemberRepository;
+import com.example.demo.notification.repository.NotificationRecipientRepository;
+import com.example.demo.notification.repository.NotificationRepository;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
@@ -26,29 +26,35 @@ public class NotificationRecipientServiceImpl implements com.example.demo.notifi
     private final NotificationRepository notificationRepository;
     private final MemberRepository memberRepository;
     private final NotificationRecipientMapper notificationRecipientMapper;
-    private final NotificationRecipientDomainService notificationRecipientDomainService;
 
     public NotificationRecipientServiceImpl(
             NotificationRecipientRepository notificationRecipientRepository,
             NotificationRepository notificationRepository,
             MemberRepository memberRepository,
-            NotificationRecipientMapper notificationRecipientMapper,
-            NotificationRecipientDomainService notificationRecipientDomainService) {
+            NotificationRecipientMapper notificationRecipientMapper) {
         this.notificationRecipientRepository = notificationRecipientRepository;
         this.notificationRepository = notificationRepository;
         this.memberRepository = memberRepository;
         this.notificationRecipientMapper = notificationRecipientMapper;
-        this.notificationRecipientDomainService = notificationRecipientDomainService;
     }
 
     @CacheEvict(allEntries = true)
     public NotificationRecipientResponse create(NotificationRecipientRequest request) {
-        notificationRecipientDomainService.validateCreateRequest(request);
-        notificationRecipientDomainService.validateRecipientUniqueness(
-                request.getNotificationId(),
-                request.getMemberId(),
-                notificationRecipientRepository.existsById(
-                        new NotificationRecipientId(request.getNotificationId(), request.getMemberId())));
+        if (request == null) {
+            throw new IllegalArgumentException("Notification recipient request must not be empty");
+        }
+        if (request.getNotificationId() == null) {
+            throw new IllegalArgumentException("Notification ID must not be empty");
+        }
+        if (request.getMemberId() == null) {
+            throw new IllegalArgumentException("Member ID must not be empty");
+        }
+        boolean exists = notificationRecipientRepository.existsById(
+                new NotificationRecipientId(request.getNotificationId(), request.getMemberId()));
+        if (exists) {
+            throw new IllegalArgumentException(
+                    "Member " + request.getMemberId() + " is already a recipient of notification " + request.getNotificationId());
+        }
 
         var notification = notificationRepository.findById(request.getNotificationId())
                 .orElseThrow(() -> new IllegalArgumentException(
@@ -87,7 +93,12 @@ public class NotificationRecipientServiceImpl implements com.example.demo.notifi
 
     @CacheEvict(allEntries = true)
     public void delete(Long notificationId, Long memberId) {
-        notificationRecipientDomainService.validateDelete(notificationId, memberId);
+        if (notificationId == null) {
+            throw new IllegalArgumentException("Notification ID must not be empty");
+        }
+        if (memberId == null) {
+            throw new IllegalArgumentException("Member ID must not be empty");
+        }
         notificationRecipientRepository.deleteById(new NotificationRecipientId(notificationId, memberId));
     }
 

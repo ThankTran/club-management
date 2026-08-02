@@ -7,6 +7,7 @@ import java.util.List;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/subjects")
@@ -19,7 +20,7 @@ public class SubjectController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody SubjectRequest request) {
+    public ResponseEntity<?> create(@Valid @RequestBody SubjectRequest request) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(subjectService.create(request));
         } catch (IllegalArgumentException e) {
@@ -42,7 +43,7 @@ public class SubjectController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable Integer id, @RequestBody SubjectRequest request) {
+    public ResponseEntity<?> update(@PathVariable Integer id, @Valid @RequestBody SubjectRequest request) {
         try {
             return ResponseEntity.ok(subjectService.update(id, request));
         } catch (IllegalArgumentException e) {

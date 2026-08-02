@@ -11,13 +11,13 @@ import com.example.demo.system.service.interfaces.SystemSettingService;
 import com.example.demo.member.entity.Member;
 import com.example.demo.department.entity.Department;
 import com.example.demo.role.entity.Role;
-import com.example.demo.member.repository.interfaces.MemberRepository;
-import com.example.demo.department.repository.interfaces.DepartmentRepository;
-import com.example.demo.role.repository.interfaces.RoleRepository;
+import com.example.demo.member.repository.MemberRepository;
+import com.example.demo.department.repository.DepartmentRepository;
+import com.example.demo.role.repository.RoleRepository;
 import com.example.demo.shared.enums.ApprovalStatusEnum;
 import com.example.demo.shared.enums.GenderEnum;
 import com.example.demo.shared.enums.GraduatedStatusEnum;
-import com.example.demo.member.domain.service.interfaces.MemberDomainService;
+
 
 import java.time.LocalDate;
 import java.time.Period;
@@ -54,7 +54,6 @@ public class MemberServiceImpl implements com.example.demo.member.service.interf
     private final DepartmentRepository departmentRepository;
     private final RoleRepository roleRepository;
     private final MemberMapper memberMapper;
-    private final MemberDomainService memberDomainService; 
     private final NotificationDispatchService notificationDispatchService;
     private final SystemSettingService systemSettingService;
 
@@ -62,14 +61,12 @@ public class MemberServiceImpl implements com.example.demo.member.service.interf
                              DepartmentRepository departmentRepository,
                              RoleRepository roleRepository,
                              MemberMapper memberMapper,
-                             MemberDomainService memberDomainService,
                              NotificationDispatchService notificationDispatchService,
                              SystemSettingService systemSettingService) {
         this.memberRepository = memberRepository;
         this.departmentRepository = departmentRepository;
         this.roleRepository = roleRepository;
         this.memberMapper = memberMapper;
-        this.memberDomainService = memberDomainService;
         this.notificationDispatchService = notificationDispatchService;
         this.systemSettingService = systemSettingService;
     }
@@ -82,15 +79,7 @@ public class MemberServiceImpl implements com.example.demo.member.service.interf
             request.setGraduatedStatus(GraduatedStatusEnum.ACTIVE);
         }
 
-        // Validate format — domain service lo
-        memberDomainService.validateStudentIdFormat(request.getStudentId());
-        memberDomainService.validateFullNameFormat(request.getFullName());
-        memberDomainService.validateEmailFormat(request.getEmail());
-        memberDomainService.validatePhoneFormat(request.getPhoneNumber());
-        memberDomainService.validateNotGraduated(request.getGraduatedStatus());
-        memberDomainService.validateGender(
-                GenderEnum.valueOf(request.getGender().toUpperCase())
-        );
+        // Format validation now handled by @Valid on DTO
         validateDateOfBirth(request.getDateOfBirth());
 
         if (memberRepository.existsByStudentId(request.getStudentId())) {
@@ -110,8 +99,10 @@ public class MemberServiceImpl implements com.example.demo.member.service.interf
         member.setCreatedAt(LocalDateTime.now());
         member.setUpdatedAt(LocalDateTime.now());
 
-
-        memberDomainService.validateDefaultStatus(member.getReqStatus());
+        // Ensure status is PENDING (invariant check)
+        if (member.getReqStatus() != ApprovalStatusEnum.PENDING) {
+            throw new IllegalArgumentException("New member request status must be PENDING");
+        }
 
         Member savedMember = memberRepository.save(member);
         notificationDispatchService.toManagers(
@@ -133,7 +124,12 @@ public class MemberServiceImpl implements com.example.demo.member.service.interf
             throw new IllegalArgumentException("Approver ID không được để trống");
 
         // QĐ2.4: Validate status
-        memberDomainService.validateApprovalStatus(request.getStatus());
+        if (request.getStatus() == null) {
+            throw new IllegalArgumentException("Approval status must not be empty");
+        }
+        if (request.getStatus() == ApprovalStatusEnum.PENDING) {
+            throw new IllegalArgumentException("Approval status must be APPROVED or REJECTED");
+        }
 
         // Lấy member
         Member member = memberRepository.findById(request.getMemberId())
@@ -144,16 +140,24 @@ public class MemberServiceImpl implements com.example.demo.member.service.interf
                 .orElseThrow(() -> new IllegalArgumentException("Không tìm thấy người xét duyệt"));
 
         // QĐ2.3: Không duyệt lại
-        memberDomainService.validateApprovalNotFinalized(member);
+        if (member.getReqStatus() != ApprovalStatusEnum.PENDING) {
+            throw new IllegalArgumentException("This member request was already finalized");
+        }
 
         // QĐ2.5: Validate ngày
-        memberDomainService.validateApprovalDate(member);
+        if (member.getCreatedAt() != null && LocalDateTime.now().isBefore(member.getCreatedAt())) {
+            throw new IllegalArgumentException("Approval date must be on or after register date");
+        }
 
         // Validate note
         if (request.getNote() != null && request.getNote().length() > 500)
             throw new IllegalArgumentException("Ghi chú không được vượt quá 500 ký tự");
 
-        memberDomainService.applyApproval(member, request.getStatus(), approver, request.getNote());
+        member.setReqStatus(request.getStatus());
+        member.setApprovalNote(request.getNote());
+        member.setApprover(approver);
+        member.setApprovalDate(LocalDateTime.now());
+        member.setUpdatedAt(LocalDateTime.now());
         Member updatedMember = memberRepository.save(member);
         notificationDispatchService.toMembers(
                 List.of(updatedMember),
@@ -285,11 +289,7 @@ public class MemberServiceImpl implements com.example.demo.member.service.interf
             request.setGraduatedStatus(GraduatedStatusEnum.ACTIVE);
         }
 
-        // Validate email nếu thay đổi
-        memberDomainService.validateFullNameFormat(request.getFullName());
-        memberDomainService.validateEmailFormat(request.getEmail());
-        memberDomainService.validatePhoneFormat(request.getPhoneNumber());
-        memberDomainService.validateNotGraduated(request.getGraduatedStatus());
+        // Format validation now handled by @Valid on DTO
         validateDateOfBirth(request.getDateOfBirth());
         if (!member.getEmail().equals(request.getEmail())
                 && memberRepository.existsByEmail(request.getEmail())) {

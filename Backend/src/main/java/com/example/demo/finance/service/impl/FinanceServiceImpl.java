@@ -1,8 +1,7 @@
 package com.example.demo.finance.service.impl;
 
 import com.example.demo.shared.enums.TransactionType;
-import com.example.demo.finance.repository.interfaces.TransactionRepository;
-import com.example.demo.finance.domain.service.interfaces.FinanceDomainService;
+import com.example.demo.finance.repository.TransactionRepository;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.concurrent.CompletableFuture;
@@ -19,36 +18,47 @@ public class FinanceServiceImpl implements com.example.demo.finance.service.inte
     private static final TransactionType INCOME_TYPE = TransactionType.INCOME;
     private static final TransactionType EXPENSE_TYPE = TransactionType.Expense;
     private final TransactionRepository transactionRepository;
-    private final FinanceDomainService financeDomainService;
 
-    public FinanceServiceImpl(
-            TransactionRepository transactionRepository,
-            FinanceDomainService financeDomainService) {
+    public FinanceServiceImpl(TransactionRepository transactionRepository) {
         this.transactionRepository = transactionRepository;
-        this.financeDomainService = financeDomainService;
+    }
+
+    private void validateTimeRange(LocalDateTime from, LocalDateTime to) {
+        if (from == null || to == null) {
+            throw new IllegalArgumentException("Time range must not be empty");
+        }
+        if (to.isBefore(from)) {
+            throw new IllegalArgumentException("End time must be on or after start time");
+        }
+    }
+
+    private void validateEventId(String eventId) {
+        if (eventId == null || eventId.isBlank()) {
+            throw new IllegalArgumentException("Event ID must not be empty");
+        }
     }
 
     @Cacheable(key = "'income:' + #from + '|' + #to")
     public BigDecimal getTotalIncome(LocalDateTime from, LocalDateTime to) {
-        financeDomainService.validateTimeRange(from, to);
+        validateTimeRange(from, to);
         return transactionRepository.sumCompletedAmountByTypeAndDateBetween(INCOME_TYPE, from, to);
     }
 
     @Cacheable(key = "'expense:' + #from + '|' + #to")
     public BigDecimal getTotalExpense(LocalDateTime from, LocalDateTime to) {
-        financeDomainService.validateTimeRange(from, to);
+        validateTimeRange(from, to);
         return transactionRepository.sumCompletedAmountByTypeAndDateBetween(EXPENSE_TYPE, from, to);
     }
 
     @Cacheable(key = "'income:event:' + #eventId")
     public BigDecimal getTotalIncomeByEvent(String eventId) {
-        financeDomainService.validateEventId(eventId);
+        validateEventId(eventId);
         return transactionRepository.sumCompletedAmountByTypeAndEventId(INCOME_TYPE, eventId);
     }
 
     @Cacheable(key = "'expense:event:' + #eventId")
     public BigDecimal getTotalExpenseByEvent(String eventId) {
-        financeDomainService.validateEventId(eventId);
+        validateEventId(eventId);
         return transactionRepository.sumCompletedAmountByTypeAndEventId(EXPENSE_TYPE, eventId);
     }
 

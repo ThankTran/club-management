@@ -12,13 +12,12 @@ import com.example.demo.document.entity.Document;
 import com.example.demo.document.entity.DocumentType;
 import com.example.demo.member.entity.Member;
 import com.example.demo.subject.entity.Subject;
-import com.example.demo.document.repository.interfaces.DocumentFileRepository;
-import com.example.demo.document.repository.interfaces.DocumentRepository;
-import com.example.demo.document.repository.interfaces.DocumentTypeRepository;
-import com.example.demo.member.repository.interfaces.MemberRepository;
-import com.example.demo.subject.repository.interfaces.SubjectRepository;
-import com.example.demo.document.domain.service.interfaces.DocumentDomainService;
-import com.example.demo.member.domain.service.interfaces.MemberDomainService;
+import com.example.demo.document.repository.DocumentFileRepository;
+import com.example.demo.document.repository.DocumentRepository;
+import com.example.demo.document.repository.DocumentTypeRepository;
+import com.example.demo.member.repository.MemberRepository;
+import com.example.demo.subject.repository.SubjectRepository;
+
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Set;
@@ -69,8 +68,6 @@ public class DocumentServiceImpl implements DocumentService {
     private final MemberRepository memberRepository;
     private final DocumentFileRepository documentFileRepository;
     private final DocumentMapper documentMapper;
-    private final DocumentDomainService documentDomainService;
-    private final MemberDomainService memberDomainService;
     private final NotificationDispatchService notificationDispatchService;
 
     public DocumentServiceImpl(
@@ -80,8 +77,6 @@ public class DocumentServiceImpl implements DocumentService {
             MemberRepository memberRepository,
             DocumentFileRepository documentFileRepository,
             DocumentMapper documentMapper,
-            DocumentDomainService documentDomainService,
-            MemberDomainService memberDomainService,
             NotificationDispatchService notificationDispatchService) {
         this.documentRepository = documentRepository;
         this.documentTypeRepository = documentTypeRepository;
@@ -89,23 +84,26 @@ public class DocumentServiceImpl implements DocumentService {
         this.memberRepository = memberRepository;
         this.documentFileRepository = documentFileRepository;
         this.documentMapper = documentMapper;
-        this.documentDomainService = documentDomainService;
-        this.memberDomainService = memberDomainService;
         this.notificationDispatchService = notificationDispatchService;
     }
 
     @Override
     @CacheEvict(allEntries = true)
     public DocumentResponse create(DocumentRequest request) {
-        documentDomainService.validateCreateRequest(request);
-        documentDomainService.validateDocumentUniqueness(
-                request.getDocumentName(),
-                request.getTypeId(),
-                request.getSubjectId(),
-                documentRepository.existsByDocumentNameIgnoreCaseAndTypeTypeIdAndSubjectSubjectId(
+        if (request == null) {
+            throw new IllegalArgumentException("Document request must not be empty");
+        }
+        if (request.getProposedById() == null) {
+            throw new IllegalArgumentException("Proposer is required");
+        }
+        boolean exists = documentRepository.existsByDocumentNameIgnoreCaseAndTypeTypeIdAndSubjectSubjectId(
                         request.getDocumentName(),
                         request.getTypeId(),
-                        request.getSubjectId()));
+                        request.getSubjectId());
+        if (exists) {
+            throw new IllegalArgumentException(
+                    "Document with the same name, type and subject already exists: " + request.getDocumentName());
+        }
 
         DocumentType type = documentTypeRepository.findById(request.getTypeId())
                 .orElseThrow(() -> new BusinessException("Không tìm thấy loại tài liệu: " + request.getTypeId()));
@@ -114,7 +112,9 @@ public class DocumentServiceImpl implements DocumentService {
         Member proposedBy = memberRepository.findById(request.getProposedById())
                 .orElseThrow(() -> new BusinessException("Không tìm thấy thành viên đề xuất: " + request.getProposedById()));
 
-        documentDomainService.validateProposer(proposedBy);
+        if (proposedBy.getReqStatus() != ApprovalStatusEnum.APPROVED) {
+            throw new IllegalArgumentException("Only approved club members can propose documents");
+        }
 
         Document document = documentMapper.toEntity(request, type, subject, proposedBy);
         Document savedDocument = documentRepository.save(document);
@@ -154,7 +154,13 @@ public class DocumentServiceImpl implements DocumentService {
         Member approver = memberRepository.findById(request.getApprovedBy())
                 .orElseThrow(() -> new BusinessException("Không tìm thấy người duyệt: " + request.getApprovedBy()));
         if (request.getStatus() != ApprovalStatusEnum.REQUESTED_CHANGES) {
-            memberDomainService.validateApproverPermission(approver);
+            // Only managers (role priority <= 2) can approve/reject
+            if (approver.getRole() == null) {
+                throw new IllegalArgumentException("Approver role is missing");
+            }
+            if (approver.getRole().getPriority() == null || approver.getRole().getPriority() > 2) {
+                throw new IllegalArgumentException("Approver does not have permission");
+            }
         }
 
         document.setReqStatus(request.getStatus());

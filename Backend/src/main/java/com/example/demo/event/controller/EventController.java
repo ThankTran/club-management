@@ -11,6 +11,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/events")
@@ -23,7 +24,7 @@ public class EventController {
     }
 
     @PostMapping
-    public ResponseEntity<?> create(@RequestBody EventRequest request) {
+    public ResponseEntity<?> create(@Valid @RequestBody EventRequest request) {
         try {
             return ResponseEntity.status(HttpStatus.CREATED).body(eventService.create(request));
         } catch (IllegalArgumentException e) {
@@ -32,7 +33,7 @@ public class EventController {
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> update(@PathVariable String id, @RequestBody EventRequest request) {
+    public ResponseEntity<?> update(@PathVariable String id, @Valid @RequestBody EventRequest request) {
         try {
             return ResponseEntity.ok(eventService.update(id, request));
         } catch (IllegalArgumentException e) {

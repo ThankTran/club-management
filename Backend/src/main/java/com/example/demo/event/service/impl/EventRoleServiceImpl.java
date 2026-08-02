@@ -3,7 +3,7 @@ package com.example.demo.event.service.impl;
 import com.example.demo.event.dto.request.EventRoleRequest;
 import com.example.demo.event.dto.response.EventRoleResponse;
 import com.example.demo.event.mapper.EventRoleMapper;
-import com.example.demo.event.repository.interfaces.EventRoleRepository;
+import com.example.demo.event.repository.EventRoleRepository;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import org.springframework.cache.annotation.CacheConfig;

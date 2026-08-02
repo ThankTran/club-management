@@ -20,6 +20,7 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
+import jakarta.validation.Valid;
 
 @RestController
 @RequestMapping("/api/users")
@@ -33,7 +34,7 @@ public class UserController {
     }
 
     @PostMapping
-    public ResponseEntity<?> createUser(@RequestBody CreateUserRequest request) {
+    public ResponseEntity<?> createUser(@Valid @RequestBody CreateUserRequest request) {
         try {
             UserResponse response = userService.createUser(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -72,7 +73,7 @@ public class UserController {
 
     @PutMapping("/{id}/password")
     public ResponseEntity<?> changeOwnPassword(@PathVariable Long id,
-                                               @RequestBody ChangePasswordRequest request) {
+                                               @Valid @RequestBody ChangePasswordRequest request) {
         try {
             return ResponseEntity.ok(userService.changePassword(id, request));
         } catch (IllegalArgumentException e) {
@@ -82,7 +83,7 @@ public class UserController {
 
     @PatchMapping("/{id}/admin")
     public ResponseEntity<?> updateUserForAdmin(@PathVariable Long id,
-                                                @RequestBody AdminUpdateUserRequest request) {
+                                                @Valid @RequestBody AdminUpdateUserRequest request) {
         try {
             return ResponseEntity.ok(userService.updatePasswordForAdmin(id, request.getNewPassword()));
         } catch (IllegalArgumentException e) {

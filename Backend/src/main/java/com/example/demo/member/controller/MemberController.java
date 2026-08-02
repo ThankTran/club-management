@@ -15,6 +15,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import jakarta.validation.Valid;
 
 import java.util.List;
 
@@ -31,7 +32,7 @@ public class MemberController {
     }
 
     @PostMapping("/register")
-    public ResponseEntity<?> registerMember(@RequestBody JoinClubRequest request) {
+    public ResponseEntity<?> registerMember(@Valid @RequestBody JoinClubRequest request) {
         try {
             MemberResponse response = memberUseCase.registerMember(request);
             return ResponseEntity.status(HttpStatus.CREATED).body(response);
@@ -117,7 +118,7 @@ public class MemberController {
 
     @PutMapping("/{id}")
     public ResponseEntity<?> updateMember(@PathVariable Long id,
-                                          @RequestBody JoinClubRequest request) {
+                                          @Valid @RequestBody JoinClubRequest request) {
         try {
             MemberResponse response = memberUseCase.updateMember(id, request);
             return ResponseEntity.ok(response);
