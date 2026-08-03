@@ -15,10 +15,9 @@ import com.example.demo.shared.enums.TransactionStatus;
 import com.example.demo.shared.enums.TransactionType;
 import com.example.demo.finance.entity.Transaction;
 import com.example.demo.member.entity.Member;
-import com.example.demo.event.repository.interfaces.EventRepository;
-import com.example.demo.finance.repository.interfaces.TransactionRepository;
-import com.example.demo.member.repository.interfaces.MemberRepository;
-import com.example.demo.finance.domain.service.interfaces.TransactionDomainService;
+import com.example.demo.event.repository.EventRepository;
+import com.example.demo.finance.repository.TransactionRepository;
+import com.example.demo.member.repository.MemberRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
@@ -35,7 +34,6 @@ class TransactionServiceImplTest {
         EventRepository eventRepository = Mockito.mock(EventRepository.class);
         MemberRepository memberRepository = Mockito.mock(MemberRepository.class);
         TransactionMapper transactionMapper = Mockito.mock(TransactionMapper.class);
-        TransactionDomainService transactionDomainService = Mockito.mock(TransactionDomainService.class);
         NotificationDispatchService notificationDispatchService = Mockito.mock(NotificationDispatchService.class);
 
         TransactionServiceImpl service = new TransactionServiceImpl(
@@ -43,7 +41,6 @@ class TransactionServiceImplTest {
                 eventRepository,
                 memberRepository,
                 transactionMapper,
-                transactionDomainService,
                 notificationDispatchService);
 
         Member member = Member.builder().memberId(5L).fullName("Vo Duc Tai").build();
@@ -74,7 +71,6 @@ class TransactionServiceImplTest {
         EventRepository eventRepository = Mockito.mock(EventRepository.class);
         MemberRepository memberRepository = Mockito.mock(MemberRepository.class);
         TransactionMapper transactionMapper = Mockito.mock(TransactionMapper.class);
-        TransactionDomainService transactionDomainService = Mockito.mock(TransactionDomainService.class);
         NotificationDispatchService notificationDispatchService = Mockito.mock(NotificationDispatchService.class);
 
         TransactionServiceImpl service = new TransactionServiceImpl(
@@ -82,7 +78,6 @@ class TransactionServiceImplTest {
                 eventRepository,
                 memberRepository,
                 transactionMapper,
-                transactionDomainService,
                 notificationDispatchService);
 
         Transaction transaction = Transaction.builder()

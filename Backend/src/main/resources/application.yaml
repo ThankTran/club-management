@@ -6,7 +6,9 @@ spring:
     import: optional:file:.env[.properties]
 
   datasource:
-    url: jdbc:sqlserver://localhost:1433;databaseName=clubmanage;integratedSecurity=true;encrypt=true;trustServerCertificate=true;sendStringParametersAsUnicode=true
+    url: jdbc:sqlserver://localhost:1433;databaseName=clubmanage;encrypt=true;trustServerCertificate=true
+    username: sa
+    password: 12345678
     driver-class-name: com.microsoft.sqlserver.jdbc.SQLServerDriver
 
   jpa:
