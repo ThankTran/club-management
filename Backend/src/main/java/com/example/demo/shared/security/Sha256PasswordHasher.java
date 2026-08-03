@@ -1,6 +1,5 @@
-package com.example.demo.user.service.impl;
+package com.example.demo.shared.security;
 
-import com.example.demo.user.service.interfaces.PasswordHasher;
 import org.springframework.stereotype.Component;
 
 import java.nio.charset.StandardCharsets;

@@ -1,4 +1,4 @@
-package com.example.demo.user.service.interfaces;
+package com.example.demo.shared.security;
 
 public interface PasswordHasher {
     String hash(String password);

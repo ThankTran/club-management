@@ -3,8 +3,8 @@ package com.example.demo.document.entity;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 
-import com.example.demo.document.repository.interfaces.DocumentFileRepository;
-import com.example.demo.document.repository.interfaces.DocumentRepository;
+import com.example.demo.document.repository.DocumentFileRepository;
+import com.example.demo.document.repository.DocumentRepository;
 import jakarta.persistence.EntityManager;
 import java.time.LocalDateTime;
 import org.junit.jupiter.api.Test;

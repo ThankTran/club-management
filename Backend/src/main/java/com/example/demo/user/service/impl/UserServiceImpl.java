@@ -11,7 +11,7 @@ import com.example.demo.member.entity.Member;
 import com.example.demo.user.entity.User;
 import com.example.demo.member.repository.MemberRepository;
 import com.example.demo.user.repository.UserRepository;
-import com.example.demo.user.service.interfaces.PasswordHasher;
+import com.example.demo.shared.security.PasswordHasher;
 
 import java.util.List;
 import java.util.concurrent.CompletableFuture;

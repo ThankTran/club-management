@@ -8,9 +8,9 @@ import com.example.demo.notification.service.impl.NotificationDispatchServiceImp
 import com.example.demo.shared.enums.ApprovalStatusEnum;
 import com.example.demo.member.entity.Member;
 import com.example.demo.notification.entity.Notification;
-import com.example.demo.member.repository.interfaces.MemberRepository;
-import com.example.demo.notification.repository.interfaces.NotificationRecipientRepository;
-import com.example.demo.notification.repository.interfaces.NotificationRepository;
+import com.example.demo.member.repository.MemberRepository;
+import com.example.demo.notification.repository.NotificationRecipientRepository;
+import com.example.demo.notification.repository.NotificationRepository;
 import java.time.LocalDateTime;
 import java.util.List;
 import org.junit.jupiter.api.Test;

@@ -44,7 +44,7 @@ import com.example.demo.role.repository.RoleRepository;
 import com.example.demo.subject.repository.SubjectRepository;
 import com.example.demo.system.repository.SystemSettingRepository;
 import com.example.demo.user.repository.UserRepository;
-import com.example.demo.user.service.interfaces.PasswordHasher;
+import com.example.demo.shared.security.PasswordHasher;
 import java.math.BigDecimal;
 import java.net.URLDecoder;
 import java.nio.charset.StandardCharsets;
@@ -1060,7 +1060,14 @@ public class SampleDataSeeder implements CommandLineRunner {
         };
     }
 
-    private LocalDateTime seedDocumentTimestamp(int offset) {
+    static LocalDateTime capToNotAfter(LocalDateTime timestamp, LocalDateTime upperBound) {
+        if (timestamp == null || upperBound == null) {
+            return timestamp;
+        }
+        return timestamp.isAfter(upperBound) ? upperBound : timestamp;
+    }
+
+    static LocalDateTime seedDocumentTimestamp(int offset) {
         LocalDateTime latestMonthStart = LocalDateTime.of(2026, 5, 1, 9, 0);
         int monthOffset = Math.floorMod(offset, 6);
         int cycleIndex = offset / 6;
@@ -1073,6 +1080,10 @@ public class SampleDataSeeder implements CommandLineRunner {
                 .withMinute((offset * 7) % 60)
                 .withSecond(0)
                 .withNano(0);
+    }
+
+    static LocalDateTime seedDocumentTimestamp(int offset, LocalDateTime upperBound) {
+        return capToNotAfter(seedDocumentTimestamp(offset), upperBound);
     }
 
     private String seedDocumentFileUrl(String folderId, int index, MaterialSeed material) {
