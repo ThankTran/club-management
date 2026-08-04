@@ -16,22 +16,19 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
 @CacheConfig(cacheNames = "auditLogs")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuditLogServiceImpl implements com.example.demo.audit.service.interfaces.AuditLogService {
-    private final AuditLogRepository auditLogRepository;
-    private final MemberRepository memberRepository;
-    private final AuditLogMapper auditLogMapper;
-
-    public AuditLogServiceImpl(
-            AuditLogRepository auditLogRepository,
-            MemberRepository memberRepository,
-            AuditLogMapper auditLogMapper) {
-        this.auditLogRepository = auditLogRepository;
-        this.memberRepository = memberRepository;
-        this.auditLogMapper = auditLogMapper;
-    }
+    AuditLogRepository auditLogRepository;
+    MemberRepository memberRepository;
+    AuditLogMapper auditLogMapper;
 
     @CacheEvict(allEntries = true)
     public AuditLogResponse create(AuditLogRequest request) {

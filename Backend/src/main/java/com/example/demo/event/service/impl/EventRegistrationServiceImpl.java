@@ -26,34 +26,25 @@ import org.springframework.cache.annotation.Cacheable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
 @CacheConfig(cacheNames = "eventRegistrations")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class EventRegistrationServiceImpl implements com.example.demo.event.service.interfaces.EventRegistrationService {
-    private static final String TARGET_EVENT = "EVENT";
-    private static final String TARGET_FINANCE = "FINANCE";
+    static final String TARGET_EVENT = "EVENT";
+    static final String TARGET_FINANCE = "FINANCE";
 
-    private final EventRegistrationRepository eventRegistrationRepository;
-    private final EventRepository eventRepository;
-    private final MemberRepository memberRepository;
-    private final TransactionRepository transactionRepository;
-    private final EventRegistrationMapper eventRegistrationMapper;
-    private final NotificationDispatchService notificationDispatchService;
-
-    public EventRegistrationServiceImpl(
-            EventRegistrationRepository eventRegistrationRepository,
-            EventRepository eventRepository,
-            MemberRepository memberRepository,
-            TransactionRepository transactionRepository,
-            EventRegistrationMapper eventRegistrationMapper,
-            NotificationDispatchService notificationDispatchService) {
-        this.eventRegistrationRepository = eventRegistrationRepository;
-        this.eventRepository = eventRepository;
-        this.memberRepository = memberRepository;
-        this.transactionRepository = transactionRepository;
-        this.eventRegistrationMapper = eventRegistrationMapper;
-        this.notificationDispatchService = notificationDispatchService;
-    }
+    final EventRegistrationRepository eventRegistrationRepository;
+    final EventRepository eventRepository;
+    final MemberRepository memberRepository;
+    final TransactionRepository transactionRepository;
+    final EventRegistrationMapper eventRegistrationMapper;
+    final NotificationDispatchService notificationDispatchService;
 
     @Override
     @CacheEvict(cacheNames = {"eventRegistrations", "events", "transactions", "finance"}, allEntries = true)

@@ -32,39 +32,28 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
 @CacheConfig(cacheNames = "events")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class EventServiceImpl implements com.example.demo.event.service.interfaces.EventService {
-    private static final ZoneId EVENT_TIMEZONE = ZoneId.of("Asia/Bangkok");
-    private static final DateTimeFormatter GOOGLE_CALENDAR_DATE_FORMAT =
+    static final ZoneId EVENT_TIMEZONE = ZoneId.of("Asia/Bangkok");
+    static final DateTimeFormatter GOOGLE_CALENDAR_DATE_FORMAT =
             DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmmss'Z'");
-    private static final String TARGET_EVENT = "EVENT";
+    static final String TARGET_EVENT = "EVENT";
 
-    private final EventRepository eventRepository;
-    private final EventOrganizerRepository eventOrganizerRepository;
-    private final EventRegistrationRepository eventRegistrationRepository;
-    private final TransactionRepository transactionRepository;
-    private final MemberRepository memberRepository;
-    private final EventMapper eventMapper;
-    private final NotificationDispatchService notificationDispatchService;
-
-    public EventServiceImpl(
-            EventRepository eventRepository,
-            EventOrganizerRepository eventOrganizerRepository,
-            EventRegistrationRepository eventRegistrationRepository,
-            TransactionRepository transactionRepository,
-            MemberRepository memberRepository,
-            EventMapper eventMapper,
-            NotificationDispatchService notificationDispatchService) {
-        this.eventRepository = eventRepository;
-        this.eventOrganizerRepository = eventOrganizerRepository;
-        this.eventRegistrationRepository = eventRegistrationRepository;
-        this.transactionRepository = transactionRepository;
-        this.memberRepository = memberRepository;
-        this.eventMapper = eventMapper;
-        this.notificationDispatchService = notificationDispatchService;
-    }
+    final EventRepository eventRepository;
+    final EventOrganizerRepository eventOrganizerRepository;
+    final EventRegistrationRepository eventRegistrationRepository;
+    final TransactionRepository transactionRepository;
+    final MemberRepository memberRepository;
+    final EventMapper eventMapper;
+    final NotificationDispatchService notificationDispatchService;
 
     @CacheEvict(allEntries = true)
     public EventResponse create(EventRequest request) {

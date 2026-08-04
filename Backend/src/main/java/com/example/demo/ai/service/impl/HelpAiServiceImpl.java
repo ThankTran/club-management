@@ -9,17 +9,19 @@ import java.text.Normalizer;
 import java.util.List;
 import org.springframework.stereotype.Service;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class HelpAiServiceImpl implements HelpAiService {
-    private static final int MANAGER_PRIORITY_MAX = 1;
-    private static final String SOURCE_REAL_AI = "REAL_AI";
-    private static final String SOURCE_FALLBACK = "FALLBACK";
+    static final int MANAGER_PRIORITY_MAX = 1;
+    static final String SOURCE_REAL_AI = "REAL_AI";
+    static final String SOURCE_FALLBACK = "FALLBACK";
 
-    private final GroqChatClient groqChatClient;
-
-    public HelpAiServiceImpl(GroqChatClient groqChatClient) {
-        this.groqChatClient = groqChatClient;
-    }
+    final GroqChatClient groqChatClient;
 
     @Override
     public HelpAiResponse ask(HelpAiRequest request, UserResponse currentUser) {

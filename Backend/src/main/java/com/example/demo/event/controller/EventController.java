@@ -13,15 +13,17 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import jakarta.validation.Valid;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @RestController
 @RequestMapping("/api/events")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EventController {
 
-    private final EventService eventService;
-
-    public EventController(EventService eventService) {
-        this.eventService = eventService;
-    }
+    EventService eventService;
 
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody EventRequest request) {

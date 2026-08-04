@@ -8,15 +8,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @RestController
 @RequestMapping("/api/audit-logs")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuditLogController {
 
-    private final AuditLogService auditLogService;
-
-    public AuditLogController(AuditLogService auditLogService) {
-        this.auditLogService = auditLogService;
-    }
+    AuditLogService auditLogService;
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody AuditLogRequest request) {

@@ -12,21 +12,18 @@ import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class AuthServiceImpl implements AuthService {
-    private final UserService userService;
-    private final AuthTokenService authTokenService;
-    private final LoginSessionService loginSessionService;
-
-    public AuthServiceImpl(
-            UserService userService,
-            AuthTokenService authTokenService,
-            LoginSessionService loginSessionService) {
-        this.userService = userService;
-        this.authTokenService = authTokenService;
-        this.loginSessionService = loginSessionService;
-    }
+    UserService userService;
+    AuthTokenService authTokenService;
+    LoginSessionService loginSessionService;
 
     @Override
     public AuthResponse login(LoginRequest request, HttpServletRequest servletRequest) {

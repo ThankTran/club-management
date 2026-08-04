@@ -23,23 +23,19 @@ import java.util.Map;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional(readOnly = true)
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class DashboardServiceImpl implements DashboardService {
-    private final MemberRepository memberRepository;
-    private final EventRepository eventRepository;
-    private final DocumentRepository documentRepository;
-    private final NotificationRepository notificationRepository;
-
-    public DashboardServiceImpl(MemberRepository memberRepository,
-                                EventRepository eventRepository,
-                                DocumentRepository documentRepository,
-                                NotificationRepository notificationRepository) {
-        this.memberRepository = memberRepository;
-        this.eventRepository = eventRepository;
-        this.documentRepository = documentRepository;
-        this.notificationRepository = notificationRepository;
-    }
+    MemberRepository memberRepository;
+    EventRepository eventRepository;
+    DocumentRepository documentRepository;
+    NotificationRepository notificationRepository;
 
     @Override
     public Map<String, Object> getOverview() {

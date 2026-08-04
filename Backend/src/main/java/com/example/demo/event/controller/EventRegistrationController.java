@@ -19,14 +19,16 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestAttribute;
 import org.springframework.web.bind.annotation.RestController;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @RestController
 @RequestMapping("/api/events")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EventRegistrationController {
-    private final EventRegistrationService eventRegistrationService;
-
-    public EventRegistrationController(EventRegistrationService eventRegistrationService) {
-        this.eventRegistrationService = eventRegistrationService;
-    }
+    EventRegistrationService eventRegistrationService;
 
     @PostMapping("/{eventId}/registrations")
     public ResponseEntity<?> register(

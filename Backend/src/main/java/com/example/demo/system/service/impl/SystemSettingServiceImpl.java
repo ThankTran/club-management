@@ -16,22 +16,19 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
 @CacheConfig(cacheNames = "systemSettings")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SystemSettingServiceImpl implements com.example.demo.system.service.interfaces.SystemSettingService {
-    private final SystemSettingRepository systemSettingRepository;
-    private final MemberRepository memberRepository;
-    private final SystemSettingMapper systemSettingMapper;
-
-    public SystemSettingServiceImpl(
-            SystemSettingRepository systemSettingRepository,
-            MemberRepository memberRepository,
-            SystemSettingMapper systemSettingMapper) {
-        this.systemSettingRepository = systemSettingRepository;
-        this.memberRepository = memberRepository;
-        this.systemSettingMapper = systemSettingMapper;
-    }
+    SystemSettingRepository systemSettingRepository;
+    MemberRepository memberRepository;
+    SystemSettingMapper systemSettingMapper;
 
     @CacheEvict(allEntries = true)
     public SystemSettingResponse createOrUpdate(SystemSettingRequest request) {

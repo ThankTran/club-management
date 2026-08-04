@@ -31,32 +31,25 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
 @CacheConfig(cacheNames = "transactions")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class TransactionServiceImpl implements com.example.demo.finance.service.interfaces.TransactionService {
-    private static final BigDecimal MONTHLY_FUND_AMOUNT = BigDecimal.valueOf(75_000L);
-    private static final DateTimeFormatter MONTH_ID_FORMAT = DateTimeFormatter.ofPattern("yyyyMM");
-    private static final String TARGET_FINANCE = "FINANCE";
+    static final BigDecimal MONTHLY_FUND_AMOUNT = BigDecimal.valueOf(75_000L);
+    static final DateTimeFormatter MONTH_ID_FORMAT = DateTimeFormatter.ofPattern("yyyyMM");
+    static final String TARGET_FINANCE = "FINANCE";
 
-    private final TransactionRepository transactionRepository;
-    private final EventRepository eventRepository;
-    private final MemberRepository memberRepository;
-    private final TransactionMapper transactionMapper;
-    private final NotificationDispatchService notificationDispatchService;
-
-    public TransactionServiceImpl(
-            TransactionRepository transactionRepository,
-            EventRepository eventRepository,
-            MemberRepository memberRepository,
-            TransactionMapper transactionMapper,
-            NotificationDispatchService notificationDispatchService) {
-        this.transactionRepository = transactionRepository;
-        this.eventRepository = eventRepository;
-        this.memberRepository = memberRepository;
-        this.transactionMapper = transactionMapper;
-        this.notificationDispatchService = notificationDispatchService;
-    }
+    final TransactionRepository transactionRepository;
+    final EventRepository eventRepository;
+    final MemberRepository memberRepository;
+    final TransactionMapper transactionMapper;
+    final NotificationDispatchService notificationDispatchService;
 
     @CacheEvict(cacheNames = {"transactions", "finance"}, allEntries = true)
     public TransactionResponse create(TransactionRequest request) {

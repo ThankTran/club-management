@@ -18,25 +18,20 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
 @CacheConfig(cacheNames = "notifications")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class NotificationServiceImpl implements com.example.demo.notification.service.interfaces.NotificationService {
-    private final NotificationRepository notificationRepository;
-    private final NotificationRecipientRepository notificationRecipientRepository;
-    private final MemberRepository memberRepository;
-    private final NotificationMapper notificationMapper;
-
-    public NotificationServiceImpl(
-            NotificationRepository notificationRepository,
-            NotificationRecipientRepository notificationRecipientRepository,
-            MemberRepository memberRepository,
-            NotificationMapper notificationMapper) {
-        this.notificationRepository = notificationRepository;
-        this.notificationRecipientRepository = notificationRecipientRepository;
-        this.memberRepository = memberRepository;
-        this.notificationMapper = notificationMapper;
-    }
+    NotificationRepository notificationRepository;
+    NotificationRecipientRepository notificationRecipientRepository;
+    MemberRepository memberRepository;
+    NotificationMapper notificationMapper;
 
     @CacheEvict(allEntries = true)
     public NotificationResponse create(NotificationRequest request) {

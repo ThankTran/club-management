@@ -25,23 +25,20 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
 @CacheConfig(cacheNames = "documentFiles")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class DocumentFileServiceImpl implements DocumentFileService {
-    private final DocumentFileRepository documentFileRepository;
-    private final DocumentRepository documentRepository;
-    private final DocumentFileMapper documentFileMapper;
-    private final String uploadDir = "uploads/documents";
-
-    public DocumentFileServiceImpl(
-            DocumentFileRepository documentFileRepository,
-            DocumentRepository documentRepository,
-            DocumentFileMapper documentFileMapper) {
-        this.documentFileRepository = documentFileRepository;
-        this.documentRepository = documentRepository;
-        this.documentFileMapper = documentFileMapper;
-    }
+    final DocumentFileRepository documentFileRepository;
+    final DocumentRepository documentRepository;
+    final DocumentFileMapper documentFileMapper;
+    final String uploadDir = "uploads/documents";
 
     @Override
     @CacheEvict(cacheNames = {"documentFiles", "documents"}, allEntries = true, beforeInvocation = true)

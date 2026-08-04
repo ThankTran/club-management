@@ -8,15 +8,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @RestController
 @RequestMapping("/api/event-organizers")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EventOrganizerController {
 
-    private final EventOrganizerService eventOrganizerService;
-
-    public EventOrganizerController(EventOrganizerService eventOrganizerService) {
-        this.eventOrganizerService = eventOrganizerService;
-    }
+    EventOrganizerService eventOrganizerService;
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody EventOrganizerRequest request) {

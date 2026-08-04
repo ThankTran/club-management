@@ -14,19 +14,18 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
 @CacheConfig(cacheNames = "documentTypes")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class DocumentTypeServiceImpl implements DocumentTypeService {
-    private final DocumentTypeRepository documentTypeRepository;
-    private final DocumentTypeMapper documentTypeMapper;
-
-    public DocumentTypeServiceImpl(
-            DocumentTypeRepository documentTypeRepository,
-            DocumentTypeMapper documentTypeMapper) {
-        this.documentTypeRepository = documentTypeRepository;
-        this.documentTypeMapper = documentTypeMapper;
-    }
+    DocumentTypeRepository documentTypeRepository;
+    DocumentTypeMapper documentTypeMapper;
 
     @Override
     @CacheEvict(allEntries = true)

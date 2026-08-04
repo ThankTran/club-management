@@ -15,21 +15,19 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
 @CacheConfig(cacheNames = "roles")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class RoleServiceImpl implements com.example.demo.role.service.interfaces.RoleService {
-    private final RoleRepository roleRepository;
-    private final MemberRepository memberRepository;
-    private final RoleMapper roleMapper;
-    public RoleServiceImpl(
-            RoleRepository roleRepository,
-            MemberRepository memberRepository,
-            RoleMapper roleMapper) {
-        this.roleRepository = roleRepository;
-        this.memberRepository = memberRepository;
-        this.roleMapper = roleMapper;
-    }
+    RoleRepository roleRepository;
+    MemberRepository memberRepository;
+    RoleMapper roleMapper;
 
     @CacheEvict(allEntries = true)
     public RoleResponse create(RoleRequest request) {

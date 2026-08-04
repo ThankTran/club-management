@@ -18,28 +18,21 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
 @CacheConfig(cacheNames = "eventOrganizers")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EventOrganizerServiceImpl implements com.example.demo.event.service.interfaces.EventOrganizerService {
-    private final EventOrganizerRepository eventOrganizerRepository;
-    private final EventRepository eventRepository;
-    private final MemberRepository memberRepository;
-    private final EventRoleRepository eventRoleRepository;
-    private final EventOrganizerMapper eventOrganizerMapper;
-
-    public EventOrganizerServiceImpl(
-            EventOrganizerRepository eventOrganizerRepository,
-            EventRepository eventRepository,
-            MemberRepository memberRepository,
-            EventRoleRepository eventRoleRepository,
-            EventOrganizerMapper eventOrganizerMapper) {
-        this.eventOrganizerRepository = eventOrganizerRepository;
-        this.eventRepository = eventRepository;
-        this.memberRepository = memberRepository;
-        this.eventRoleRepository = eventRoleRepository;
-        this.eventOrganizerMapper = eventOrganizerMapper;
-    }
+    EventOrganizerRepository eventOrganizerRepository;
+    EventRepository eventRepository;
+    MemberRepository memberRepository;
+    EventRoleRepository eventRoleRepository;
+    EventOrganizerMapper eventOrganizerMapper;
 
     @CacheEvict(allEntries = true)
     public EventOrganizerResponse create(EventOrganizerRequest request) {

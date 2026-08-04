@@ -37,39 +37,31 @@ import java.time.LocalDateTime;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
 @CacheConfig(cacheNames = "members")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class MemberServiceImpl implements com.example.demo.member.service.interfaces.MemberService {
-    private static final int MIN_ROLE_PRIORITY = 1;
-    private static final int MAX_ROLE_PRIORITY = 10;
-    private static final String DEFAULT_ROLE_NAME = "Thành viên";
-    private static final String AGE_MIN_SETTING_KEY = "member.age.min";
-    private static final String AGE_MAX_SETTING_KEY = "member.age.max";
-    private static final int DEFAULT_MIN_AGE = 18;
-    private static final int DEFAULT_MAX_AGE = 30;
-    private static final String TARGET_MEMBER = "MEMBER";
+    static final int MIN_ROLE_PRIORITY = 1;
+    static final int MAX_ROLE_PRIORITY = 10;
+    static final String DEFAULT_ROLE_NAME = "Thành viên";
+    static final String AGE_MIN_SETTING_KEY = "member.age.min";
+    static final String AGE_MAX_SETTING_KEY = "member.age.max";
+    static final int DEFAULT_MIN_AGE = 18;
+    static final int DEFAULT_MAX_AGE = 30;
+    static final String TARGET_MEMBER = "MEMBER";
 
-    private final MemberRepository memberRepository;
-    private final DepartmentRepository departmentRepository;
-    private final RoleRepository roleRepository;
-    private final MemberMapper memberMapper;
-    private final NotificationDispatchService notificationDispatchService;
-    private final SystemSettingService systemSettingService;
-
-    public MemberServiceImpl(MemberRepository memberRepository,
-                             DepartmentRepository departmentRepository,
-                             RoleRepository roleRepository,
-                             MemberMapper memberMapper,
-                             NotificationDispatchService notificationDispatchService,
-                             SystemSettingService systemSettingService) {
-        this.memberRepository = memberRepository;
-        this.departmentRepository = departmentRepository;
-        this.roleRepository = roleRepository;
-        this.memberMapper = memberMapper;
-        this.notificationDispatchService = notificationDispatchService;
-        this.systemSettingService = systemSettingService;
-    }
+    final MemberRepository memberRepository;
+    final DepartmentRepository departmentRepository;
+    final RoleRepository roleRepository;
+    final MemberMapper memberMapper;
+    final NotificationDispatchService notificationDispatchService;
+    final SystemSettingService systemSettingService;
 
 
     @Override
