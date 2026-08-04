@@ -7,15 +7,17 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @RestController
 @RequestMapping("/api/finance")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class FinanceController {
 
-    private final FinanceService financeService;
-
-    public FinanceController(FinanceService financeService) {
-        this.financeService = financeService;
-    }
+    FinanceService financeService;
 
     @GetMapping("/income")
     public ResponseEntity<?> totalIncome(

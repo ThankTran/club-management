@@ -29,12 +29,18 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
 @CacheConfig(cacheNames = "documents")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class DocumentServiceImpl implements DocumentService {
-    private static final String TARGET_DOCUMENT = "DOCUMENT";
-    private static final Set<String> LOOKUP_FOLDER_IDS = Set.of(
+    static final String TARGET_DOCUMENT = "DOCUMENT";
+    static final Set<String> LOOKUP_FOLDER_IDS = Set.of(
             "tu-tuong-ho-chi-minh",
             "triet-hoc-mac-lenin",
             "kinh-te-chinh-tri",
@@ -62,30 +68,13 @@ public class DocumentServiceImpl implements DocumentService {
             "ky-thuat-may-tinh-chuyen-nganh",
             "thiet-ke-vi-mach");
 
-    private final DocumentRepository documentRepository;
-    private final DocumentTypeRepository documentTypeRepository;
-    private final SubjectRepository subjectRepository;
-    private final MemberRepository memberRepository;
-    private final DocumentFileRepository documentFileRepository;
-    private final DocumentMapper documentMapper;
-    private final NotificationDispatchService notificationDispatchService;
-
-    public DocumentServiceImpl(
-            DocumentRepository documentRepository,
-            DocumentTypeRepository documentTypeRepository,
-            SubjectRepository subjectRepository,
-            MemberRepository memberRepository,
-            DocumentFileRepository documentFileRepository,
-            DocumentMapper documentMapper,
-            NotificationDispatchService notificationDispatchService) {
-        this.documentRepository = documentRepository;
-        this.documentTypeRepository = documentTypeRepository;
-        this.subjectRepository = subjectRepository;
-        this.memberRepository = memberRepository;
-        this.documentFileRepository = documentFileRepository;
-        this.documentMapper = documentMapper;
-        this.notificationDispatchService = notificationDispatchService;
-    }
+    final DocumentRepository documentRepository;
+    final DocumentTypeRepository documentTypeRepository;
+    final SubjectRepository subjectRepository;
+    final MemberRepository memberRepository;
+    final DocumentFileRepository documentFileRepository;
+    final DocumentMapper documentMapper;
+    final NotificationDispatchService notificationDispatchService;
 
     @Override
     @CacheEvict(allEntries = true)

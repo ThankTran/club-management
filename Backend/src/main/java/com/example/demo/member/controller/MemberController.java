@@ -19,17 +19,18 @@ import jakarta.validation.Valid;
 
 import java.util.List;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @RestController
 @RequestMapping("/api/members")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class MemberController {
 
-    private final MemberService memberUseCase;
-    private final DepartmentService departmentService;
-
-    public MemberController(MemberService memberUseCase, DepartmentService departmentService) {
-        this.memberUseCase = memberUseCase;
-        this.departmentService = departmentService;
-    }
+    MemberService memberUseCase;
+    DepartmentService departmentService;
 
     @PostMapping("/register")
     public ResponseEntity<?> registerMember(@Valid @RequestBody JoinClubRequest request) {

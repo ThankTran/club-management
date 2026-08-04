@@ -9,15 +9,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @RestController
 @RequestMapping("/api/document-types")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class DocumentTypeController {
 
-    private final DocumentTypeService documentTypeService;
-
-    public DocumentTypeController(DocumentTypeService documentTypeService) {
-        this.documentTypeService = documentTypeService;
-    }
+    DocumentTypeService documentTypeService;
 
     @PostMapping
     public ResponseEntity<?> create(@Valid @RequestBody DocumentTypeRequest request) {

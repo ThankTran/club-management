@@ -11,17 +11,19 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional(readOnly = true)
 @CacheConfig(cacheNames = "finance")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class FinanceServiceImpl implements com.example.demo.finance.service.interfaces.FinanceService {
-    private static final TransactionType INCOME_TYPE = TransactionType.INCOME;
-    private static final TransactionType EXPENSE_TYPE = TransactionType.Expense;
-    private final TransactionRepository transactionRepository;
-
-    public FinanceServiceImpl(TransactionRepository transactionRepository) {
-        this.transactionRepository = transactionRepository;
-    }
+    static final TransactionType INCOME_TYPE = TransactionType.INCOME;
+    static final TransactionType EXPENSE_TYPE = TransactionType.Expense;
+    final TransactionRepository transactionRepository;
 
     private void validateTimeRange(LocalDateTime from, LocalDateTime to) {
         if (from == null || to == null) {

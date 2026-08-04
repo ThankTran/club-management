@@ -12,21 +12,18 @@ import java.util.List;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class LoginSessionServiceImpl implements LoginSessionService {
-    private final LoginSessionRepository loginSessionRepository;
-    private final UserRepository userRepository;
-    private final LoginSessionMapper loginSessionMapper;
-
-    public LoginSessionServiceImpl(
-            LoginSessionRepository loginSessionRepository,
-            UserRepository userRepository,
-            LoginSessionMapper loginSessionMapper) {
-        this.loginSessionRepository = loginSessionRepository;
-        this.userRepository = userRepository;
-        this.loginSessionMapper = loginSessionMapper;
-    }
+    LoginSessionRepository loginSessionRepository;
+    UserRepository userRepository;
+    LoginSessionMapper loginSessionMapper;
 
     @Override
     public void recordLogin(Long userId, HttpServletRequest request) {

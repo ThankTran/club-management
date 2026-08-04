@@ -14,17 +14,18 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @RestController
 @RequestMapping("/api/document-files")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class DocumentFileController {
 
-    private final DocumentFileService documentFileService;
-    private final DocumentService documentService;
-
-    public DocumentFileController(DocumentFileService documentFileService, DocumentService documentService) {
-        this.documentFileService = documentFileService;
-        this.documentService = documentService;
-    }
+    DocumentFileService documentFileService;
+    DocumentService documentService;
 
     @PostMapping(consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<?> create(

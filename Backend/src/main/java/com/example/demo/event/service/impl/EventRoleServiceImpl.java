@@ -13,17 +13,18 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
 @CacheConfig(cacheNames = "eventRoles")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EventRoleServiceImpl implements com.example.demo.event.service.interfaces.EventRoleService {
-    private final EventRoleRepository eventRoleRepository;
-    private final EventRoleMapper eventRoleMapper;
-
-    public EventRoleServiceImpl(EventRoleRepository eventRoleRepository, EventRoleMapper eventRoleMapper) {
-        this.eventRoleRepository = eventRoleRepository;
-        this.eventRoleMapper = eventRoleMapper;
-    }
+    EventRoleRepository eventRoleRepository;
+    EventRoleMapper eventRoleMapper;
 
     @CacheEvict(allEntries = true)
     public EventRoleResponse create(EventRoleRequest request) {

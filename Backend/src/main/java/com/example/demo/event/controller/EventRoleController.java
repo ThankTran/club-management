@@ -8,15 +8,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @RestController
 @RequestMapping("/api/event-roles")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EventRoleController {
 
-    private final EventRoleService eventRoleService;
-
-    public EventRoleController(EventRoleService eventRoleService) {
-        this.eventRoleService = eventRoleService;
-    }
+    EventRoleService eventRoleService;
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody EventRoleRequest request) {

@@ -15,21 +15,19 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
 @CacheConfig(cacheNames = "subjects")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class SubjectServiceImpl implements com.example.demo.subject.service.interfaces.SubjectService {
-    private final SubjectRepository subjectRepository;
-    private final DocumentRepository documentRepository;
-    private final SubjectMapper subjectMapper;
-    public SubjectServiceImpl(
-            SubjectRepository subjectRepository,
-            DocumentRepository documentRepository,
-            SubjectMapper subjectMapper) {
-        this.subjectRepository = subjectRepository;
-        this.documentRepository = documentRepository;
-        this.subjectMapper = subjectMapper;
-    }
+    SubjectRepository subjectRepository;
+    DocumentRepository documentRepository;
+    SubjectMapper subjectMapper;
 
     @CacheEvict(allEntries = true)
     public SubjectResponse create(SubjectRequest request) {

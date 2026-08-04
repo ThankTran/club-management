@@ -22,16 +22,17 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import jakarta.validation.Valid;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @RestController
 @RequestMapping("/api/users")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserController {
-    private final UserService userService;
-    private final LoginSessionService loginSessionService;
-
-    public UserController(UserService userService, LoginSessionService loginSessionService) {
-        this.userService = userService;
-        this.loginSessionService = loginSessionService;
-    }
+    UserService userService;
+    LoginSessionService loginSessionService;
 
     @PostMapping
     public ResponseEntity<?> createUser(@Valid @RequestBody CreateUserRequest request) {

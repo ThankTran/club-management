@@ -11,14 +11,16 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @RestController
 @RequestMapping("/api/event-evaluations")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class EventEvaluationController {
-    private final EventService eventService;
-
-    public EventEvaluationController(EventService eventService) {
-        this.eventService = eventService;
-    }
+    EventService eventService;
 
     @PostMapping
     public ResponseEntity<?> createOrUpdate(@RequestBody EventEvaluationRequest request) {

@@ -8,18 +8,20 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @RestController
 @RequestMapping("/api/system-settings")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class SystemSettingController {
-    private static final String MONTHLY_DUE_SETTING_KEY = "finance.monthlyDueAmount";
-    private static final String MONTHLY_DUE_DEFAULT_VALUE = "50000";
-    private static final String MONTHLY_DUE_DESCRIPTION = "Số tiền đóng quỹ định kỳ";
+    static final String MONTHLY_DUE_SETTING_KEY = "finance.monthlyDueAmount";
+    static final String MONTHLY_DUE_DEFAULT_VALUE = "50000";
+    static final String MONTHLY_DUE_DESCRIPTION = "Số tiền đóng quỹ định kỳ";
 
-    private final SystemSettingService systemSettingService;
-
-    public SystemSettingController(SystemSettingService systemSettingService) {
-        this.systemSettingService = systemSettingService;
-    }
+    final SystemSettingService systemSettingService;
 
     @PostMapping
     public ResponseEntity<?> createOrUpdate(@RequestBody SystemSettingRequest request) {

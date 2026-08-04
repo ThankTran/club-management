@@ -8,15 +8,17 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @RestController
 @RequestMapping("/api/notification-recipients")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class NotificationRecipientController {
 
-    private final NotificationRecipientService notificationRecipientService;
-
-    public NotificationRecipientController(NotificationRecipientService notificationRecipientService) {
-        this.notificationRecipientService = notificationRecipientService;
-    }
+    NotificationRecipientService notificationRecipientService;
 
     @PostMapping
     public ResponseEntity<?> create(@RequestBody NotificationRecipientRequest request) {

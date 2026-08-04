@@ -20,24 +20,21 @@ import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE)
 public class NotificationDispatchServiceImpl implements NotificationDispatchService {
-    private static final int MANAGER_PRIORITY_MAX = 1;
-    private static final String SEND_METHOD_SYSTEM = "SYSTEM";
+    static final int MANAGER_PRIORITY_MAX = 1;
+    static final String SEND_METHOD_SYSTEM = "SYSTEM";
 
-    private final NotificationRepository notificationRepository;
-    private final NotificationRecipientRepository notificationRecipientRepository;
-    private final MemberRepository memberRepository;
-
-    public NotificationDispatchServiceImpl(
-            NotificationRepository notificationRepository,
-            NotificationRecipientRepository notificationRecipientRepository,
-            MemberRepository memberRepository) {
-        this.notificationRepository = notificationRepository;
-        this.notificationRecipientRepository = notificationRecipientRepository;
-        this.memberRepository = memberRepository;
-    }
+    final NotificationRepository notificationRepository;
+    final NotificationRecipientRepository notificationRecipientRepository;
+    final MemberRepository memberRepository;
 
     @Override
     @CacheEvict(cacheNames = {"notifications", "notificationRecipients"}, allEntries = true)

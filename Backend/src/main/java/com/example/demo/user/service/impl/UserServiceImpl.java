@@ -23,27 +23,21 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
 @CacheConfig(cacheNames = "users")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class UserServiceImpl implements com.example.demo.user.service.interfaces.UserService {
-    private final UserRepository userRepository;
-    private final MemberRepository memberRepository;
-    private final UserMapper userMapper;
-    private final PasswordHasher passwordHasher;
-    private final NotificationDispatchService notificationDispatchService;
-
-    public UserServiceImpl(UserRepository userRepository,
-                           MemberRepository memberRepository,
-                           UserMapper userMapper,
-                           PasswordHasher passwordHasher,
-                           NotificationDispatchService notificationDispatchService) {
-        this.userRepository = userRepository;
-        this.memberRepository = memberRepository;
-        this.userMapper = userMapper;
-        this.passwordHasher = passwordHasher;
-        this.notificationDispatchService = notificationDispatchService;
-    }
+    UserRepository userRepository;
+    MemberRepository memberRepository;
+    UserMapper userMapper;
+    PasswordHasher passwordHasher;
+    NotificationDispatchService notificationDispatchService;
 
     @Override
     @CacheEvict(allEntries = true)

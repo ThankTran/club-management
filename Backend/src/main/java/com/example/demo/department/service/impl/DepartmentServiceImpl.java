@@ -16,21 +16,19 @@ import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import lombok.RequiredArgsConstructor;
+import lombok.experimental.FieldDefaults;
+import lombok.AccessLevel;
+
 @Service
 @Transactional
 @CacheConfig(cacheNames = "departments")
+@RequiredArgsConstructor
+@FieldDefaults(level = AccessLevel.PRIVATE, makeFinal = true)
 public class DepartmentServiceImpl implements DepartmentService {
-    private final DepartmentRepository departmentRepository;
-    private final MemberRepository memberRepository;
-    private final DepartmentMapper departmentMapper;
-    public DepartmentServiceImpl(
-            DepartmentRepository departmentRepository,
-            MemberRepository memberRepository,
-            DepartmentMapper departmentMapper) {
-        this.departmentRepository = departmentRepository;
-        this.memberRepository = memberRepository;
-        this.departmentMapper = departmentMapper;
-    }
+    DepartmentRepository departmentRepository;
+    MemberRepository memberRepository;
+    DepartmentMapper departmentMapper;
 
     @CacheEvict(allEntries = true)
     public DepartmentResponse create(DepartmentRequest request) {
