@@ -9,96 +9,34 @@ import com.example.demo.department.dto.response.DepartmentResponse;
 import com.example.demo.department.entity.Department;
 import com.example.demo.member.entity.Member;
 
-import com.example.demo.shared.enums.ApprovalStatusEnum;
+import com.example.demo.shared.config.GlobalMapperConfig;
 import com.example.demo.shared.enums.GenderEnum;
 import com.example.demo.shared.enums.GraduatedStatusEnum;
 
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-public class MemberMapper {
+@Mapper(config = GlobalMapperConfig.class, imports = {GenderEnum.class, GraduatedStatusEnum.class})
+public abstract class MemberMapper {
 
-    public Member toEntity(CreateMemberRequest request) {
-        if (request == null) return null;
-        return Member.builder()
-                .studentId(request.getStudentId())
-                .fullName(request.getFullName())
-                .email(request.getEmail())
-                .phone(request.getPhone())
-                .gender(request.getGender())
-                .dateOfBirth(request.getDateOfBirth())
-                .graduatedStatus(request.getGraduatedStatus())
-                .reqStatus(ApprovalStatusEnum.PENDING)  
-                .build();
-    }
+    @Mapping(target = "reqStatus", constant = "PENDING")
+    public abstract Member toEntity(CreateMemberRequest request);
 
-    public Member toEntity(JoinClubRequest request) {
-        if (request == null) return null;
-        return Member.builder()
-                .studentId(request.getStudentId())
-                .fullName(request.getFullName())
-                .email(request.getEmail())
-                .phone(request.getPhoneNumber())
-                .gender(GenderEnum.valueOf(request.getGender().toUpperCase()))
-                .dateOfBirth(request.getDateOfBirth())
-                .graduatedStatus(request.getGraduatedStatus() == null
-                        ? GraduatedStatusEnum.ACTIVE
-                        : request.getGraduatedStatus())
-                .reqStatus(ApprovalStatusEnum.PENDING)
-                .build();
-    }
+    @Mapping(target = "phone", source = "phoneNumber")
+    @Mapping(target = "gender", expression = "java(request.getGender() != null ? GenderEnum.valueOf(request.getGender().toUpperCase()) : null)")
+    @Mapping(target = "graduatedStatus", expression = "java(request.getGraduatedStatus() == null ? GraduatedStatusEnum.ACTIVE : request.getGraduatedStatus())")
+    @Mapping(target = "reqStatus", constant = "PENDING")
+    public abstract Member toEntity(JoinClubRequest request);
 
-    public MemberResponse toResponse(Member member) {
-        if (member == null) return null;
-        return MemberResponse.builder()
-                .memberId(member.getMemberId())
-                .studentId(member.getStudentId())
-                .fullName(member.getFullName())
-                .email(member.getEmail())
-                .phone(member.getPhone())
-                .gender(member.getGender() != null ? member.getGender().name() : null)
-                .dateOfBirth(member.getDateOfBirth())
-                .departmentId(member.getDepartment() != null
-                        ? member.getDepartment().getDepartmentId() : null)
-                .departmentName(member.getDepartment() != null
-                        ? member.getDepartment().getDepartmentName() : null)
-                .roleName(member.getRole() != null
-                        ? member.getRole().getRoleName() : null)
-                .reqStatus(member.getReqStatus() != null
-                        ? member.getReqStatus().name() : null)
-                .graduatedStatus(member.getGraduatedStatus() != null
-                        ? member.getGraduatedStatus().name() : null)
-                .approverName(member.getApprover() != null
-                        ? member.getApprover().getFullName() : null)
-                .approvalDate(member.getApprovalDate())
-                .approvalNote(member.getApprovalNote())
-                .createdAt(member.getCreatedAt())
-                .build();
-    }
+    @Mapping(source = "department.departmentId", target = "departmentId")
+    @Mapping(source = "department.departmentName", target = "departmentName")
+    @Mapping(source = "role.roleName", target = "roleName")
+    @Mapping(source = "approver.fullName", target = "approverName")
+    public abstract MemberResponse toResponse(Member member);
 
-    public MemberSearchResponse toSearchResponse(Member member) {
-        if (member == null) return null;
-        return MemberSearchResponse.builder()
-                .memberId(member.getMemberId())
-                .studentId(member.getStudentId())
-                .fullName(member.getFullName())
-                .dateOfBirth(member.getDateOfBirth())
-                .departmentName(member.getDepartment() != null
-                        ? member.getDepartment().getDepartmentName() : null)
-                .phone(member.getPhone())
-                .email(member.getEmail())
-                .reqStatus(member.getReqStatus() != null
-                        ? member.getReqStatus().name() : null)
-                .graduatedStatus(member.getGraduatedStatus() != null
-                        ? member.getGraduatedStatus().name() : null)
-                .build();
-    }
+    @Mapping(source = "department.departmentName", target = "departmentName")
+    public abstract MemberSearchResponse toSearchResponse(Member member);
 
-    public DepartmentResponse toDepartmentResponse(Department department) {
-        if (department == null) return null;
-        return DepartmentResponse.builder()
-                .departmentId(department.getDepartmentId())
-                .departmentName(department.getDepartmentName())
-                .build();
-    }
+    public abstract DepartmentResponse toDepartmentResponse(Department department);
 }
+

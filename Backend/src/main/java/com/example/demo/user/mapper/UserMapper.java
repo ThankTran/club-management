@@ -1,40 +1,29 @@
 package com.example.demo.user.mapper;
 
+import com.example.demo.shared.config.GlobalMapperConfig;
 import com.example.demo.user.dto.response.UserPasswordResponse;
 import com.example.demo.user.dto.response.UserResponse;
 import com.example.demo.user.entity.User;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-public class UserMapper {
-    public UserResponse toResponse(User entity) {
-        var member = entity.getMember();
-        var department = member.getDepartment();
-        var role = member.getRole();
+@Mapper(config = GlobalMapperConfig.class)
+public interface UserMapper {
 
-        return UserResponse.builder()
-                .userId(entity.getUserId())
-                .memberId(member.getMemberId())
-                .studentId(member.getStudentId())
-                .fullName(member.getFullName())
-                .email(member.getEmail())
-                .departmentId(department == null ? null : department.getDepartmentId())
-                .departmentName(department == null ? null : department.getDepartmentName())
-                .roleId(role == null ? null : role.getRoleId())
-                .roleName(role == null ? null : role.getRoleName())
-                .rolePriority(role == null ? null : role.getPriority())
-                .reqStatus(member.getReqStatus() == null ? null : member.getReqStatus().name())
-                .graduatedStatus(member.getGraduatedStatus() == null ? null : member.getGraduatedStatus().name())
-                .createdAt(entity.getCreatedAt())
-                .updatedAt(entity.getUpdatedAt())
-                .build();
-    }
+    @Mapping(source = "member.memberId", target = "memberId")
+    @Mapping(source = "member.studentId", target = "studentId")
+    @Mapping(source = "member.fullName", target = "fullName")
+    @Mapping(source = "member.email", target = "email")
+    @Mapping(source = "member.department.departmentId", target = "departmentId")
+    @Mapping(source = "member.department.departmentName", target = "departmentName")
+    @Mapping(source = "member.role.roleId", target = "roleId")
+    @Mapping(source = "member.role.roleName", target = "roleName")
+    @Mapping(source = "member.role.priority", target = "rolePriority")
+    @Mapping(source = "member.reqStatus", target = "reqStatus")
+    @Mapping(source = "member.graduatedStatus", target = "graduatedStatus")
+    UserResponse toResponse(User entity);
 
-    public UserPasswordResponse toPasswordResponse(User entity) {
-        return UserPasswordResponse.builder()
-                .userId(entity.getUserId())
-                .memberId(entity.getMember().getMemberId())
-                .passwordHash(entity.getPasswordHash())
-                .build();
-    }
+    @Mapping(source = "member.memberId", target = "memberId")
+    UserPasswordResponse toPasswordResponse(User entity);
 }
+

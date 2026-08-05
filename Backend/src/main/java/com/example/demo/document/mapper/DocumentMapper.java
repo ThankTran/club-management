@@ -6,43 +6,25 @@ import com.example.demo.document.entity.Document;
 import com.example.demo.document.entity.DocumentFile;
 import com.example.demo.document.entity.DocumentType;
 import com.example.demo.member.entity.Member;
+import com.example.demo.shared.config.GlobalMapperConfig;
 import com.example.demo.subject.entity.Subject;
-import org.springframework.stereotype.Component;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-public class DocumentMapper {
-    public Document toEntity(DocumentRequest request, DocumentType type, Subject subject, Member proposedBy) {
-        return Document.builder()
-                .documentName(request.getDocumentName())
-                .type(type)
-                .subject(subject)
-                .source(request.getSource())
-                .note(request.getNote())
-                .proposedBy(proposedBy)
-                .build();
-    }
+@Mapper(config = GlobalMapperConfig.class)
+public abstract class DocumentMapper {
+    @Mapping(target = "type", source = "type")
+    @Mapping(target = "subject", source = "subject")
+    @Mapping(target = "proposedBy", source = "proposedBy")
+    public abstract Document toEntity(DocumentRequest request, DocumentType type, Subject subject, Member proposedBy);
 
-    public DocumentResponse toResponse(Document entity) {
-        return DocumentResponse.builder()
-                .documentId(entity.getDocumentId())
-                .documentName(entity.getDocumentName())
-                .typeId(entity.getType() != null ? entity.getType().getTypeId() : null)
-                .typeName(entity.getType() != null ? entity.getType().getTypeName() : null)
-                .subjectId(entity.getSubject() != null ? entity.getSubject().getSubjectId() : null)
-                .subjectName(entity.getSubject() != null ? entity.getSubject().getSubjectName() : null)
-                .status(entity.getStatus() != null ? entity.getStatus().name() : null)
-                .reqStatus(entity.getReqStatus() != null ? entity.getReqStatus().name() : null)
-                .version(entity.getVersion())
-                .source(entity.getSource())
-                .note(entity.getNote())
-                .lookupFolderId(entity.getLookupFolderId())
-                .proposedById(entity.getProposedBy() != null ? entity.getProposedBy().getMemberId() : null)
-                .approvedById(entity.getApprovedBy() != null ? entity.getApprovedBy().getMemberId() : null)
-                .approvedAt(entity.getApprovedAt())
-                .createdAt(entity.getCreatedAt())
-                .updatedAt(entity.getUpdatedAt())
-                .build();
-    }
+    @Mapping(source = "type.typeId", target = "typeId")
+    @Mapping(source = "type.typeName", target = "typeName")
+    @Mapping(source = "subject.subjectId", target = "subjectId")
+    @Mapping(source = "subject.subjectName", target = "subjectName")
+    @Mapping(source = "proposedBy.memberId", target = "proposedById")
+    @Mapping(source = "approvedBy.memberId", target = "approvedById")
+    public abstract DocumentResponse toResponse(Document entity);
 
     public DocumentResponse toResponse(Document entity, DocumentFile primaryFile) {
         DocumentResponse response = toResponse(entity);
@@ -55,4 +37,5 @@ public class DocumentMapper {
         return response;
     }
 }
+
 

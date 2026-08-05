@@ -79,7 +79,7 @@ public class TransactionServiceImpl implements com.example.demo.finance.service.
                 : memberRepository.findById(request.getApprovedById())
                         .orElseThrow(() -> new IllegalArgumentException(
                                 "Không tìm thấy người duyệt: " + request.getApprovedById()));
-        var entity = transactionMapper.toEntity(request, event, member, createdBy, approvedBy);
+        var entity = transactionMapper.toEntity(request, event, member, createdBy, approvedBy, type);
         Transaction savedTransaction = transactionRepository.save(entity);
         notifyFinance(
                 savedTransaction,
@@ -308,8 +308,18 @@ public class TransactionServiceImpl implements com.example.demo.finance.service.
         return CompletableFuture.completedFuture(getAll());
     }
 
-    private TransactionType parseTransactionType(String type) {
-        return transactionMapper.parseTransactionType(type);
+    private TransactionType parseTransactionType(String raw) {
+        if (raw == null || raw.isBlank()) {
+            throw new IllegalArgumentException("Loại giao dịch không được để trống");
+        }
+        String t = raw.trim();
+        if ("INCOME".equalsIgnoreCase(t)) {
+            return TransactionType.INCOME;
+        }
+        if ("EXPENSE".equalsIgnoreCase(t)) {
+            return TransactionType.Expense;
+        }
+        throw new IllegalArgumentException("Loại giao dịch chỉ nhận INCOME hoặc EXPENSE");
     }
 
     private void ensureMonthlyDue(Member member, YearMonth month) {

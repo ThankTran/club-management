@@ -4,31 +4,17 @@ import com.example.demo.notification.dto.request.NotificationRequest;
 import com.example.demo.notification.dto.response.NotificationResponse;
 import com.example.demo.member.entity.Member;
 import com.example.demo.notification.entity.Notification;
-import org.springframework.stereotype.Component;
+import com.example.demo.shared.config.GlobalMapperConfig;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-public class NotificationMapper {
+@Mapper(config = GlobalMapperConfig.class)
+public interface NotificationMapper {
 
-    public Notification toEntity(NotificationRequest request, Member sender) {
-        return Notification.builder()
-                .title(request.getTitle())
-                .content(request.getContent())
-                .sender(sender)
-                .targetType(request.getTargetType())
-                .sendMethod(request.getSendMethod())
-                .build();
-    }
+    @Mapping(target = "sender", source = "sender")
+    Notification toEntity(NotificationRequest request, Member sender);
 
-    public NotificationResponse toResponse(Notification entity) {
-        Long senderId = entity.getSender() == null ? null : entity.getSender().getMemberId();
-        return NotificationResponse.builder()
-                .notificationId(entity.getNotificationId())
-                .title(entity.getTitle())
-                .content(entity.getContent())
-                .senderId(senderId)
-                .targetType(entity.getTargetType())
-                .sendMethod(entity.getSendMethod())
-                .sentAt(entity.getSentAt())
-                .build();
-    }
+    @Mapping(source = "sender.memberId", target = "senderId")
+    NotificationResponse toResponse(Notification entity);
 }
+

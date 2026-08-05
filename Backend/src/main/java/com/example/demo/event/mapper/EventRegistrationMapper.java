@@ -2,24 +2,18 @@ package com.example.demo.event.mapper;
 
 import com.example.demo.event.dto.response.EventRegistrationResponse;
 import com.example.demo.event.entity.EventRegistration;
-import com.example.demo.member.entity.Member;
-import org.springframework.stereotype.Component;
+import com.example.demo.shared.config.GlobalMapperConfig;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-public class EventRegistrationMapper {
-    public EventRegistrationResponse toResponse(EventRegistration entity) {
-        Member member = entity.getMember();
-        String departmentName = member.getDepartment() == null ? null : member.getDepartment().getDepartmentName();
-        return EventRegistrationResponse.builder()
-                .eventId(entity.getId() == null ? null : entity.getId().getEventId())
-                .memberId(entity.getId() == null ? null : entity.getId().getMemberId())
-                .studentId(member.getStudentId())
-                .fullName(member.getFullName())
-                .departmentName(departmentName)
-                .email(member.getEmail())
-                .registeredAt(entity.getRegisteredAt())
-                .attended(entity.getAttended())
-                .attendedAt(entity.getAttendedAt())
-                .build();
-    }
+@Mapper(config = GlobalMapperConfig.class)
+public interface EventRegistrationMapper {
+    @Mapping(source = "id.eventId", target = "eventId")
+    @Mapping(source = "id.memberId", target = "memberId")
+    @Mapping(source = "member.studentId", target = "studentId")
+    @Mapping(source = "member.fullName", target = "fullName")
+    @Mapping(source = "member.department.departmentName", target = "departmentName")
+    @Mapping(source = "member.email", target = "email")
+    EventRegistrationResponse toResponse(EventRegistration entity);
 }
+

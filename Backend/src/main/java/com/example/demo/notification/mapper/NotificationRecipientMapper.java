@@ -6,10 +6,12 @@ import com.example.demo.member.entity.Member;
 import com.example.demo.notification.entity.Notification;
 import com.example.demo.notification.entity.NotificationRecipient;
 import com.example.demo.notification.entity.NotificationRecipientId;
-import org.springframework.stereotype.Component;
+import com.example.demo.shared.config.GlobalMapperConfig;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-public class NotificationRecipientMapper {
+@Mapper(config = GlobalMapperConfig.class)
+public abstract class NotificationRecipientMapper {
 
     public NotificationRecipient toEntity(
             NotificationRecipientRequest request,
@@ -25,23 +27,14 @@ public class NotificationRecipientMapper {
                 .build();
     }
 
-    public NotificationRecipientResponse toResponse(NotificationRecipient entity) {
-        Long notificationId = entity.getId() != null ? entity.getId().getNotificationId() : null;
-        Long memberId = entity.getId() != null ? entity.getId().getMemberId() : null;
-        Notification notification = entity.getNotification();
-        Member sender = notification == null ? null : notification.getSender();
-
-        return NotificationRecipientResponse.builder()
-                .notificationId(notificationId)
-                .memberId(memberId)
-                .isRead(entity.getIsRead())
-                .readAt(entity.getReadAt())
-                .title(notification == null ? null : notification.getTitle())
-                .content(notification == null ? null : notification.getContent())
-                .senderId(sender == null ? null : sender.getMemberId())
-                .targetType(notification == null ? null : notification.getTargetType())
-                .sendMethod(notification == null ? null : notification.getSendMethod())
-                .sentAt(notification == null ? null : notification.getSentAt())
-                .build();
-    }
+    @Mapping(source = "id.notificationId", target = "notificationId")
+    @Mapping(source = "id.memberId", target = "memberId")
+    @Mapping(source = "notification.title", target = "title")
+    @Mapping(source = "notification.content", target = "content")
+    @Mapping(source = "notification.sender.memberId", target = "senderId")
+    @Mapping(source = "notification.targetType", target = "targetType")
+    @Mapping(source = "notification.sendMethod", target = "sendMethod")
+    @Mapping(source = "notification.sentAt", target = "sentAt")
+    public abstract NotificationRecipientResponse toResponse(NotificationRecipient entity);
 }
+

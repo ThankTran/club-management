@@ -7,10 +7,12 @@ import com.example.demo.event.entity.EventOrganizer;
 import com.example.demo.event.entity.EventOrganizerId;
 import com.example.demo.event.entity.EventRole;
 import com.example.demo.member.entity.Member;
-import org.springframework.stereotype.Component;
+import com.example.demo.shared.config.GlobalMapperConfig;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-public class EventOrganizerMapper {
+@Mapper(config = GlobalMapperConfig.class)
+public abstract class EventOrganizerMapper {
 
     public EventOrganizer toEntity(
             EventOrganizerRequest request,
@@ -26,16 +28,10 @@ public class EventOrganizerMapper {
                 .build();
     }
 
-    public EventOrganizerResponse toResponse(EventOrganizer entity) {
-        String eventId = entity.getId() != null ? entity.getId().getEventId() : null;
-        Long memberId = entity.getId() != null ? entity.getId().getMemberId() : null;
-        Short roleId = entity.getRole() == null ? null : entity.getRole().getRoleId();
-        String roleName = entity.getRole() == null ? null : entity.getRole().getRoleName();
-        return EventOrganizerResponse.builder()
-                .eventId(eventId)
-                .memberId(memberId)
-                .roleId(roleId)
-                .roleName(roleName)
-                .build();
-    }
+    @Mapping(source = "id.eventId", target = "eventId")
+    @Mapping(source = "id.memberId", target = "memberId")
+    @Mapping(source = "role.roleId", target = "roleId")
+    @Mapping(source = "role.roleName", target = "roleName")
+    public abstract EventOrganizerResponse toResponse(EventOrganizer entity);
 }
+
