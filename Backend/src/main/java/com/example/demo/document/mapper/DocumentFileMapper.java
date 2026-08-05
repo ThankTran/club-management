@@ -4,10 +4,18 @@ import com.example.demo.document.dto.request.DocumentFileRequest;
 import com.example.demo.document.dto.response.DocumentFileResponse;
 import com.example.demo.document.entity.Document;
 import com.example.demo.document.entity.DocumentFile;
-import org.springframework.stereotype.Component;
+import com.example.demo.shared.config.GlobalMapperConfig;
+import org.mapstruct.Mapper;
+import org.mapstruct.Mapping;
 
-@Component
-public class DocumentFileMapper {
+@Mapper(config = GlobalMapperConfig.class)
+public abstract class DocumentFileMapper {
+    /**
+     * Intentionally manual: field values (fileName, fileSize, mimeType) are derived
+     * conditionally from either a {@link org.springframework.web.multipart.MultipartFile}
+     * or DTO fallback fields. This conditional logic cannot be expressed with
+     * {@code @Mapping} annotations and must remain as a concrete method.
+     */
     public DocumentFile toEntity(DocumentFileRequest request, Document document, String url) {
         boolean hasUploadedFile = request.getFile() != null && !request.getFile().isEmpty();
         String fileName = hasUploadedFile
@@ -29,16 +37,7 @@ public class DocumentFileMapper {
                 .build();
     }
 
-    public DocumentFileResponse toResponse(DocumentFile entity) {
-        return DocumentFileResponse.builder()
-                .fileId(entity.getFileId())
-                .documentId(entity.getDocument() != null ? entity.getDocument().getDocumentId() : null)
-                .fileUrl(entity.getFileUrl())
-                .fileName(entity.getFileName())
-                .fileSize(entity.getFileSize())
-                .mimeType(entity.getMimeType())
-                .uploadedAt(entity.getUploadedAt())
-                .build();
-    }
+    @Mapping(source = "document.documentId", target = "documentId")
+    public abstract DocumentFileResponse toResponse(DocumentFile entity);
 }
 
