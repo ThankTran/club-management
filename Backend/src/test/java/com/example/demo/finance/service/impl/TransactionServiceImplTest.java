@@ -93,7 +93,6 @@ class TransactionServiceImplTest {
                 null,
                 null,
                 pageable)).thenReturn(transactionPage);
-        when(transactionMapper.parseTransactionType("INCOME")).thenReturn(TransactionType.INCOME);
         when(transactionMapper.toResponse(transaction))
                 .thenReturn(TransactionResponse.builder().transactionId("THU001").build());
 

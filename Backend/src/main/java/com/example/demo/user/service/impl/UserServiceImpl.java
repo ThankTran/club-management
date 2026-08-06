@@ -75,6 +75,11 @@ public class UserServiceImpl implements com.example.demo.user.service.interfaces
         if (!passwordHasher.matches(request.getPassword(), user.getPasswordHash())) {
             throw new IllegalArgumentException("Thông tin đăng nhập không chính xác");
         }
+        if (user.getPasswordHash() != null && !user.getPasswordHash().startsWith("$2a$")
+                && !user.getPasswordHash().startsWith("$2b$") && !user.getPasswordHash().startsWith("$2y$")) {
+            user.changePassword(passwordHasher.hash(request.getPassword()));
+            userRepository.save(user);
+        }
         return userMapper.toResponse(user);
     }
 
